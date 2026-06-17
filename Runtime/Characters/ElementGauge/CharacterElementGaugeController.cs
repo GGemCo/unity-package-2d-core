@@ -5,11 +5,11 @@ using UnityEngine;
 namespace GGemCo2DCore
 {
     /// <summary>
-    /// 캐릭터가 실제로 받은 속성별 데미지를 누적하고, UI/확장 핸들러에 상태 변화를 전달하는 컨트롤러입니다.
+    /// 캐릭터가 실제로 받은 속성 데미지를 속성별 게이지로 누적하고, UI와 확장 핸들러에 상태 변화를 전달합니다.
     /// </summary>
     /// <remarks>
     /// 이 컨트롤러는 속성 게이지의 누적, 감쇠, 임계 도달 이벤트만 담당합니다.
-    /// 임계 도달 후 효과와 임계 상태에서 같은 속성 데미지를 다시 받았을 때의 처리는 프로젝트별 핸들러로 확장합니다.
+    /// 임계 도달 후의 효과와 임계 상태에서 같은 속성 데미지를 다시 받았을 때의 처리는 프로젝트별 핸들러로 확장합니다.
     /// </remarks>
     [DisallowMultipleComponent]
     public sealed class CharacterElementGaugeController : MonoBehaviour
@@ -25,13 +25,13 @@ namespace GGemCo2DCore
 
         /// <summary>
         /// 전역 기본 임계 도달 핸들러입니다.
-        /// 씬/프로젝트 부트스트랩에서 설정하면 이후 생성되는 컨트롤러의 기본 핸들러로 사용됩니다.
+        /// 프로젝트 부트스트랩에서 설정하면 이후 생성되는 컨트롤러의 기본 핸들러로 사용합니다.
         /// </summary>
         public static IElementGaugeThresholdHandler DefaultThresholdHandler { get; set; } = NullElementGaugeThresholdHandler.Instance;
 
         /// <summary>
-        /// 전역 기본 임계 상태 재피격 핸들러입니다.
-        /// 씬/프로젝트 부트스트랩에서 설정하면 이후 생성되는 컨트롤러의 기본 핸들러로 사용됩니다.
+        /// 전역 기본 임계 상태 반복 피격 핸들러입니다.
+        /// 프로젝트 부트스트랩에서 설정하면 이후 생성되는 컨트롤러의 기본 핸들러로 사용합니다.
         /// </summary>
         public static IElementGaugeRepeatedHitHandler DefaultRepeatedHitHandler { get; set; } = NullElementGaugeRepeatedHitHandler.Instance;
 
@@ -80,9 +80,9 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 임계 상태 재피격 핸들러를 교체합니다.
+        /// 임계 상태 반복 피격 핸들러를 교체합니다.
         /// </summary>
-        /// <param name="handler">프로젝트별 재피격 핸들러입니다. null이면 기본 Null 핸들러를 사용합니다.</param>
+        /// <param name="handler">프로젝트별 반복 피격 핸들러입니다. null이면 기본 Null 핸들러를 사용합니다.</param>
         public void SetRepeatedHitHandler(IElementGaugeRepeatedHitHandler handler)
         {
             _repeatedHitHandler = handler ?? NullElementGaugeRepeatedHitHandler.Instance;
@@ -133,42 +133,20 @@ namespace GGemCo2DCore
                 return ElementGaugeAccumulationResult.None;
 
             ConfigCommon.DamageType damageType = metadataDamage.damageType;
-            if (damageType == ConfigCommon.DamageType.None || damageType == ConfigCommon.DamageType.Physic)
+            if (!CanAccumulateDamageType(damageType))
                 return ElementGaugeAccumulationResult.None;
 
             if (!_runtime.TryGetRule(damageType, out ElementGaugeRuleDefinition rule) || rule == null)
                 return ElementGaugeAccumulationResult.None;
 
-            long sourceAmount = ResolveGaugeSourceAmount(rule, metadataDamage, damageType, damageAmount);
-            float gaugeAmount = CalculateGaugeAmount(rule, sourceAmount);
-            if (sourceAmount <= 0L || gaugeAmount <= 0f)
-                return ElementGaugeAccumulationResult.None;
-
-            ElementGaugeApplyResult result = _gaugeProcessor.AccumulateDamage(_runtime, damageType, gaugeAmount, Time.time);
-            if (!result.GaugeChanged && !result.ThresholdReached && !result.RepeatedElementDamage)
-                return ElementGaugeAccumulationResult.None;
-
-            var context = new ElementGaugeAccumulationContext(_owner, metadataDamage.attacker, metadataDamage, damageType, sourceAmount, gaugeAmount);
-
-            if (result.GaugeChanged)
-                RaiseGaugeChanged();
-
-            if (result.ThresholdReached)
+            long sourceAmount = ResolveAttackerElementDamage(metadataDamage, damageType);
+            if (sourceAmount <= 0L)
             {
-                ThresholdReached?.Invoke(result.Snapshot, context);
-                _thresholdHandler.OnThresholdReached(result.Snapshot, context);
-            }
-            else if (result.RepeatedElementDamage)
-            {
-                RepeatedElementDamageReceived?.Invoke(result.Snapshot, context);
-                _repeatedHitHandler.OnRepeatedElementDamage(result.Snapshot, context);
+                // 데미지 분해 결과가 없는 레거시 경로에서는 기존 단일 damageType 값을 기준으로 최종 피해량을 사용합니다.
+                sourceAmount = Math.Max(0L, damageAmount);
             }
 
-            return new ElementGaugeAccumulationResult(
-                result.GaugeChanged,
-                result.ThresholdReached,
-                result.RepeatedElementDamage,
-                result.Snapshot);
+            return AccumulateResolvedAmount(metadataDamage, metadataDamage.attacker, damageType, sourceAmount, sourceAmount);
         }
 
         /// <summary>
@@ -178,7 +156,7 @@ namespace GGemCo2DCore
         /// <param name="breakdown">속성별 데미지 분해 결과입니다.</param>
         /// <returns>마지막으로 변화가 발생한 속성 게이지 누적 결과입니다.</returns>
         /// <remarks>
-        /// 신규 데미지 파트 정보가 없으면 기존 단일 데미지 타입 기반 누적 로직으로 되돌아갑니다.
+        /// 분해 결과가 없으면 기존 단일 데미지 타입 기반 누적 로직으로 되돌아갑니다.
         /// 물리 파트는 게이지 대상이 아니므로 건너뛰고, 화염/냉기/번개/독 파트만 누적합니다.
         /// </remarks>
         public ElementGaugeAccumulationResult AccumulateFromDamageBreakdown(
@@ -196,7 +174,7 @@ namespace GGemCo2DCore
             for (int i = 0; i < parts.Count; i++)
             {
                 DamagePartResult part = parts[i];
-                if (part.DamageType == ConfigCommon.DamageType.None || part.DamageType == ConfigCommon.DamageType.Physic)
+                if (!CanAccumulateDamageType(part.DamageType))
                     continue;
 
                 ElementGaugeAccumulationResult result = AccumulateFromDamagePart(metadataDamage, part);
@@ -217,7 +195,7 @@ namespace GGemCo2DCore
         /// <returns>누적 처리 결과입니다.</returns>
         /// <remarks>
         /// Affect의 ElementGauge Modifier처럼 HP 피해와 분리된 게이지 전용 효과에서 사용합니다.
-        /// 이 메서드는 <see cref="CharacterBase.TakeDamage"/>를 호출하지 않으므로 피격 반응, Hit VFX, 사망 처리를 발생시키지 않습니다.
+        /// 이 메서드는 <see cref="CharacterBase.TakeDamage"/>를 호출하지 않으므로 피격 반응, Hit VFX, 넉백 처리를 발생시키지 않습니다.
         /// </remarks>
         public ElementGaugeAccumulationResult AccumulateDirect(
             ConfigCommon.DamageType damageType,
@@ -228,43 +206,13 @@ namespace GGemCo2DCore
             if (!CanProcessRuntime() || gaugeAmount <= 0f)
                 return ElementGaugeAccumulationResult.None;
 
-            if (damageType == ConfigCommon.DamageType.None || damageType == ConfigCommon.DamageType.Physic)
+            if (!CanAccumulateDamageType(damageType))
                 return ElementGaugeAccumulationResult.None;
 
             if (!_runtime.TryGetRule(damageType, out ElementGaugeRuleDefinition rule) || rule == null)
                 return ElementGaugeAccumulationResult.None;
 
-            ElementGaugeApplyResult result = _gaugeProcessor.AccumulateDamage(_runtime, damageType, gaugeAmount, Time.time);
-            if (!result.GaugeChanged && !result.ThresholdReached && !result.RepeatedElementDamage)
-                return ElementGaugeAccumulationResult.None;
-
-            var context = new ElementGaugeAccumulationContext(
-                _owner,
-                source,
-                metadataDamage,
-                damageType,
-                0L,
-                gaugeAmount);
-
-            if (result.GaugeChanged)
-                RaiseGaugeChanged();
-
-            if (result.ThresholdReached)
-            {
-                ThresholdReached?.Invoke(result.Snapshot, context);
-                _thresholdHandler.OnThresholdReached(result.Snapshot, context);
-            }
-            else if (result.RepeatedElementDamage)
-            {
-                RepeatedElementDamageReceived?.Invoke(result.Snapshot, context);
-                _repeatedHitHandler.OnRepeatedElementDamage(result.Snapshot, context);
-            }
-
-            return new ElementGaugeAccumulationResult(
-                result.GaugeChanged,
-                result.ThresholdReached,
-                result.RepeatedElementDamage,
-                result.Snapshot);
+            return AccumulateResolvedAmount(metadataDamage, source, damageType, 0L, gaugeAmount);
         }
 
         /// <summary>
@@ -302,38 +250,23 @@ namespace GGemCo2DCore
                 RaiseGaugeChanged();
         }
 
+        /// <summary>
+        /// 런타임 처리가 가능한 상태인지 확인합니다.
+        /// </summary>
+        /// <returns>소유 캐릭터가 살아 있고 게이지 런타임이 준비되었으면 <see langword="true"/>입니다.</returns>
         private bool CanProcessRuntime()
         {
             return _owner != null && !_owner.IsStatusDead() && _runtime != null && _gaugeProcessor != null;
         }
 
         /// <summary>
-        /// 게이지 규칙에 따라 누적 원본 수치를 결정합니다.
+        /// 속성 게이지 누적 대상 데미지 타입인지 확인합니다.
         /// </summary>
-        /// <param name="rule">현재 속성 게이지 규칙입니다.</param>
-        /// <param name="metadataDamage">데미지 메타데이터입니다.</param>
-        /// <param name="damageType">누적 대상 속성 타입입니다.</param>
-        /// <param name="finalDamageAmount">이번 피격에서 확정된 최종 HP 데미지량입니다.</param>
-        /// <returns>게이지 변환에 사용할 원본 수치입니다.</returns>
-        private static long ResolveGaugeSourceAmount(
-            ElementGaugeRuleDefinition rule,
-            MetadataDamage metadataDamage,
-            ConfigCommon.DamageType damageType,
-            long finalDamageAmount)
+        /// <param name="damageType">검사할 데미지 타입입니다.</param>
+        /// <returns>물리와 None이 아닌 속성이면 <see langword="true"/>입니다.</returns>
+        private static bool CanAccumulateDamageType(ConfigCommon.DamageType damageType)
         {
-            if (rule == null)
-                return 0L;
-
-            long safeFinalDamage = Math.Max(0L, finalDamageAmount);
-            long attackerElementDamage = ResolveAttackerElementDamage(metadataDamage, damageType);
-
-            return rule.fillSourcePolicy switch
-            {
-                ElementGaugeFillSourcePolicy.FinalDamage => safeFinalDamage,
-                ElementGaugeFillSourcePolicy.AttackerElementDamage => attackerElementDamage,
-                ElementGaugeFillSourcePolicy.AttackerElementDamageOrFinalDamage => attackerElementDamage > 0L ? attackerElementDamage : safeFinalDamage,
-                _ => attackerElementDamage > 0L ? attackerElementDamage : safeFinalDamage
-            };
+            return damageType != ConfigCommon.DamageType.None && damageType != ConfigCommon.DamageType.Physic;
         }
 
         /// <summary>
@@ -349,20 +282,44 @@ namespace GGemCo2DCore
             if (!_runtime.TryGetRule(part.DamageType, out ElementGaugeRuleDefinition rule) || rule == null)
                 return ElementGaugeAccumulationResult.None;
 
-            long sourceAmount = ResolveGaugeSourceAmount(rule, part.FinalDamage, part.AttackerElementDamage);
-            float gaugeAmount = CalculateGaugeAmount(rule, sourceAmount);
-            if (sourceAmount <= 0L || gaugeAmount <= 0f)
+            long sourceAmount = Math.Max(0L, part.AttackerElementDamage);
+            if (sourceAmount <= 0L)
+            {
+                // 분해 결과가 공격자 속성 데미지를 제공하지 않는 경우에만 파트 최종 피해량을 보조 기준으로 사용합니다.
+                sourceAmount = Math.Max(0L, part.FinalDamage);
+            }
+
+            return AccumulateResolvedAmount(metadataDamage, metadataDamage.attacker, part.DamageType, sourceAmount, sourceAmount);
+        }
+
+        /// <summary>
+        /// 이미 확정된 누적량을 런타임 게이지에 반영하고 관련 이벤트를 발행합니다.
+        /// </summary>
+        /// <param name="metadataDamage">게이지 원인을 설명하는 데미지 메타데이터입니다.</param>
+        /// <param name="source">게이지를 발생시킨 원인 GameObject입니다.</param>
+        /// <param name="damageType">누적 대상 속성 타입입니다.</param>
+        /// <param name="sourceAmount">컨텍스트에 기록할 원본 수치입니다.</param>
+        /// <param name="gaugeAmount">실제 게이지에 더할 수치입니다.</param>
+        /// <returns>속성 게이지 누적 결과입니다.</returns>
+        private ElementGaugeAccumulationResult AccumulateResolvedAmount(
+            MetadataDamage metadataDamage,
+            GameObject source,
+            ConfigCommon.DamageType damageType,
+            long sourceAmount,
+            float gaugeAmount)
+        {
+            if (sourceAmount <= 0L && gaugeAmount <= 0f)
                 return ElementGaugeAccumulationResult.None;
 
-            ElementGaugeApplyResult result = _gaugeProcessor.AccumulateDamage(_runtime, part.DamageType, gaugeAmount, Time.time);
+            ElementGaugeApplyResult result = _gaugeProcessor.AccumulateDamage(_runtime, damageType, gaugeAmount, Time.time);
             if (!result.GaugeChanged && !result.ThresholdReached && !result.RepeatedElementDamage)
                 return ElementGaugeAccumulationResult.None;
 
             var context = new ElementGaugeAccumulationContext(
                 _owner,
-                metadataDamage.attacker,
+                source,
                 metadataDamage,
-                part.DamageType,
+                damageType,
                 sourceAmount,
                 gaugeAmount);
 
@@ -388,33 +345,6 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 게이지 규칙에 따라 데미지 파트에서 누적 기준 수치를 선택합니다.
-        /// </summary>
-        /// <param name="rule">현재 속성 게이지 규칙입니다.</param>
-        /// <param name="finalDamageAmount">파트별 최종 HP 데미지입니다.</param>
-        /// <param name="attackerElementDamage">공격자 속성 데미지 스탯에서 유래한 수치입니다.</param>
-        /// <returns>게이지 변화에 사용할 기준 수치입니다.</returns>
-        private static long ResolveGaugeSourceAmount(
-            ElementGaugeRuleDefinition rule,
-            long finalDamageAmount,
-            long attackerElementDamage)
-        {
-            if (rule == null)
-                return 0L;
-
-            long safeFinalDamage = Math.Max(0L, finalDamageAmount);
-            long safeAttackerElementDamage = Math.Max(0L, attackerElementDamage);
-
-            return rule.fillSourcePolicy switch
-            {
-                ElementGaugeFillSourcePolicy.FinalDamage => safeFinalDamage,
-                ElementGaugeFillSourcePolicy.AttackerElementDamage => safeAttackerElementDamage,
-                ElementGaugeFillSourcePolicy.AttackerElementDamageOrFinalDamage => safeAttackerElementDamage > 0L ? safeAttackerElementDamage : safeFinalDamage,
-                _ => safeAttackerElementDamage > 0L ? safeAttackerElementDamage : safeFinalDamage
-            };
-        }
-
-        /// <summary>
         /// 공격자 캐릭터가 보유한 현재 기본 속성 데미지 값을 조회합니다.
         /// </summary>
         /// <param name="metadataDamage">데미지 메타데이터입니다.</param>
@@ -430,29 +360,8 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 원본 수치를 게이지 누적량으로 변환합니다.
+        /// 플레이어 설정에서 게이지 규칙을 읽어 런타임용 목록을 초기화합니다.
         /// </summary>
-        /// <param name="rule">현재 속성 게이지 규칙입니다.</param>
-        /// <param name="sourceAmount">게이지 변환에 사용할 원본 수치입니다.</param>
-        /// <returns>실제로 게이지에 누적할 값입니다.</returns>
-        private static float CalculateGaugeAmount(ElementGaugeRuleDefinition rule, long sourceAmount)
-        {
-            if (rule == null || sourceAmount <= 0L)
-                return 0f;
-
-            float gaugeAmount = sourceAmount * Mathf.Max(0f, rule.gaugeFillPerElementDamage);
-            if (rule.flatGaugeFillOnElementHit > 0f)
-                gaugeAmount += rule.flatGaugeFillOnElementHit;
-
-            if (rule.minGaugeFillPerHit > 0f)
-                gaugeAmount = Mathf.Max(rule.minGaugeFillPerHit, gaugeAmount);
-
-            if (rule.maxGaugeFillPerHit > 0f)
-                gaugeAmount = Mathf.Min(rule.maxGaugeFillPerHit, gaugeAmount);
-
-            return Mathf.Max(0f, gaugeAmount);
-        }
-
         private void InitializeRules()
         {
             _rules.Clear();
@@ -475,11 +384,18 @@ namespace GGemCo2DCore
                 _rules.AddRange(ElementGaugeRuleDefinition.CreateDefaultPlayerRules());
         }
 
+        /// <summary>
+        /// Addressables 설정 로더에서 플레이어 설정을 조회합니다.
+        /// </summary>
+        /// <returns>로드된 플레이어 설정입니다. 설정이 없으면 null입니다.</returns>
         private GGemCoPlayerSettings ResolvePlayerSettings()
         {
             return AddressableLoaderSettings.Instance != null ? AddressableLoaderSettings.Instance.playerSettings : null;
         }
 
+        /// <summary>
+        /// 게이지 변경 이벤트를 발생시킵니다.
+        /// </summary>
         private void RaiseGaugeChanged()
         {
             GaugeChanged?.Invoke();
