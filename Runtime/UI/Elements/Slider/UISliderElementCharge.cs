@@ -1,4 +1,4 @@
-﻿using TMPro;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -24,6 +24,8 @@ namespace GGemCo2DCore
 
         [Header("Policy")]
         [SerializeField] private bool hideWhenEmpty = false;
+        [Tooltip("오염 HP가 모두 사라져 차단 상태가 해제되고 게이지가 비어 있으면 UI를 숨길지 여부입니다.")]
+        [SerializeField] private bool hideWhenTriggeredHpCleared = true;
         [SerializeField] private bool showNumericText = false;
 
         private CharacterElementGaugeController _controller;
@@ -88,6 +90,7 @@ namespace GGemCo2DCore
                 return;
 
             _controller.GaugeChanged += OnGaugeChanged;
+            _controller.TriggeredHpChanged += OnTriggeredHpChanged;
             _isSubscribed = true;
         }
 
@@ -97,10 +100,20 @@ namespace GGemCo2DCore
                 return;
 
             _controller.GaugeChanged -= OnGaugeChanged;
+            _controller.TriggeredHpChanged -= OnTriggeredHpChanged;
             _isSubscribed = false;
         }
 
         private void OnGaugeChanged()
+        {
+            RefreshView();
+        }
+
+        /// <summary>
+        /// 오염 HP가 0이 되어 차단 상태가 해제되면 게이지 UI 표시 여부도 즉시 갱신합니다.
+        /// </summary>
+        /// <param name="snapshot">현재 오염 HP 스냅샷입니다.</param>
+        private void OnTriggeredHpChanged(ElementTriggeredHpCollectionSnapshot snapshot)
         {
             RefreshView();
         }
@@ -154,7 +167,7 @@ namespace GGemCo2DCore
             if (blockedOverlay != null)
                 blockedOverlay.SetActive(blocked);
 
-            if (canvasGroup != null && hideWhenEmpty)
+            if (canvasGroup != null && (hideWhenEmpty || hideWhenTriggeredHpCleared))
             {
                 bool visible = normalized > 0f || blocked;
                 canvasGroup.alpha = visible ? 1f : 0f;
@@ -177,7 +190,7 @@ namespace GGemCo2DCore
             if (blockedOverlay != null)
                 blockedOverlay.SetActive(false);
 
-            if (canvasGroup != null && hideWhenEmpty)
+            if (canvasGroup != null && (hideWhenEmpty || hideWhenTriggeredHpCleared))
             {
                 canvasGroup.alpha = 0f;
                 canvasGroup.blocksRaycasts = false;

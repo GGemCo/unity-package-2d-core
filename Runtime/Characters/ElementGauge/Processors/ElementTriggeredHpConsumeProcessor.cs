@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace GGemCo2DCore
@@ -10,19 +10,31 @@ namespace GGemCo2DCore
     {
         private readonly CharacterBase _owner;
         private readonly ElementTriggeredHpService _triggeredHpService;
+        private readonly ElementGaugeThresholdAffectService _thresholdAffectService;
 
-        public ElementTriggeredHpConsumeProcessor(CharacterBase owner, ElementTriggeredHpService triggeredHpService)
+        public ElementTriggeredHpConsumeProcessor(
+            CharacterBase owner,
+            ElementTriggeredHpService triggeredHpService,
+            ElementGaugeThresholdAffectService thresholdAffectService)
         {
             _owner = owner;
             _triggeredHpService = triggeredHpService;
+            _thresholdAffectService = thresholdAffectService;
         }
 
+        /// <summary>
+        /// 피격 후 오염 HP 즉시 소모 정책을 평가하고, 오염 HP가 0이 된 경우 임계 Affect와 게이지 UI 상태를 정리합니다.
+        /// </summary>
+        /// <param name="runtime">속성 게이지 런타임 상태입니다.</param>
+        /// <param name="metadataDamage">피격 메타데이터입니다.</param>
+        /// <returns>오염 HP/게이지 변경과 사망 확정 필요 여부를 포함한 처리 결과입니다.</returns>
         public ElementTriggeredHpConsumeResult HandleAfterIncomingDamage(ElementGaugeRuntime runtime, MetadataDamage metadataDamage)
         {
             if (_owner == null || runtime == null || metadataDamage == null || _triggeredHpService == null)
                 return ElementTriggeredHpConsumeResult.None;
 
             bool triggeredHpChanged = false;
+            bool gaugeChanged = false;
             bool requiresDeathFinalize = false;
 
             IReadOnlyList<ElementGaugeRuleDefinition> rules = runtime.Rules;
@@ -33,7 +45,11 @@ namespace GGemCo2DCore
                     continue;
 
                 ConfigCommon.DamageType damageType = rule.damageType;
-                triggeredHpChanged |= _triggeredHpService.ClampTriggeredHpToCurrentResources(runtime, damageType);
+                bool clamped = _triggeredHpService.ClampTriggeredHpToCurrentResources(runtime, damageType);
+                triggeredHpChanged |= clamped;
+
+                if (clamped && !_triggeredHpService.HasTriggeredHp(runtime, damageType))
+                    gaugeChanged |= EndThresholdAffectIfNeeded(runtime, rule, damageType);
 
                 if (!_triggeredHpService.HasTriggeredHp(runtime, damageType))
                     continue;
@@ -50,11 +66,30 @@ namespace GGemCo2DCore
                     continue;
 
                 triggeredHpChanged = true;
+                if (!_triggeredHpService.HasTriggeredHp(runtime, damageType))
+                    gaugeChanged |= EndThresholdAffectIfNeeded(runtime, rule, damageType);
+
                 if (_owner.CurrentHp.Value <= 0)
                     requiresDeathFinalize = true;
             }
 
-            return new ElementTriggeredHpConsumeResult(triggeredHpChanged, requiresDeathFinalize);
+            return new ElementTriggeredHpConsumeResult(triggeredHpChanged, gaugeChanged, requiresDeathFinalize);
+        }
+
+        /// <summary>
+        /// 오염 HP가 남아 있지 않을 때 임계 Affect와 게이지 상태를 종료합니다.
+        /// </summary>
+        /// <param name="runtime">속성 게이지 런타임 상태입니다.</param>
+        /// <param name="rule">현재 평가 중인 속성 게이지 규칙입니다.</param>
+        /// <param name="damageType">정리할 속성 타입입니다.</param>
+        /// <returns>게이지 UI 갱신이 필요한지 여부입니다.</returns>
+        private bool EndThresholdAffectIfNeeded(
+            ElementGaugeRuntime runtime,
+            ElementGaugeRuleDefinition rule,
+            ConfigCommon.DamageType damageType)
+        {
+            return _thresholdAffectService != null &&
+                   _thresholdAffectService.EndIfTriggeredHpCleared(runtime, _triggeredHpService, rule, damageType);
         }
 
         private static bool ShouldConsumeTriggeredHp(ElementGaugeRuleDefinition rule, MetadataDamage metadataDamage)

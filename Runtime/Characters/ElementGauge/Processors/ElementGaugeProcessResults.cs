@@ -1,4 +1,4 @@
-﻿namespace GGemCo2DCore
+namespace GGemCo2DCore
 {
     internal readonly struct ElementGaugeApplyResult
     {
@@ -42,29 +42,33 @@
 
     internal readonly struct ElementTriggeredHpTickResult
     {
-        public static ElementTriggeredHpTickResult None => new(false, false);
+        public static ElementTriggeredHpTickResult None => new(false, false, false);
 
-        public ElementTriggeredHpTickResult(bool triggeredHpChanged, bool requiresDeathFinalize)
+        public ElementTriggeredHpTickResult(bool triggeredHpChanged, bool gaugeChanged, bool requiresDeathFinalize)
         {
             TriggeredHpChanged = triggeredHpChanged;
+            GaugeChanged = gaugeChanged;
             RequiresDeathFinalize = requiresDeathFinalize;
         }
 
         public bool TriggeredHpChanged { get; }
+        public bool GaugeChanged { get; }
         public bool RequiresDeathFinalize { get; }
     }
 
     internal readonly struct ElementTriggeredHpConsumeResult
     {
-        public static ElementTriggeredHpConsumeResult None => new(false, false);
+        public static ElementTriggeredHpConsumeResult None => new(false, false, false);
 
-        public ElementTriggeredHpConsumeResult(bool triggeredHpChanged, bool requiresDeathFinalize)
+        public ElementTriggeredHpConsumeResult(bool triggeredHpChanged, bool gaugeChanged, bool requiresDeathFinalize)
         {
             TriggeredHpChanged = triggeredHpChanged;
+            GaugeChanged = gaugeChanged;
             RequiresDeathFinalize = requiresDeathFinalize;
         }
 
         public bool TriggeredHpChanged { get; }
+        public bool GaugeChanged { get; }
         public bool RequiresDeathFinalize { get; }
     }
 }

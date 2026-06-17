@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -20,6 +20,7 @@ namespace GGemCo2DCore
         private ElementGaugeProcessor _gaugeProcessor;
         private ElementGaugeThresholdProcessor _thresholdProcessor;
         private ElementTriggeredHpService _triggeredHpService;
+        private ElementGaugeThresholdAffectService _thresholdAffectService;
         private ElementTriggeredHpTickProcessor _tickProcessor;
         private ElementTriggeredHpConsumeProcessor _consumeProcessor;
 
@@ -41,10 +42,11 @@ namespace GGemCo2DCore
             InitializeRules();
             _runtime = new ElementGaugeRuntime(_rules);
             _triggeredHpService = new ElementTriggeredHpService(_owner);
+            _thresholdAffectService = new ElementGaugeThresholdAffectService(_owner);
             _gaugeProcessor = new ElementGaugeProcessor(_owner);
-            _thresholdProcessor = new ElementGaugeThresholdProcessor(_owner, _triggeredHpService);
-            _tickProcessor = new ElementTriggeredHpTickProcessor(_owner, _triggeredHpService);
-            _consumeProcessor = new ElementTriggeredHpConsumeProcessor(_owner, _triggeredHpService);
+            _thresholdProcessor = new ElementGaugeThresholdProcessor(_owner, _triggeredHpService, _thresholdAffectService);
+            _tickProcessor = new ElementTriggeredHpTickProcessor(_owner, _triggeredHpService, _thresholdAffectService);
+            _consumeProcessor = new ElementTriggeredHpConsumeProcessor(_owner, _triggeredHpService, _thresholdAffectService);
         }
 
         private void Update()
@@ -55,7 +57,7 @@ namespace GGemCo2DCore
             ElementGaugeDecayResult decayResult = _gaugeProcessor.UpdateDecay(_runtime, Time.time, Time.deltaTime);
             ElementTriggeredHpTickResult tickResult = _tickProcessor.UpdateTick(_runtime, Time.deltaTime);
 
-            if (decayResult.GaugeChanged)
+            if (decayResult.GaugeChanged || tickResult.GaugeChanged)
                 RaiseGaugeChanged();
 
             if (tickResult.TriggeredHpChanged)
@@ -104,6 +106,9 @@ namespace GGemCo2DCore
                 return;
 
             ElementTriggeredHpConsumeResult result = _consumeProcessor.HandleAfterIncomingDamage(_runtime, metadataDamage);
+            if (result.GaugeChanged)
+                RaiseGaugeChanged();
+
             if (result.TriggeredHpChanged)
                 RaiseTriggeredHpChanged();
 
