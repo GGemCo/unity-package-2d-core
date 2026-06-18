@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 
@@ -14,6 +14,7 @@ namespace GGemCo2DCore
         TilemapPrefab,    // tilemap.prefab
         RegenNpcJson,     // regen_npc.json
         RegenMonsterJson, // regen_monster.json
+        WaveSpawnJson,    // wave_spawn.json
         WarpJson,          // warp.json
         PatrolJson
     }
@@ -23,6 +24,7 @@ namespace GGemCo2DCore
         private const string KeyNameTilemap    = "tilemap";
         private const string KeyNameRegenNpc   = "regen_npc";
         private const string KeyNameRegenMonster = "regen_monster";
+        private const string KeyNameWaveSpawn = "wave_spawn";
         private const string KeyNameWarp       = "warp";
 
         private const string ExtPrefab = ".prefab";
@@ -54,17 +56,28 @@ namespace GGemCo2DCore
         public static string GetKeyJsonWarp(string folderName)         => GetKey(folderName, MapAssetType.WarpJson);
         public static string GetKeyJsonRegenNpc(string folderName)     => GetKey(folderName, MapAssetType.RegenNpcJson);
         public static string GetKeyJsonRegenMonster(string folderName) => GetKey(folderName, MapAssetType.RegenMonsterJson);
+
+        /// <summary>웨이브 스폰 JSON Addressables 키를 반환합니다.</summary>
+        /// <param name="folderName">맵 폴더 이름입니다.</param>
+        /// <returns>맵별 wave_spawn.json Addressables 키입니다.</returns>
+        public static string GetKeyJsonWaveSpawn(string folderName) => GetKey(folderName, MapAssetType.WaveSpawnJson);
         
         public static string GetAssetPathTileMap(string folderName)    => GetAssetPath(folderName, MapAssetType.TilemapPrefab);
         public static string GetAssetPathWarp(string folderName)       => GetAssetPath(folderName, MapAssetType.WarpJson);
         public static string GetAssetPathRegenNpc(string folderName)   => GetAssetPath(folderName, MapAssetType.RegenNpcJson);
         public static string GetAssetPathRegenMonster(string folderName)=> GetAssetPath(folderName, MapAssetType.RegenMonsterJson);
 
+        /// <summary>웨이브 스폰 JSON 에셋 경로를 반환합니다.</summary>
+        /// <param name="folderName">맵 폴더 이름입니다.</param>
+        /// <returns>프로젝트 내 wave_spawn.json 에셋 경로입니다.</returns>
+        public static string GetAssetPathWaveSpawn(string folderName) => GetAssetPath(folderName, MapAssetType.WaveSpawnJson);
+
         public static string GetAssetName(MapAssetType type) => type switch
         {
             MapAssetType.TilemapPrefab    => KeyNameTilemap,
             MapAssetType.RegenNpcJson     => KeyNameRegenNpc,
             MapAssetType.RegenMonsterJson => KeyNameRegenMonster,
+            MapAssetType.WaveSpawnJson    => KeyNameWaveSpawn,
             MapAssetType.WarpJson         => KeyNameWarp,
             _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
         };
@@ -74,6 +87,7 @@ namespace GGemCo2DCore
             MapAssetType.TilemapPrefab    => KeyNameTilemap + ExtPrefab,
             MapAssetType.RegenNpcJson     => KeyNameRegenNpc + ExtJson,
             MapAssetType.RegenMonsterJson => KeyNameRegenMonster + ExtJson,
+            MapAssetType.WaveSpawnJson    => KeyNameWaveSpawn + ExtJson,
             MapAssetType.WarpJson         => KeyNameWarp + ExtJson,
             _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
         };

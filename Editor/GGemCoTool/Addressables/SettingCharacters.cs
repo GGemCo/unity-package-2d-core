@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.IO;
 using GGemCo2DCore;
 using UnityEditor;
@@ -194,6 +194,12 @@ namespace GGemCo2DCoreEditor
                     ConfigAddressableMap.GetAssetPathRegenMonster(folderName),
                     AddressableCharacterType.Monster,
                     clearExistingLabel: true);
+
+                AddressableCharacterLabelUtility.ApplyMapLabelFromWaveSpawn(
+                    settings,
+                    folderName,
+                    ConfigAddressableMap.GetAssetPathWaveSpawn(folderName),
+                    clearExistingLabel: false);
 
                 AddressableCharacterLabelUtility.ApplyMapLabelFromRegen(
                     settings,

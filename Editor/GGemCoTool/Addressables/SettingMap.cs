@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.IO;
 using GGemCo2DCore;
 using UnityEditor;
@@ -106,6 +106,20 @@ namespace GGemCo2DCoreEditor
                     type: AddressableCharacterType.Monster,
                     clearExistingLabel: true
                 );
+
+                // 웨이브 스폰 파일은 맵별 선택 파일이므로, 파일이 있을 때만 Addressables에 등록합니다.
+                key = ConfigAddressableMap.GetKeyJsonWaveSpawn(info.FolderName);
+                assetPath = ConfigAddressableMap.GetAssetPathWaveSpawn(info.FolderName);
+                if (File.Exists(assetPath))
+                {
+                    Add(settings, group, key, assetPath);
+                    AddressableCharacterLabelUtility.ApplyMapLabelFromWaveSpawn(
+                        settings,
+                        mapFolderName: info.FolderName,
+                        waveSpawnJsonAssetPath: assetPath,
+                        clearExistingLabel: false
+                    );
+                }
                 
                 // npc 리젠 파일
                 key = ConfigAddressableMap.GetKeyJsonRegenNpc(info.FolderName);
