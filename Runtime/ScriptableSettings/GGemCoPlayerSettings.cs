@@ -288,17 +288,7 @@ namespace GGemCo2DCore
             }
         }
 
-        /// <summary>
-        /// 플레이어 속성 게이지가 누적되는 입력 경로를 결정합니다.
-        /// </summary>
-        /// <remarks>
-        /// <see cref="ElementGaugeAccumulationMode.ExplicitOnly"/>에서는 속성 데미지가 게이지를 자동으로 채우지 않습니다.
-        /// Affect의 ElementGauge Modifier처럼 명시적인 게이지 입력만 누적됩니다.
-        /// </remarks>
         [Header("Element Gauge")]
-        [Tooltip("속성 게이지 누적 입력 경로입니다. ExplicitOnly는 명시적인 ElementGauge 효과만 누적합니다.")]
-        public ElementGaugeAccumulationMode elementGaugeAccumulationMode = ElementGaugeAccumulationMode.DamageDerived;
-
         [Tooltip("플레이어에게 적용할 속성 게이지 규칙 목록입니다. 비어 있으면 런타임 기본값을 사용합니다.")]
         public List<ElementGaugeRuleDefinition> elementGaugeRules = new();
 
@@ -338,7 +328,6 @@ namespace GGemCo2DCore
             spriteWhiteOverlayFlashDuration = 0.08f;
             incomingHitVfx = IncomingHitVfxSettings.CreateDisabled();
 
-            elementGaugeAccumulationMode = ElementGaugeAccumulationMode.DamageDerived;
             elementGaugeRules = ElementGaugeRuleDefinition.CreateDefaultPlayerRules();
 
         }

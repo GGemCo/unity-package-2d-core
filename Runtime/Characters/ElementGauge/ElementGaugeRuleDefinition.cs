@@ -21,7 +21,7 @@ namespace GGemCo2DCore
     }
 
     /// <summary>
-    /// 속성 데미지 누적으로 채워지는 게이지 규칙입니다.
+    /// 명시적인 속성 게이지 입력으로 채워지는 게이지 규칙입니다.
     /// </summary>
     /// <remarks>
     /// Core는 속성별 누적량, 감쇠, 임계 도달 여부만 계산합니다.
@@ -30,7 +30,7 @@ namespace GGemCo2DCore
     [Serializable]
     public sealed class ElementGaugeRuleDefinition
     {
-        [Tooltip("게이지를 누적할 속성 데미지 타입입니다.")]
+        [Tooltip("게이지를 누적할 속성 타입입니다.")]
         public ConfigCommon.DamageType damageType = ConfigCommon.DamageType.None;
 
         [Min(1f)]

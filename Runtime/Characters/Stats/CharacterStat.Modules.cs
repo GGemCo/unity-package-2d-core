@@ -247,5 +247,50 @@ namespace GGemCo2DCore
             }
         }
 
+        /// <summary>
+        /// 기본 속성 게이지 누적력(BASE_ELEMENT_GAUGE_*) 계산과 스트림 발행을 담당하는 모듈입니다.
+        /// </summary>
+        /// <remarks>
+        /// 속성 게이지 누적력은 HP 데미지와 분리된 값이며, 확정 타격 시 대상의 속성 게이지에만 반영됩니다.
+        /// </remarks>
+        private sealed class ElementGaugeStatModule : ICharacterStatModule
+        {
+            private readonly CharacterStat _owner;
+
+            private bool _hasTotalElementGaugeFire;
+            private long _lastTotalElementGaugeFire;
+            private bool _hasTotalElementGaugeCold;
+            private long _lastTotalElementGaugeCold;
+            private bool _hasTotalElementGaugeLightning;
+            private long _lastTotalElementGaugeLightning;
+            private bool _hasTotalElementGaugePoison;
+            private long _lastTotalElementGaugePoison;
+
+            public ElementGaugeStatModule(CharacterStat owner) => _owner = owner;
+
+            /// <summary>
+            /// 모든 Provider의 Flat/Percent modifier를 합산해 최종 속성 게이지 누적력을 계산합니다.
+            /// </summary>
+            public void Recalculate()
+            {
+                _owner._totalElementGaugeFire = StatCalculator.CalculateFinal(ConfigCommon.BaseStatElementGaugeFire, 0, _owner._allProviders);
+                _owner._totalElementGaugeCold = StatCalculator.CalculateFinal(ConfigCommon.BaseStatElementGaugeCold, 0, _owner._allProviders);
+                _owner._totalElementGaugeLightning = StatCalculator.CalculateFinal(ConfigCommon.BaseStatElementGaugeLightning, 0, _owner._allProviders);
+                _owner._totalElementGaugePoison = StatCalculator.CalculateFinal(ConfigCommon.BaseStatElementGaugePoison, 0, _owner._allProviders);
+            }
+
+            /// <summary>
+            /// 계산된 속성 게이지 누적력이 변경된 경우에만 구독자에게 발행합니다.
+            /// </summary>
+            public void Publish()
+            {
+                PublishIfChanged(_owner.TotalElementGaugeFire, ref _hasTotalElementGaugeFire, ref _lastTotalElementGaugeFire, _owner._totalElementGaugeFire);
+                PublishIfChanged(_owner.TotalElementGaugeCold, ref _hasTotalElementGaugeCold, ref _lastTotalElementGaugeCold, _owner._totalElementGaugeCold);
+                PublishIfChanged(_owner.TotalElementGaugeLightning, ref _hasTotalElementGaugeLightning, ref _lastTotalElementGaugeLightning, _owner._totalElementGaugeLightning);
+                PublishIfChanged(_owner.TotalElementGaugePoison, ref _hasTotalElementGaugePoison, ref _lastTotalElementGaugePoison, _owner._totalElementGaugePoison);
+            }
+        }
+
+
     }
 }

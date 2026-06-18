@@ -31,6 +31,23 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 데미지 타입에 대응되는 현재 속성 게이지 누적력을 반환합니다.
+        /// </summary>
+        /// <param name="damageType">조회할 속성 타입입니다.</param>
+        /// <returns>화염/냉기/번개/독이면 해당 속성 게이지 누적력을, 그 외에는 0을 반환합니다.</returns>
+        public long GetElementGaugeValue(ConfigCommon.DamageType damageType)
+        {
+            return damageType switch
+            {
+                ConfigCommon.DamageType.Fire => TotalElementGaugeFire.Value,
+                ConfigCommon.DamageType.Cold => TotalElementGaugeCold.Value,
+                ConfigCommon.DamageType.Lightning => TotalElementGaugeLightning.Value,
+                ConfigCommon.DamageType.Poison => TotalElementGaugePoison.Value,
+                _ => 0L
+            };
+        }
+
+        /// <summary>
         /// 현재 Total 값을 기준으로 1회 공격의 최종 데미지를 계산합니다(크리티컬 포함).
         /// </summary>
         /// <returns>전역 계산 정책이 반영된 일반 공격 데미지입니다.</returns>

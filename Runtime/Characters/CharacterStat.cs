@@ -27,7 +27,7 @@ namespace GGemCo2DCore
         private int _batchUpdateCount;
         private bool _batchPublishPending;
         // 스탯 계산/발행 로직 모듈(군별 분리)
-        private readonly List<ICharacterStatModule> _statModules = new(5);
+        private readonly List<ICharacterStatModule> _statModules = new(6);
         private bool _statModulesInitialized;
 
         /// <summary>
@@ -49,6 +49,10 @@ namespace GGemCo2DCore
             public readonly long DamageCold;
             public readonly long DamageLightning;
             public readonly long DamagePoison;
+            public readonly long ElementGaugeFire;
+            public readonly long ElementGaugeCold;
+            public readonly long ElementGaugeLightning;
+            public readonly long ElementGaugePoison;
 
             public readonly long TotalBaseAtk;
             public readonly long TotalBaseDef;
@@ -79,6 +83,7 @@ namespace GGemCo2DCore
                 long criticalDamage, long criticalProbability,
                 long registFire, long registCold, long registLightning, long registPoison,
                 long damageFire, long damageCold, long damageLightning, long damagePoison,
+                long elementGaugeFire = 0L, long elementGaugeCold = 0L, long elementGaugeLightning = 0L, long elementGaugePoison = 0L,
                 long? resolvedAtk = null, long? resolvedDef = null,
                 long? maxHp = null, long? maxMp = null, long? maxStamina = null)
             {
@@ -110,6 +115,10 @@ namespace GGemCo2DCore
                 DamageCold = damageCold;
                 DamageLightning = damageLightning;
                 DamagePoison = damagePoison;
+                ElementGaugeFire = elementGaugeFire;
+                ElementGaugeCold = elementGaugeCold;
+                ElementGaugeLightning = elementGaugeLightning;
+                ElementGaugePoison = elementGaugePoison;
             }
 
             /// <summary>
@@ -130,6 +139,7 @@ namespace GGemCo2DCore
                     stat.TotalCriticalDamage.Value, stat.TotalCriticalProbability.Value,
                     stat.TotalRegistFire.Value, stat.TotalRegistCold.Value, stat.TotalRegistLightning.Value, stat.TotalRegistPoison.Value,
                     stat.TotalDamageFire.Value, stat.TotalDamageCold.Value, stat.TotalDamageLightning.Value, stat.TotalDamagePoison.Value,
+                    stat.TotalElementGaugeFire.Value, stat.TotalElementGaugeCold.Value, stat.TotalElementGaugeLightning.Value, stat.TotalElementGaugePoison.Value,
                     stat.ResolvedAtk.Value, stat.ResolvedDef.Value,
                     stat.MaxHp.Value, stat.MaxMp.Value, stat.MaxStamina.Value);
             }
@@ -216,7 +226,11 @@ namespace GGemCo2DCore
             _totalDamageFire,
             _totalDamageCold,
             _totalDamageLightning,
-            _totalDamagePoison;
+            _totalDamagePoison,
+            _totalElementGaugeFire,
+            _totalElementGaugeCold,
+            _totalElementGaugeLightning,
+            _totalElementGaugePoison;
 
         private int _totalSuperArmor;
 
@@ -370,6 +384,26 @@ namespace GGemCo2DCore
         public readonly BehaviorSubject<long> TotalDamagePoison = new(0);
 
         /// <summary>
+        /// 최종 화염 속성 게이지 누적력(계산 결과)을 스트림으로 제공합니다.
+        /// </summary>
+        public readonly BehaviorSubject<long> TotalElementGaugeFire = new(0);
+
+        /// <summary>
+        /// 최종 냉기 속성 게이지 누적력(계산 결과)을 스트림으로 제공합니다.
+        /// </summary>
+        public readonly BehaviorSubject<long> TotalElementGaugeCold = new(0);
+
+        /// <summary>
+        /// 최종 번개 속성 게이지 누적력(계산 결과)을 스트림으로 제공합니다.
+        /// </summary>
+        public readonly BehaviorSubject<long> TotalElementGaugeLightning = new(0);
+
+        /// <summary>
+        /// 최종 독 속성 게이지 누적력(계산 결과)을 스트림으로 제공합니다.
+        /// </summary>
+        public readonly BehaviorSubject<long> TotalElementGaugePoison = new(0);
+
+        /// <summary>
         /// 리소스 동기화(최대치 변경 시 현재값 보정)
         /// 특정 구간에서 Current 값을 직접 세팅하는 경우, 자동 보정을 잠시 비활성화할 수 있습니다.
         /// </summary>
@@ -447,6 +481,7 @@ namespace GGemCo2DCore
             _statModules.Add(new MovementStatModule(this));
             _statModules.Add(new ResistanceStatModule(this));
             _statModules.Add(new ElementDamageStatModule(this));
+            _statModules.Add(new ElementGaugeStatModule(this));
         }
 
         /// <summary>
@@ -788,6 +823,19 @@ namespace GGemCo2DCore
                 BaseDamagePoison,
                 flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
 
+            long elementGaugeFire = StatCalculator.CalculateFinalProjected(ConfigCommon.BaseStatElementGaugeFire,
+                0,
+                flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
+            long elementGaugeCold = StatCalculator.CalculateFinalProjected(ConfigCommon.BaseStatElementGaugeCold,
+                0,
+                flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
+            long elementGaugeLightning = StatCalculator.CalculateFinalProjected(ConfigCommon.BaseStatElementGaugeLightning,
+                0,
+                flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
+            long elementGaugePoison = StatCalculator.CalculateFinalProjected(ConfigCommon.BaseStatElementGaugePoison,
+                0,
+                flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
+
             return new CharacterTotals(
                 baseAtk, baseDef, baseHp, baseMp, baseStamina,
                 statAtk, statDef, statHp, statMp, statStamina,
@@ -796,6 +844,7 @@ namespace GGemCo2DCore
                 criticalDamage, criticalProbability,
                 registFire, registCold, registLightning, registPoison,
                 damageFire, damageCold, damageLightning, damagePoison,
+                elementGaugeFire, elementGaugeCold, elementGaugeLightning, elementGaugePoison,
                 CalculateResolvedAtkValue(baseAtk, statAtk),
                 CalculateResolvedDefValue(baseDef, statDef),
                 CalculateMaxHpValue(baseHp, statHp),

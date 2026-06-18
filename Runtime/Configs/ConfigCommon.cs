@@ -70,6 +70,10 @@ namespace GGemCo2DCore
         public const string BaseStatDamageCold = "BASE_DAMAGE_COLD";
         public const string BaseStatDamageLightning = "BASE_DAMAGE_LIGHTNING";
         public const string BaseStatDamagePoison = "BASE_DAMAGE_POISON";
+        public const string BaseStatElementGaugeFire = "BASE_ELEMENT_GAUGE_FIRE";
+        public const string BaseStatElementGaugeCold = "BASE_ELEMENT_GAUGE_COLD";
+        public const string BaseStatElementGaugeLightning = "BASE_ELEMENT_GAUGE_LIGHTNING";
+        public const string BaseStatElementGaugePoison = "BASE_ELEMENT_GAUGE_POISON";
         public const string BaseStatMoveStep = "BASE_MOVE_STEP";
         public const string StatusStatAtk = "STAT_ATK";
         public const string StatusStatDef = "STAT_DEF";
@@ -187,6 +191,38 @@ namespace GGemCo2DCore
                 DamageType.Cold => BaseStatDamageCold,
                 DamageType.Lightning => BaseStatDamageLightning,
                 DamageType.Poison => BaseStatDamagePoison,
+                _ => string.Empty
+            };
+        }
+
+        /// <summary>
+        /// 기본 속성 게이지 누적력에 사용되는 스탯 키인지 확인합니다.
+        /// </summary>
+        /// <param name="statId">확인할 스탯 ID입니다.</param>
+        /// <returns>화염/냉기/번개/독 기본 속성 게이지 키이면 true입니다.</returns>
+        public static bool IsElementGaugeStatId(string statId)
+        {
+            if (string.IsNullOrWhiteSpace(statId)) return false;
+            string normalized = NormalizeStatId(statId);
+            return normalized == BaseStatElementGaugeFire
+                   || normalized == BaseStatElementGaugeCold
+                   || normalized == BaseStatElementGaugeLightning
+                   || normalized == BaseStatElementGaugePoison;
+        }
+
+        /// <summary>
+        /// 데미지 타입에 대응되는 기본 속성 게이지 누적력 스탯 키를 반환합니다.
+        /// </summary>
+        /// <param name="damageType">조회할 속성 타입입니다.</param>
+        /// <returns>지원되는 속성 타입이면 BASE_ELEMENT_GAUGE_* 키를, 아니면 빈 문자열을 반환합니다.</returns>
+        public static string GetElementGaugeStatId(DamageType damageType)
+        {
+            return damageType switch
+            {
+                DamageType.Fire => BaseStatElementGaugeFire,
+                DamageType.Cold => BaseStatElementGaugeCold,
+                DamageType.Lightning => BaseStatElementGaugeLightning,
+                DamageType.Poison => BaseStatElementGaugePoison,
                 _ => string.Empty
             };
         }

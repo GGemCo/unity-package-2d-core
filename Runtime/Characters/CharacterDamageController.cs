@@ -565,9 +565,11 @@ namespace GGemCo2DCore
                 return;
             }
 
-            // 타격 확정: 공격자에게 OnHit(코팅/부여형 버프 등) 트리거를 전달한다.
-            if (attacker != null)
+            // 타격 확정: 즉시 타격에 한해 공격자 OnHit와 속성 게이지 누적력을 처리합니다.
+            if (attacker != null && ShouldProcessConfirmedAttackHit(metadataDamage))
             {
+                CharacterBase attackerCharacter = attacker.GetComponentInParent<CharacterBase>();
+                ElementGaugeOnHitApplier.Apply(attackerCharacter, _characterBase, metadataDamage);
                 AffectRuntimeBridge.NotifyOnHit(attacker, _characterBase.gameObject);
             }
 
@@ -682,6 +684,33 @@ namespace GGemCo2DCore
             _characterBase.CurrentHp.OnNext(remainHp);
 
             ApplyConfirmedAttackHitStop(metadataDamage);
+        }
+
+        /// <summary>
+        /// 확정 타격 후속 처리 대상인지 확인합니다.
+        /// </summary>
+        /// <param name="metadataDamage">피격 처리에 사용되는 데미지 메타데이터입니다.</param>
+        /// <returns>즉시 타격이면 true, 지속 피해 Tick이면 false입니다.</returns>
+        /// <remarks>
+        /// 지속 피해는 HP 데미지 타입이 속성이더라도 속성 게이지, Affect OnHit, 공격 성공 후속 처리와 연동하지 않습니다.
+        /// </remarks>
+        private static bool ShouldProcessConfirmedAttackHit(MetadataDamage metadataDamage)
+        {
+            if (metadataDamage == null || metadataDamage.IsDamageOverTime)
+                return false;
+
+            DamageCalculationBreakdown breakdown = metadataDamage.DamageBreakdown;
+            if (breakdown == null || !breakdown.HasParts)
+                return true;
+
+            IReadOnlyList<DamagePartResult> parts = breakdown.Parts;
+            for (int i = 0; i < parts.Count; i++)
+            {
+                if (!parts[i].IsDot)
+                    return true;
+            }
+
+            return false;
         }
 
         /// <summary>

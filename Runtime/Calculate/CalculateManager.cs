@@ -438,6 +438,10 @@ namespace GGemCo2DCore
             variables.Set(prefix + "BaseDamageCold", character.TotalDamageCold.Value);
             variables.Set(prefix + "BaseDamageLightning", character.TotalDamageLightning.Value);
             variables.Set(prefix + "BaseDamagePoison", character.TotalDamagePoison.Value);
+            variables.Set(prefix + "BaseElementGaugeFire", character.TotalElementGaugeFire.Value);
+            variables.Set(prefix + "BaseElementGaugeCold", character.TotalElementGaugeCold.Value);
+            variables.Set(prefix + "BaseElementGaugeLightning", character.TotalElementGaugeLightning.Value);
+            variables.Set(prefix + "BaseElementGaugePoison", character.TotalElementGaugePoison.Value);
 
             // Stat* 변수는 스탯 항목의 최종 계산값(TotalStat*)을 의미합니다.
             variables.Set(prefix + "StatAtk", character.TotalStatAtk.Value);
@@ -472,6 +476,10 @@ namespace GGemCo2DCore
             variables.Set(prefix + "TotalDamageCold", character.TotalDamageCold.Value);
             variables.Set(prefix + "TotalDamageLightning", character.TotalDamageLightning.Value);
             variables.Set(prefix + "TotalDamagePoison", character.TotalDamagePoison.Value);
+            variables.Set(prefix + "TotalElementGaugeFire", character.TotalElementGaugeFire.Value);
+            variables.Set(prefix + "TotalElementGaugeCold", character.TotalElementGaugeCold.Value);
+            variables.Set(prefix + "TotalElementGaugeLightning", character.TotalElementGaugeLightning.Value);
+            variables.Set(prefix + "TotalElementGaugePoison", character.TotalElementGaugePoison.Value);
         }
 
         /// <summary>
@@ -505,6 +513,10 @@ namespace GGemCo2DCore
             variables.Set(prefix + "BaseDamageCold", 0d);
             variables.Set(prefix + "BaseDamageLightning", 0d);
             variables.Set(prefix + "BaseDamagePoison", 0d);
+            variables.Set(prefix + "BaseElementGaugeFire", 0d);
+            variables.Set(prefix + "BaseElementGaugeCold", 0d);
+            variables.Set(prefix + "BaseElementGaugeLightning", 0d);
+            variables.Set(prefix + "BaseElementGaugePoison", 0d);
             variables.Set(prefix + "StatAtk", 0d);
             variables.Set(prefix + "StatDef", 0d);
             variables.Set(prefix + "StatHp", 0d);
@@ -535,6 +547,10 @@ namespace GGemCo2DCore
             variables.Set(prefix + "TotalDamageCold", 0d);
             variables.Set(prefix + "TotalDamageLightning", 0d);
             variables.Set(prefix + "TotalDamagePoison", 0d);
+            variables.Set(prefix + "TotalElementGaugeFire", 0d);
+            variables.Set(prefix + "TotalElementGaugeCold", 0d);
+            variables.Set(prefix + "TotalElementGaugeLightning", 0d);
+            variables.Set(prefix + "TotalElementGaugePoison", 0d);
         }
 
         /// <summary>

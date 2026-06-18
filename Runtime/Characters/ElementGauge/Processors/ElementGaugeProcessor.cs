@@ -4,7 +4,7 @@ using UnityEngine;
 namespace GGemCo2DCore
 {
     /// <summary>
-    /// 속성 데미지 누적/감쇠 계산만 담당하는 프로세서입니다.
+    /// 속성 게이지 누적/감쇠 계산만 담당하는 프로세서입니다.
     /// </summary>
     internal sealed class ElementGaugeProcessor
     {
@@ -16,7 +16,7 @@ namespace GGemCo2DCore
         /// <param name="gaugeAmount">실제로 게이지에 더할 값입니다.</param>
         /// <param name="now">현재 시간입니다.</param>
         /// <returns>누적 처리 결과입니다.</returns>
-        public ElementGaugeApplyResult AccumulateDamage(
+        public ElementGaugeApplyResult AccumulateGauge(
             ElementGaugeRuntime runtime,
             ConfigCommon.DamageType damageType,
             float gaugeAmount,
@@ -42,7 +42,7 @@ namespace GGemCo2DCore
                 if (gaugeState.IsRepeatedEventConsumed)
                     return ElementGaugeApplyResult.None;
 
-                // 핸들러 실행 중 동일 속성 피해가 재진입해도 이벤트가 중복 발행되지 않도록
+                // 핸들러 실행 중 동일 속성 게이지 입력이 재진입해도 이벤트가 중복 발행되지 않도록
                 // 결과를 반환하기 전에 현재 임계 사이클의 반복 이벤트를 먼저 소비 처리합니다.
                 gaugeState.IsRepeatedEventConsumed = true;
                 return new ElementGaugeApplyResult(false, false, true, damageType, BuildSnapshot(rule, gaugeState));
