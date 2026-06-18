@@ -59,6 +59,10 @@ namespace GGemCo2DCore
         // 타일맵이 로드 완료되었을때 발생하는 이벤트
         // 캐릭터, 워프 스폰 매니저
         private MapLoadCharacters _mapLoadCharacters;
+
+        // 맵 웨이브 스폰 컨트롤러
+        private MapWaveSpawnController _mapWaveSpawnController;
+
         private AddressableLoaderPrefabCharacter _addressableLoaderPrefabCharacter;
         private MapEntryRuleResolver _mapEntryRuleResolver;
         private GGemCoMapSettings _mapSettings;
@@ -72,6 +76,8 @@ namespace GGemCo2DCore
 
             _mapLoadCharacters = new MapLoadCharacters();
             _mapLoadCharacters.Initialize(this);
+            _mapWaveSpawnController = new MapWaveSpawnController();
+            _mapWaveSpawnController.Initialize(this, _mapLoadCharacters);
             _autoMoveLifecycleController = new MapAutoMoveLifecycleController();
 
             CreateGrid();
@@ -185,6 +191,7 @@ namespace GGemCo2DCore
 
         protected void Reset()
         {
+            _mapWaveSpawnController?.Reset();
             StopAllCoroutines();
             // 맵 언로드 시점에 외부 패키지가 Addressables 핸들을 해제할 수 있도록 알림.
             CharacterSpawnHooks.NotifyMapUnload();
@@ -336,6 +343,9 @@ namespace GGemCo2DCore
                     case MapConstants.State.CreateWarp:
                         yield return StartCoroutineSafe(
                             AwaitTask(_mapLoadCharacters.LoadWarps(_mapTileCommon, _currentMapTableData)));
+                        if (_currentState == MapConstants.State.Failed) yield break;
+                        yield return StartCoroutineSafe(
+                            AwaitTask(_mapWaveSpawnController.LoadWaveSpawnAsync(_mapTileCommon, _currentMapTableData)));
                         if (_currentState == MapConstants.State.Failed) yield break;
                         _currentState = MapConstants.State.FadeOut;
                         break;
