@@ -212,6 +212,63 @@ namespace GGemCo2DCore
         public string GuardBreakFeedbackText;
 
         public List<int> ResolvedOnHitCrowdControls;
+
+        /// <summary>
+        /// 데미지 요청 큐에 보관할 수 있도록 현재 메타데이터의 독립 복사본을 생성합니다.
+        /// </summary>
+        /// <returns>참조형 하위 데이터가 복제된 데미지 메타데이터입니다.</returns>
+        /// <remarks>
+        /// 데미지 처리 중에는 최종 데미지, 대표 데미지 타입, Crowd Control 목록 등이 갱신됩니다.
+        /// 큐에 원본 참조를 저장하면 호출자가 가진 인스턴스나 중첩 데미지 요청이 서로 영향을 줄 수 있으므로,
+        /// 데미지 처리 진입 시점의 스냅샷을 사용합니다.
+        /// </remarks>
+        public MetadataDamage Clone()
+        {
+            return new MetadataDamage
+            {
+                damage = damage,
+                attacker = attacker,
+                damageType = damageType,
+                DamageBreakdown = DamageBreakdown != null ? DamageBreakdown.Clone() : null,
+                IncludeAttackerElementDamageParts = IncludeAttackerElementDamageParts,
+                IsDamageOverTime = IsDamageOverTime,
+                affectUid = affectUid,
+                crowdControlUid = crowdControlUid,
+                StaggerStackDamage = StaggerStackDamage,
+                HitReactionType = HitReactionType,
+                ForceHitReaction = ForceHitReaction,
+                AttackId = AttackId,
+                SkillUid = SkillUid,
+                SkillHitMpGain = SkillHitMpGain,
+                AllowMultipleSkillHitMpGainPerAttack = AllowMultipleSkillHitMpGainPerAttack,
+                SuppressDamageReaction = SuppressDamageReaction,
+                SuppressHitEffect = SuppressHitEffect,
+                HasPendingAfterDamageCrowdControl = HasPendingAfterDamageCrowdControl,
+                DamageCameraShakePreset = DamageCameraShakePreset,
+                DamageCameraShakeDirectionSource = DamageCameraShakeDirectionSource,
+                DamageCameraShakeFixedDirection = DamageCameraShakeFixedDirection,
+                DamageCameraShakeHorizontalOnly = DamageCameraShakeHorizontalOnly,
+                DamageCameraShakeChannel = DamageCameraShakeChannel,
+                SourceAffectUid = SourceAffectUid,
+                DeathPresentation = DeathPresentation != null ? DeathPresentation.Clone() : null,
+                HasAttackHitStopSettings = HasAttackHitStopSettings,
+                AttackHitStopSettings = AttackHitStopSettings,
+                IsBasicAttackCombo = IsBasicAttackCombo,
+                BasicAttackComboIndex = BasicAttackComboIndex,
+                BasicAttackComboCount = BasicAttackComboCount,
+                IsLastBasicAttackCombo = IsLastBasicAttackCombo,
+                GuardInteractionMode = GuardInteractionMode,
+                GuardAttackType = GuardAttackType,
+                GuardBreakJustGuardPolicy = GuardBreakJustGuardPolicy,
+                GuardBreakDamageMultiplier = GuardBreakDamageMultiplier,
+                GuardBreakStaminaCost = GuardBreakStaminaCost,
+                GuardBreakVfxUid = GuardBreakVfxUid,
+                GuardBreakFeedbackText = GuardBreakFeedbackText,
+                ResolvedOnHitCrowdControls = ResolvedOnHitCrowdControls != null
+                    ? new List<int>(ResolvedOnHitCrowdControls)
+                    : null,
+            };
+        }
     }
     /// <summary>
     /// 캐릭터 데미지 처리
@@ -219,6 +276,10 @@ namespace GGemCo2DCore
     public class CharacterDamageController
     {
         private const int PlayerIncomingHitVfxCooldownKey = -1;
+        private const int MaxDamageRequestsPerDrain = 128;
+
+        private readonly Queue<MetadataDamage> _pendingDamageRequests = new Queue<MetadataDamage>();
+        private bool _isDrainingDamageRequests;
 
         private CharacterBase _characterBase;
         private ControllerMonsterSuperArmor _controllerMonsterSuperArmor;
@@ -274,11 +335,19 @@ namespace GGemCo2DCore
 
             _playerSettings = loaderSettings != null ? loaderSettings.playerSettings : null;
             _nextIncomingHitVfxPlayableTimesByKey.Clear();
+            _pendingDamageRequests.Clear();
+            _isDrainingDamageRequests = false;
         }
 
         public void Dispose()
         {
-            _controllerMonsterSuperArmor.BreakTriggered -= OnSuperArmorBreak;
+            _pendingDamageRequests.Clear();
+            _isDrainingDamageRequests = false;
+
+            if (_controllerMonsterSuperArmor != null)
+            {
+                _controllerMonsterSuperArmor.BreakTriggered -= OnSuperArmorBreak;
+            }
         }
 
         private void NotifyIncomingHitCombatFeedback(MetadataDamage metadataDamage, MonsterSkillCombatOutcome outcome)
@@ -369,7 +438,70 @@ namespace GGemCo2DCore
             }
         }
 
+        /// <summary>
+        /// 데미지 요청을 큐에 등록하고 현재 처리 중이 아니면 순차 처리합니다.
+        /// </summary>
+        /// <param name="metadataDamage">처리할 데미지 메타데이터입니다.</param>
+        /// <remarks>
+        /// 피격 처리 중 Affect OnHit, 속성 게이지 반복 입력, 반사 데미지처럼 다시 데미지가 발생할 수 있습니다.
+        /// 중첩 호출을 즉시 처리하면 바깥쪽 피격 처리에서 미리 계산한 HP가 안쪽 데미지 결과를 덮어쓸 수 있으므로,
+        /// 재진입 요청은 큐에 보관한 뒤 현재 요청의 최종 HP 반영이 끝난 다음 순서대로 처리합니다.
+        /// </remarks>
         public void TakeDamage(MetadataDamage metadataDamage)
+        {
+            if (metadataDamage == null)
+                return;
+
+            _pendingDamageRequests.Enqueue(metadataDamage.Clone());
+
+            if (_isDrainingDamageRequests)
+                return;
+
+            DrainDamageRequests();
+        }
+
+        /// <summary>
+        /// 큐에 쌓인 데미지 요청을 FIFO 순서로 처리합니다.
+        /// </summary>
+        /// <remarks>
+        /// 일반 호출은 즉시 처리되지만, 처리 중 새로 들어온 요청은 현재 요청이 끝난 뒤 이어서 실행됩니다.
+        /// 무한 재귀성 데미지 루프를 방어하기 위해 한 번의 Drain에서 처리 가능한 최대 요청 수를 제한합니다.
+        /// </remarks>
+        private void DrainDamageRequests()
+        {
+            _isDrainingDamageRequests = true;
+
+            try
+            {
+                int processedCount = 0;
+
+                while (_pendingDamageRequests.Count > 0)
+                {
+                    if (++processedCount > MaxDamageRequestsPerDrain)
+                    {
+                        GcLogger.LogError(
+                            $"[DamageQueue] 데미지 요청이 과도하게 중첩되어 남은 요청을 폐기합니다. " +
+                            $"Target={(_characterBase != null ? _characterBase.name : "None")}, " +
+                            $"Limit={MaxDamageRequestsPerDrain}, Remaining={_pendingDamageRequests.Count}");
+                        _pendingDamageRequests.Clear();
+                        break;
+                    }
+
+                    MetadataDamage queuedDamage = _pendingDamageRequests.Dequeue();
+                    ProcessDamageNow(queuedDamage);
+                }
+            }
+            finally
+            {
+                _isDrainingDamageRequests = false;
+            }
+        }
+
+        /// <summary>
+        /// 큐에서 꺼낸 단일 데미지 요청을 실제 피격 파이프라인으로 처리합니다.
+        /// </summary>
+        /// <param name="metadataDamage">큐에서 꺼낸 데미지 메타데이터 스냅샷입니다.</param>
+        private void ProcessDamageNow(MetadataDamage metadataDamage)
         {
             if (metadataDamage == null) return;
             _suppressNextIncomingHitAnimationEventVfx = false;

@@ -105,6 +105,26 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 현재 데미지 분해 결과의 독립 복사본을 생성합니다.
+        /// </summary>
+        /// <returns>동일한 파트와 합계를 가진 새 데미지 분해 결과입니다.</returns>
+        /// <remarks>
+        /// 데미지 큐는 요청 시점의 계산 결과를 보관해야 하므로,
+        /// 참조형 분해 결과가 후속 처리에서 변경되어도 큐 안의 요청에는 영향을 주지 않도록 복제합니다.
+        /// </remarks>
+        public DamageCalculationBreakdown Clone()
+        {
+            var clone = new DamageCalculationBreakdown();
+
+            for (int i = 0; i < _parts.Count; i++)
+            {
+                clone.AddPart(_parts[i]);
+            }
+
+            return clone;
+        }
+
+        /// <summary>
         /// 단일 데미지 계산 결과를 포함하는 분해 결과를 생성합니다.
         /// </summary>
         /// <param name="result">기존 단일 데미지 계산 결과입니다.</param>
