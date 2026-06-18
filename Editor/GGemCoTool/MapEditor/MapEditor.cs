@@ -97,6 +97,7 @@ namespace GGemCo2DCoreEditor
             SetupServices();
             InitializeExporters();
             RebuildPopupCaches();
+            RegisterWaveSceneGizmos();
 
             // Grid 생성 등 씬 작업은 즉시 하지 않고 delayCall로 한 틱 뒤로 미룹니다.
             EditorApplication.delayCall += () =>
@@ -111,6 +112,7 @@ namespace GGemCo2DCoreEditor
 
         private void OnDisable()
         {
+            UnregisterWaveSceneGizmos();
             // DestroyGridObjectIfExists();
         }
 

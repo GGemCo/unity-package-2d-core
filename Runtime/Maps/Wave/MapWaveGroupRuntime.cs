@@ -41,6 +41,11 @@ namespace GGemCo2DCore
         public bool IsNextRequested { get; private set; }
 
         /// <summary>
+        /// 이 그룹에서 누적 생성한 웨이브 몬스터 수입니다.
+        /// </summary>
+        public int SpawnedCount => _spawnedMonsterVids.Count;
+
+        /// <summary>
         /// 현재 생존 중인 웨이브 몬스터 수입니다.
         /// </summary>
         public int AliveCount => _aliveMonsterVids.Count;

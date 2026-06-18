@@ -50,6 +50,7 @@ namespace GGemCo2DCoreEditor
                     "스폰 포인트는 씬에서 선택한 오브젝트 위치를 기준으로 추가할 수 있습니다.",
                     MessageType.Info);
 
+                DrawWaveGizmoOptions();
                 DrawWaveScenarioToolbar();
 
                 MapWaveScenarioData scenario = DrawWaveScenarioSelector();

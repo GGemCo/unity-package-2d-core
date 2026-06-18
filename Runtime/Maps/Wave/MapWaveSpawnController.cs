@@ -23,6 +23,8 @@ namespace GGemCo2DCore
         private readonly List<Coroutine> _runningCoroutines = new List<Coroutine>();
         private readonly WaveMonsterOwnershipRegistry _ownershipRegistry = new WaveMonsterOwnershipRegistry();
 
+        private const string DebugLogPrefix = "[MapWave]";
+
         private MapManager _mapManager;
         private MapLoadCharacters _mapLoadCharacters;
         private MapTileCommon _mapTileCommon;
@@ -33,6 +35,11 @@ namespace GGemCo2DCore
         /// 현재 실행 중인 웨이브 시나리오가 하나라도 있는지 여부입니다.
         /// </summary>
         public bool HasRunningScenario => _scenarioByUid.Count > 0;
+
+        /// <summary>
+        /// 웨이브 진행 추적 로그를 Unity Console에 출력할지 여부입니다.
+        /// </summary>
+        public bool DebugLogEnabled { get; set; } = true;
 
         /// <summary>
         /// 웨이브 스폰 컨트롤러에 맵 관리자와 캐릭터 스폰 서비스를 연결합니다.
@@ -80,9 +87,11 @@ namespace GGemCo2DCore
             MapWaveSpawnDataList dataList = await LoadWaveSpawnDataAsync(currentMapTableData);
             if (dataList?.WaveScenarios == null || dataList.WaveScenarios.Count == 0)
             {
+                LogDebug($"웨이브 스폰 데이터가 없습니다. mapUid:{currentMapTableData.Uid}, folder:{currentMapTableData.FolderName}");
                 return;
             }
 
+            int validScenarioCount = 0;
             foreach (MapWaveScenarioData scenarioData in dataList.WaveScenarios)
             {
                 if (!IsScenarioValidForCurrentMap(scenarioData, currentMapTableData.Uid))
@@ -91,12 +100,15 @@ namespace GGemCo2DCore
                 }
 
                 _loadedScenarioDataByUid[scenarioData.ScenarioUid] = scenarioData;
+                validScenarioCount++;
 
                 if (scenarioData.AutoStart)
                 {
                     StartScenario(scenarioData, Mathf.Max(0f, scenarioData.StartDelaySeconds));
                 }
             }
+
+            LogDebug($"웨이브 스폰 데이터 로드 완료. mapUid:{currentMapTableData.Uid}, scenarioCount:{validScenarioCount}");
         }
 
         /// <summary>
@@ -117,6 +129,7 @@ namespace GGemCo2DCore
                 return false;
             }
 
+            LogDebug($"웨이브 시나리오 수동 시작 요청. scenarioUid:{scenarioUid}");
             StartScenario(scenarioData, Mathf.Max(0f, scenarioData.StartDelaySeconds));
             return true;
         }
@@ -154,18 +167,22 @@ namespace GGemCo2DCore
             }
 
             _ownershipRegistry.Unregister(monsterVid);
+            LogDebug($"웨이브 몬스터 사망 감지. monsterVid:{monsterVid}, scenarioUid:{ownership.ScenarioUid}, groupUid:{ownership.GroupUid}, groupInstanceId:{ownership.GroupInstanceId}");
 
             if (!_scenarioByUid.TryGetValue(ownership.ScenarioUid, out MapWaveScenarioRuntime scenarioRuntime))
             {
+                LogDebug($"사망 몬스터의 웨이브 시나리오가 이미 종료되었습니다. monsterVid:{monsterVid}, scenarioUid:{ownership.ScenarioUid}");
                 return true;
             }
 
             if (!scenarioRuntime.TryGetActiveGroup(ownership.GroupInstanceId, out MapWaveGroupRuntime groupRuntime))
             {
+                LogDebug($"사망 몬스터의 웨이브 그룹이 이미 정리되었습니다. monsterVid:{monsterVid}, groupInstanceId:{ownership.GroupInstanceId}");
                 return true;
             }
 
-            groupRuntime.MarkMonsterDead(monsterVid);
+            bool removed = groupRuntime.MarkMonsterDead(monsterVid);
+            LogDebug($"웨이브 그룹 생존 수 갱신. scenarioUid:{scenarioRuntime.Data.ScenarioUid}, groupUid:{groupRuntime.Data.GroupUid}, instanceId:{groupRuntime.InstanceId}, removed:{removed}, alive:{groupRuntime.AliveCount}");
             HandleGroupClearedIfNeeded(scenarioRuntime, groupRuntime);
             return true;
         }
@@ -261,6 +278,7 @@ namespace GGemCo2DCore
             }
 
             _scheduledScenarioUids.Add(scenarioData.ScenarioUid);
+            LogDebug($"웨이브 시나리오 시작 예약. scenarioUid:{scenarioData.ScenarioUid}, delay:{delaySeconds:F2}");
             Coroutine routine = _mapManager.StartCoroutine(StartScenarioCoroutine(scenarioData, delaySeconds));
             TrackCoroutine(routine);
         }
@@ -279,6 +297,7 @@ namespace GGemCo2DCore
 
             if (!CanRunWave())
             {
+                LogDebug($"웨이브 시나리오 시작 취소. 필수 맵 참조가 없습니다. scenarioUid:{scenarioData.ScenarioUid}");
                 _scheduledScenarioUids.Remove(scenarioData.ScenarioUid);
                 yield break;
             }
@@ -293,6 +312,7 @@ namespace GGemCo2DCore
             }
 
             _scenarioByUid[scenarioData.ScenarioUid] = scenarioRuntime;
+            LogDebug($"웨이브 시나리오 시작. scenarioUid:{scenarioData.ScenarioUid}, firstGroupUid:{firstGroup.GroupUid}");
             StartGroup(scenarioRuntime, firstGroup, 0);
         }
 
@@ -317,12 +337,14 @@ namespace GGemCo2DCore
                 repeatIndex);
 
             scenarioRuntime.AddActiveGroup(groupRuntime);
+            LogDebug($"웨이브 그룹 시작. scenarioUid:{scenarioRuntime.Data.ScenarioUid}, groupUid:{groupData.GroupUid}, instanceId:{groupInstanceId}, repeatIndex:{repeatIndex}, policy:{groupData.NextPolicy}");
 
             Coroutine spawnRoutine = _mapManager.StartCoroutine(SpawnGroupCoroutine(scenarioRuntime, groupRuntime));
             TrackCoroutine(spawnRoutine);
 
             if (UsesTimeBasedNextPolicy(groupData))
             {
+                LogDebug($"웨이브 그룹 시간 전환 타이머 시작. scenarioUid:{scenarioRuntime.Data.ScenarioUid}, groupUid:{groupData.GroupUid}, instanceId:{groupInstanceId}, wait:{Mathf.Max(0f, groupData.NextAfterSeconds):F2}");
                 Coroutine timerRoutine = _mapManager.StartCoroutine(WaitTimeThenRequestNextGroup(scenarioRuntime, groupRuntime));
                 TrackCoroutine(timerRoutine);
             }
@@ -336,6 +358,7 @@ namespace GGemCo2DCore
         private IEnumerator SpawnGroupCoroutine(MapWaveScenarioRuntime scenarioRuntime, MapWaveGroupRuntime groupRuntime)
         {
             List<MapWaveMonsterSpawnData> monsters = groupRuntime.Data.Monsters;
+            LogDebug($"웨이브 그룹 스폰 시작. scenarioUid:{scenarioRuntime.Data.ScenarioUid}, groupUid:{groupRuntime.Data.GroupUid}, instanceId:{groupRuntime.InstanceId}, entryCount:{monsters?.Count ?? 0}");
             if (monsters != null)
             {
                 foreach (MapWaveMonsterSpawnData spawnData in monsters)
@@ -359,6 +382,7 @@ namespace GGemCo2DCore
             }
 
             groupRuntime.MarkSpawnCompleted();
+            LogDebug($"웨이브 그룹 스폰 완료. scenarioUid:{scenarioRuntime.Data.ScenarioUid}, groupUid:{groupRuntime.Data.GroupUid}, instanceId:{groupRuntime.InstanceId}, spawned:{groupRuntime.SpawnedCount}, alive:{groupRuntime.AliveCount}");
             HandleGroupClearedIfNeeded(scenarioRuntime, groupRuntime);
         }
 
@@ -399,6 +423,7 @@ namespace GGemCo2DCore
                 scenarioRuntime.Data.ScenarioUid,
                 groupRuntime.Data.GroupUid,
                 groupRuntime.InstanceId));
+            LogDebug($"웨이브 몬스터 스폰. scenarioUid:{scenarioRuntime.Data.ScenarioUid}, groupUid:{groupRuntime.Data.GroupUid}, instanceId:{groupRuntime.InstanceId}, monsterUid:{spawnData.MonsterUid}, vid:{monster.vid}, alive:{groupRuntime.AliveCount}");
         }
 
         /// <summary>
@@ -514,7 +539,8 @@ namespace GGemCo2DCore
                 yield return new WaitForSeconds(waitSeconds);
             }
 
-            RequestNextGroup(scenarioRuntime, groupRuntime);
+            LogDebug($"웨이브 그룹 시간 전환 조건 만족. scenarioUid:{scenarioRuntime.Data.ScenarioUid}, groupUid:{groupRuntime.Data.GroupUid}, instanceId:{groupRuntime.InstanceId}, wait:{waitSeconds:F2}");
+            RequestNextGroup(scenarioRuntime, groupRuntime, WaveNextTriggerReason.TimerElapsed);
         }
 
         /// <summary>
@@ -533,7 +559,8 @@ namespace GGemCo2DCore
 
             if (!groupRuntime.IsNextRequested && ShouldRequestNextWhenAllDead(groupRuntime.Data.NextPolicy))
             {
-                RequestNextGroup(scenarioRuntime, groupRuntime);
+                LogDebug($"웨이브 그룹 전체 처치 조건 만족. scenarioUid:{scenarioRuntime.Data.ScenarioUid}, groupUid:{groupRuntime.Data.GroupUid}, instanceId:{groupRuntime.InstanceId}");
+                RequestNextGroup(scenarioRuntime, groupRuntime, WaveNextTriggerReason.AllMonstersDead);
             }
 
             if (CanRemoveClearedGroup(groupRuntime))
@@ -548,7 +575,11 @@ namespace GGemCo2DCore
         /// </summary>
         /// <param name="scenarioRuntime">전환할 시나리오 런타임입니다.</param>
         /// <param name="groupRuntime">전환 기준 그룹 런타임입니다.</param>
-        private void RequestNextGroup(MapWaveScenarioRuntime scenarioRuntime, MapWaveGroupRuntime groupRuntime)
+        /// <param name="reason">전환을 요청한 원인입니다.</param>
+        private void RequestNextGroup(
+            MapWaveScenarioRuntime scenarioRuntime,
+            MapWaveGroupRuntime groupRuntime,
+            WaveNextTriggerReason reason)
         {
             if (scenarioRuntime == null || groupRuntime == null || groupRuntime.IsNextRequested)
             {
@@ -557,6 +588,7 @@ namespace GGemCo2DCore
 
             groupRuntime.MarkNextRequested();
             scenarioRuntime.IncrementPendingTransition();
+            LogDebug($"웨이브 다음 그룹 전환 요청. scenarioUid:{scenarioRuntime.Data.ScenarioUid}, groupUid:{groupRuntime.Data.GroupUid}, instanceId:{groupRuntime.InstanceId}, reason:{reason}, pending:{scenarioRuntime.PendingTransitionCount}");
 
             Coroutine routine = _mapManager.StartCoroutine(ProceedToNextGroupCoroutine(scenarioRuntime, groupRuntime));
             TrackCoroutine(routine);
@@ -579,10 +611,12 @@ namespace GGemCo2DCore
             float delaySeconds = Mathf.Max(0f, previousGroup.Data.NextDelaySeconds);
             if (delaySeconds > 0f)
             {
+                LogDebug($"웨이브 다음 그룹 전환 지연 시작. scenarioUid:{scenarioRuntime.Data.ScenarioUid}, groupUid:{previousGroup.Data.GroupUid}, instanceId:{previousGroup.InstanceId}, delay:{delaySeconds:F2}");
                 yield return new WaitForSeconds(delaySeconds);
             }
 
             scenarioRuntime.DecrementPendingTransition();
+            LogDebug($"웨이브 다음 그룹 전환 실행. scenarioUid:{scenarioRuntime.Data.ScenarioUid}, previousGroupUid:{previousGroup.Data.GroupUid}, instanceId:{previousGroup.InstanceId}, pending:{scenarioRuntime.PendingTransitionCount}");
 
             if (!CanRunWave() || scenarioRuntime.IsCompleted)
             {
@@ -591,6 +625,7 @@ namespace GGemCo2DCore
 
             if (TryResolveRepeatedGroup(previousGroup, out MapWaveGroupData repeatedGroup, out int repeatIndex))
             {
+                LogDebug($"웨이브 그룹 반복 실행. scenarioUid:{scenarioRuntime.Data.ScenarioUid}, groupUid:{repeatedGroup.GroupUid}, nextRepeatIndex:{repeatIndex}");
                 StartGroup(scenarioRuntime, repeatedGroup, repeatIndex);
                 yield break;
             }
@@ -598,6 +633,7 @@ namespace GGemCo2DCore
             MapWaveGroupData nextGroup = scenarioRuntime.GetNextGroup(previousGroup.Data);
             if (nextGroup != null)
             {
+                LogDebug($"웨이브 다음 그룹 시작. scenarioUid:{scenarioRuntime.Data.ScenarioUid}, nextGroupUid:{nextGroup.GroupUid}");
                 StartGroup(scenarioRuntime, nextGroup, 0);
                 yield break;
             }
@@ -694,6 +730,7 @@ namespace GGemCo2DCore
         private void RemoveGroupRuntime(MapWaveScenarioRuntime scenarioRuntime, MapWaveGroupRuntime groupRuntime)
         {
             scenarioRuntime.RemoveActiveGroup(groupRuntime.InstanceId);
+            LogDebug($"웨이브 그룹 정리. scenarioUid:{scenarioRuntime.Data.ScenarioUid}, groupUid:{groupRuntime.Data.GroupUid}, instanceId:{groupRuntime.InstanceId}, spawned:{groupRuntime.SpawnedCount}");
 
             List<int> spawnedVids = groupRuntime.GetSpawnedMonsterVids();
             foreach (int monsterVid in spawnedVids)
@@ -719,6 +756,7 @@ namespace GGemCo2DCore
             }
 
             scenarioRuntime.MarkCompleted();
+            LogDebug($"웨이브 시나리오 완료. scenarioUid:{scenarioRuntime.Data.ScenarioUid}");
             _scenarioByUid.Remove(scenarioRuntime.Data.ScenarioUid);
             _scheduledScenarioUids.Remove(scenarioRuntime.Data.ScenarioUid);
         }
@@ -744,6 +782,20 @@ namespace GGemCo2DCore
                    _mapLoadCharacters != null &&
                    _mapTileCommon != null &&
                    _currentMapTableData != null;
+        }
+
+        /// <summary>
+        /// 웨이브 디버그 로그가 활성화되어 있으면 공통 접두사를 붙여 로그를 출력합니다.
+        /// </summary>
+        /// <param name="message">출력할 로그 본문입니다.</param>
+        private void LogDebug(string message)
+        {
+            if (!DebugLogEnabled || string.IsNullOrEmpty(message))
+            {
+                return;
+            }
+
+            GcLogger.Log($"{DebugLogPrefix} {message}");
         }
 
         /// <summary>
