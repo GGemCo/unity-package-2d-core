@@ -681,13 +681,20 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 몬스터 죽었을때 리젠 처리
+        /// 몬스터 사망 이벤트를 웨이브 소유권과 일반 배치 리젠 정책으로 분기 처리합니다.
+        /// 웨이브 몬스터는 웨이브 컨트롤러가 그룹 클리어와 다음 그룹 전환을 담당하므로 기본 개별 리젠 예약을 걸지 않습니다.
         /// </summary>
-        /// <param name="monsterVid"></param>
+        /// <param name="monsterVid">사망한 몬스터의 런타임 VID입니다.</param>
         public void OnDeadMonster(int monsterVid)
         {
             if (monsterVid <= 0) return;
             if (!HasValidCurrentMap()) return;
+
+            if (TryHandleWaveMonsterDead(monsterVid))
+            {
+                return;
+            }
+
             if (ShouldSuppressMonsterRespawn()) return;
 
             _mapLoadCharacters?.MarkMonsterDead(monsterVid);
@@ -695,11 +702,27 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 맵 전체 몬스터 처치 목표 또는 맵 종료 정책이 진행 중이면 몬스터 리젠 예약을 막아야 하는지 확인합니다.
+        /// 사망한 몬스터가 웨이브 소유 몬스터인지 확인하고 웨이브 컨트롤러에 사망 처리를 위임합니다.
+        /// 웨이브 몬스터로 확인되면 일반 배치 리젠 로직을 실행하지 않도록 true를 반환합니다.
         /// </summary>
-        /// <returns>현재 맵에서 몬스터 리젠을 막아야 하면 true입니다.</returns>
+        /// <param name="monsterVid">사망한 몬스터의 런타임 VID입니다.</param>
+        /// <returns>웨이브 소유 몬스터로 처리했으면 <see langword="true"/>를 반환합니다.</returns>
+        private bool TryHandleWaveMonsterDead(int monsterVid)
+        {
+            return _mapWaveSpawnController?.TryHandleWaveMonsterDead(monsterVid) == true;
+        }
+
+        /// <summary>
+        /// 웨이브 진행, 맵 전체 몬스터 처치 목표 또는 맵 종료 정책이 진행 중이면 몬스터 리젠 예약을 막아야 하는지 확인합니다.
+        /// </summary>
+        /// <returns>현재 맵에서 몬스터 리젠을 막아야 하면 <see langword="true"/>를 반환합니다.</returns>
         private bool ShouldSuppressMonsterRespawn()
         {
+            if (_mapWaveSpawnController?.ShouldSuppressNormalMonsterRespawn() == true)
+            {
+                return true;
+            }
+
             if (SceneGame.Instance?.QuestManager?.HasActiveObjective(
                     _currentMapUid,
                     QuestConstants.ObjectiveType.KillMonsterInMap) == true)
