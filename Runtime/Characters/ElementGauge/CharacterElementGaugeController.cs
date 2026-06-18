@@ -147,6 +147,7 @@ namespace GGemCo2DCore
         /// <returns>누적 처리 결과입니다.</returns>
         /// <remarks>
         /// <see cref="ElementGaugeAccumulationMode.ExplicitOnly"/>에서는 데미지와 게이지를 분리하기 위해 누적하지 않습니다.
+        /// 지속 피해는 HP 감소만 처리하고, 속성 게이지 자동 누적에는 사용하지 않습니다.
         /// </remarks>
         public ElementGaugeAccumulationResult AccumulateFromDamage(MetadataDamage metadataDamage, long damageAmount)
         {
@@ -154,6 +155,9 @@ namespace GGemCo2DCore
                 return ElementGaugeAccumulationResult.None;
 
             if (!CanAccumulateFromDamage())
+                return ElementGaugeAccumulationResult.None;
+
+            if (ShouldIgnoreDamageForGauge(metadataDamage))
                 return ElementGaugeAccumulationResult.None;
 
             ConfigCommon.DamageType damageType = metadataDamage.damageType;
@@ -183,6 +187,7 @@ namespace GGemCo2DCore
         /// 분해 결과가 없으면 기존 단일 데미지 타입 기반 누적 로직으로 되돌아갑니다.
         /// 물리 파트는 게이지 대상이 아니므로 건너뛰고, 화염/냉기/번개/독 파트만 누적합니다.
         /// <see cref="ElementGaugeAccumulationMode.ExplicitOnly"/>에서는 일반 피해와 지속 피해를 모두 누적하지 않습니다.
+        /// 지속 피해 파트는 상태 효과 Tick 피해이므로 속성 게이지 자동 누적에서 제외합니다.
         /// </remarks>
         public ElementGaugeAccumulationResult AccumulateFromDamageBreakdown(
             MetadataDamage metadataDamage,
@@ -194,6 +199,9 @@ namespace GGemCo2DCore
             if (!CanAccumulateFromDamage())
                 return ElementGaugeAccumulationResult.None;
 
+            if (ShouldIgnoreDamageForGauge(metadataDamage))
+                return ElementGaugeAccumulationResult.None;
+
             if (breakdown == null || !breakdown.HasParts)
                 return AccumulateFromDamage(metadataDamage, metadataDamage.damage);
 
@@ -202,6 +210,9 @@ namespace GGemCo2DCore
             for (int i = 0; i < parts.Count; i++)
             {
                 DamagePartResult part = parts[i];
+                if (ShouldIgnoreDamagePartForGauge(metadataDamage, part))
+                    continue;
+
                 if (!CanAccumulateDamageType(part.DamageType) || !CanAccumulateByPolicy(part.DamageType))
                     continue;
 
@@ -318,6 +329,36 @@ namespace GGemCo2DCore
         private bool CanAccumulateByPolicy(ConfigCommon.DamageType damageType)
         {
             return _accumulationPolicy == null || _accumulationPolicy.CanAccumulateElementGauge(_owner, damageType);
+        }
+
+        /// <summary>
+        /// 데미지 메타데이터 기준으로 속성 게이지 자동 누적에서 제외해야 하는지 확인합니다.
+        /// </summary>
+        /// <param name="metadataDamage">검사할 데미지 메타데이터입니다.</param>
+        /// <returns>지속 피해이면 <see langword="true"/>입니다.</returns>
+        /// <remarks>
+        /// 지속 피해는 상태 효과 Tick 결과로 HP만 감소시키는 입력입니다.
+        /// 가드/저스트 가드와 동일하게 속성 게이지 자동 누적에서도 제외하여,
+        /// 최초 타격과 지속 피해 Tick이 게이지를 중복 누적하지 않도록 합니다.
+        /// </remarks>
+        private static bool ShouldIgnoreDamageForGauge(MetadataDamage metadataDamage)
+        {
+            return metadataDamage != null && metadataDamage.IsDamageOverTime;
+        }
+
+        /// <summary>
+        /// 개별 데미지 파트 기준으로 속성 게이지 자동 누적에서 제외해야 하는지 확인합니다.
+        /// </summary>
+        /// <param name="metadataDamage">이번 피격을 설명하는 데미지 메타데이터입니다.</param>
+        /// <param name="part">검사할 데미지 파트입니다.</param>
+        /// <returns>메타데이터 또는 파트가 지속 피해이면 <see langword="true"/>입니다.</returns>
+        /// <remarks>
+        /// 상위 시스템이 메타데이터의 지속 피해 플래그를 누락하더라도,
+        /// 분해 파트의 Dot 플래그가 있으면 방어적으로 누적을 건너뜁니다.
+        /// </remarks>
+        private static bool ShouldIgnoreDamagePartForGauge(MetadataDamage metadataDamage, in DamagePartResult part)
+        {
+            return ShouldIgnoreDamageForGauge(metadataDamage) || part.IsDot;
         }
 
         /// <summary>

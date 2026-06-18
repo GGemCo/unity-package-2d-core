@@ -26,6 +26,15 @@ namespace GGemCo2DCore
         /// DOT, Affect 직접 피해, 이미 속성 파트가 명시된 스킬은 중복 적용을 피하기 위해 기본값 false를 유지합니다.
         /// </remarks>
         public bool IncludeAttackerElementDamageParts;
+
+        /// <summary>
+        /// 이번 데미지가 지속 피해(Damage over Time)인지 여부입니다.
+        /// </summary>
+        /// <remarks>
+        /// 지속 피해는 실시간 공격 입력으로 발생한 즉시 타격이 아니라 상태 효과의 Tick 결과이므로,
+        /// 가드/저스트 가드 판정 대상에서 제외하기 위해 사용합니다.
+        /// </remarks>
+        public bool IsDamageOverTime;
         // 데미지 받는 대상에 적용되는 어펙트 uid 
         public int affectUid;
         // 데미지 받는 대상에 적용되는 CC uid
@@ -452,7 +461,7 @@ namespace GGemCo2DCore
             List<CrowdControlRuntimeData> guardCrowdControlRuntimeList = null;
             var guardResolver = _characterBase.GetComponent<IIncomingHitGuardResolver>();
 
-            if (guardResolver != null)
+            if (guardResolver != null && ShouldEvaluateGuardResolution(metadataDamage))
             {
                 metadataDamage.damage = damage;
                 if (guardResolver.TryResolveIncomingHit(metadataDamage, out var guardResult) && guardResult.IsResolved)
@@ -672,10 +681,6 @@ namespace GGemCo2DCore
             
             _characterBase.CurrentHp.OnNext(remainHp);
 
-            // 속성 데미지 게이지 처리
-            // 실제 피격이 확정된 뒤, 속성별 최종 데미지 파트를 기준으로 Core 공통 게이지에 누적합니다.
-            _characterBase.ElementGaugeController?.AccumulateFromDamageBreakdown(metadataDamage, metadataDamage.DamageBreakdown);
-
             ApplyConfirmedAttackHitStop(metadataDamage);
         }
 
@@ -693,6 +698,37 @@ namespace GGemCo2DCore
             for (int i = 0; i < parts.Count; i++)
             {
                 if (parts[i].IsImmune)
+                    return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// 현재 데미지가 가드/저스트 가드 판정 대상인지 확인합니다.
+        /// </summary>
+        /// <param name="metadataDamage">피격 처리에 사용되는 데미지 메타데이터입니다.</param>
+        /// <returns>가드 판정을 수행해야 하면 true, 지속 피해처럼 가드 대상이 아니면 false입니다.</returns>
+        /// <remarks>
+        /// 지속 피해는 상태 효과 Tick에 의해 누적되는 피해이므로 플레이어의 가드 입력으로 막지 않습니다.
+        /// 상위 패키지가 명시 플래그를 설정하지 않은 경우에도 모든 데미지 파트가 Dot이면 방어적으로 제외합니다.
+        /// </remarks>
+        private static bool ShouldEvaluateGuardResolution(MetadataDamage metadataDamage)
+        {
+            if (metadataDamage == null)
+                return false;
+
+            if (metadataDamage.IsDamageOverTime)
+                return false;
+
+            DamageCalculationBreakdown breakdown = metadataDamage.DamageBreakdown;
+            if (breakdown == null || !breakdown.HasParts)
+                return true;
+
+            IReadOnlyList<DamagePartResult> parts = breakdown.Parts;
+            for (int i = 0; i < parts.Count; i++)
+            {
+                if (!parts[i].IsDot)
                     return true;
             }
 
