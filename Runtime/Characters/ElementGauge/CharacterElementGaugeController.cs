@@ -5,7 +5,7 @@ using UnityEngine;
 namespace GGemCo2DCore
 {
     /// <summary>
-    /// 캐릭터가 실제로 받은 속성 데미지를 속성별 게이지로 누적하고, UI와 확장 핸들러에 상태 변화를 전달합니다.
+    /// 캐릭터가 받은 속성 게이지 입력을 속성별로 누적하고, UI와 확장 핸들러에 상태 변화를 전달합니다.
     /// </summary>
     /// <remarks>
     /// 이 컨트롤러는 속성 게이지의 누적, 감쇠, 임계 도달 이벤트만 담당합니다.
@@ -20,6 +20,7 @@ namespace GGemCo2DCore
         private CharacterBase _owner;
         private ElementGaugeRuntime _runtime;
         private ElementGaugeProcessor _gaugeProcessor;
+        private ElementGaugeAccumulationMode _accumulationMode = ElementGaugeAccumulationMode.DamageDerived;
         private IElementGaugeThresholdHandler _thresholdHandler = NullElementGaugeThresholdHandler.Instance;
         private IElementGaugeRepeatedHitHandler _repeatedHitHandler = NullElementGaugeRepeatedHitHandler.Instance;
         private IElementGaugeAccumulationPolicy _accumulationPolicy = AllowAllElementGaugeAccumulationPolicy.Instance;
@@ -144,9 +145,15 @@ namespace GGemCo2DCore
         /// <param name="metadataDamage">데미지 메타데이터입니다.</param>
         /// <param name="damageAmount">이번 피격에서 확정된 최종 HP 데미지량입니다.</param>
         /// <returns>누적 처리 결과입니다.</returns>
+        /// <remarks>
+        /// <see cref="ElementGaugeAccumulationMode.ExplicitOnly"/>에서는 데미지와 게이지를 분리하기 위해 누적하지 않습니다.
+        /// </remarks>
         public ElementGaugeAccumulationResult AccumulateFromDamage(MetadataDamage metadataDamage, long damageAmount)
         {
             if (!CanProcessRuntime() || metadataDamage == null)
+                return ElementGaugeAccumulationResult.None;
+
+            if (!CanAccumulateFromDamage())
                 return ElementGaugeAccumulationResult.None;
 
             ConfigCommon.DamageType damageType = metadataDamage.damageType;
@@ -175,12 +182,16 @@ namespace GGemCo2DCore
         /// <remarks>
         /// 분해 결과가 없으면 기존 단일 데미지 타입 기반 누적 로직으로 되돌아갑니다.
         /// 물리 파트는 게이지 대상이 아니므로 건너뛰고, 화염/냉기/번개/독 파트만 누적합니다.
+        /// <see cref="ElementGaugeAccumulationMode.ExplicitOnly"/>에서는 일반 피해와 지속 피해를 모두 누적하지 않습니다.
         /// </remarks>
         public ElementGaugeAccumulationResult AccumulateFromDamageBreakdown(
             MetadataDamage metadataDamage,
             DamageCalculationBreakdown breakdown)
         {
             if (!CanProcessRuntime() || metadataDamage == null)
+                return ElementGaugeAccumulationResult.None;
+
+            if (!CanAccumulateFromDamage())
                 return ElementGaugeAccumulationResult.None;
 
             if (breakdown == null || !breakdown.HasParts)
@@ -274,6 +285,19 @@ namespace GGemCo2DCore
         private bool CanProcessRuntime()
         {
             return _owner != null && !_owner.IsStatusDead() && _runtime != null && _gaugeProcessor != null;
+        }
+
+        /// <summary>
+        /// 현재 설정에서 확정 데미지를 속성 게이지 입력으로 사용할 수 있는지 확인합니다.
+        /// </summary>
+        /// <returns>데미지 기반 누적을 허용하면 <see langword="true"/>입니다.</returns>
+        /// <remarks>
+        /// 명시적 누적 모드에서는 일반 속성 피해와 지속 속성 피해를 모두 게이지 입력에서 제외합니다.
+        /// 게이지는 Affect의 ElementGauge Modifier 등에서 <see cref="AccumulateDirect"/>를 호출할 때만 누적됩니다.
+        /// </remarks>
+        private bool CanAccumulateFromDamage()
+        {
+            return _accumulationMode == ElementGaugeAccumulationMode.DamageDerived;
         }
 
         /// <summary>
@@ -394,6 +418,10 @@ namespace GGemCo2DCore
             _rules.Clear();
 
             GGemCoPlayerSettings settings = ResolvePlayerSettings();
+            _accumulationMode = settings != null
+                ? settings.elementGaugeAccumulationMode
+                : ElementGaugeAccumulationMode.DamageDerived;
+
             List<ElementGaugeRuleDefinition> configuredRules = settings != null ? settings.elementGaugeRules : null;
             if (configuredRules != null)
             {

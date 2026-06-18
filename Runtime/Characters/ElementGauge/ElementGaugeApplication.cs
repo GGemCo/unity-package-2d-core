@@ -4,6 +4,28 @@ using UnityEngine;
 namespace GGemCo2DCore
 {
     /// <summary>
+    /// 속성 게이지가 어떤 입력 경로를 통해 누적되는지 결정합니다.
+    /// </summary>
+    public enum ElementGaugeAccumulationMode
+    {
+        /// <summary>
+        /// 확정된 속성 데미지와 명시적인 게이지 입력을 모두 누적합니다.
+        /// </summary>
+        /// <remarks>
+        /// 기존 프로젝트의 동작과 직렬화 호환성을 유지하기 위한 기본값입니다.
+        /// </remarks>
+        DamageDerived = 0,
+
+        /// <summary>
+        /// <see cref="CharacterElementGaugeController.AccumulateDirect"/>를 통한 명시적인 게이지 입력만 누적합니다.
+        /// </summary>
+        /// <remarks>
+        /// 속성 데미지와 속성 게이지를 독립적으로 설계할 때 사용합니다.
+        /// </remarks>
+        ExplicitOnly = 1,
+    }
+
+    /// <summary>
     /// 속성 데미지 누적 처리에 사용할 입력 컨텍스트입니다.
     /// </summary>
     /// <remarks>
