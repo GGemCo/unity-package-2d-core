@@ -3,6 +3,9 @@ using UnityEngine;
 
 namespace GGemCo2DCore
 {
+    /// <summary>
+    /// 캐릭터 피격 요청에 필요한 데미지, 연출, 가드, 후속 처리 정보를 전달합니다.
+    /// </summary>
     public class MetadataDamage
     {
         public long damage;
@@ -271,15 +274,13 @@ namespace GGemCo2DCore
         }
     }
     /// <summary>
-    /// 캐릭터 데미지 처리
+    /// 캐릭터 피격 파이프라인의 실행 순서를 조정하는 오케스트레이터입니다.
     /// </summary>
     public class CharacterDamageController
     {
-        private const int PlayerIncomingHitVfxCooldownKey = -1;
-        private const int MaxDamageRequestsPerDrain = 128;
-
-        private readonly Queue<MetadataDamage> _pendingDamageRequests = new Queue<MetadataDamage>();
-        private bool _isDrainingDamageRequests;
+        private readonly DamageRequestQueue _damageRequestQueue = new DamageRequestQueue();
+        private readonly CharacterIncomingHitVfxController _incomingHitVfxController =
+            new CharacterIncomingHitVfxController();
 
         private CharacterBase _characterBase;
         private ControllerMonsterSuperArmor _controllerMonsterSuperArmor;
@@ -288,11 +289,6 @@ namespace GGemCo2DCore
         
         private Color _textColorDamageMonster;
         private Color _textColorDamagePlayer;
-        private Color _textColorHeal;
-        private GGemCoPlayerSettings _playerSettings;
-        private GGemCoMonsterSettings _monsterSettings;
-        private readonly Dictionary<int, float> _nextIncomingHitVfxPlayableTimesByKey = new Dictionary<int, float>();
-        private bool _suppressNextIncomingHitAnimationEventVfx;
         
         /// <summary>
         /// 데미지 컨트롤러를 초기화하고, 몬스터 슈퍼아머 설정을 함께 주입합니다.
@@ -313,8 +309,6 @@ namespace GGemCo2DCore
             
             AddressableLoaderSettings loaderSettings = AddressableLoaderSettings.Instance;
             GGemCoMonsterSettings monsterSettings = loaderSettings != null ? loaderSettings.monsterSettings : null;
-            _monsterSettings = monsterSettings;
-
             _controllerMonsterSuperArmor = new ControllerMonsterSuperArmor();
             _controllerMonsterSuperArmor.Initialize(_characterBase, monsterSettings);
             
@@ -330,88 +324,26 @@ namespace GGemCo2DCore
             {
                 _textColorDamageMonster = loaderSettings.settings.textColorDamageMonster;
                 _textColorDamagePlayer = loaderSettings.settings.textColorDamagePlayer;
-                _textColorHeal = loaderSettings.settings.textColorHeal;
             }
 
-            _playerSettings = loaderSettings != null ? loaderSettings.playerSettings : null;
-            _nextIncomingHitVfxPlayableTimesByKey.Clear();
-            _pendingDamageRequests.Clear();
-            _isDrainingDamageRequests = false;
+            _incomingHitVfxController.Initialize(
+                _characterBase,
+                loaderSettings != null ? loaderSettings.playerSettings : null,
+                monsterSettings);
+            _damageRequestQueue.Initialize(_characterBase.name, ProcessDamageNow);
         }
 
+        /// <summary>
+        /// 이벤트 구독과 런타임 요청 상태를 정리합니다.
+        /// </summary>
         public void Dispose()
         {
-            _pendingDamageRequests.Clear();
-            _isDrainingDamageRequests = false;
+            _damageRequestQueue.Clear();
+            _incomingHitVfxController.ResetRuntimeState();
 
             if (_controllerMonsterSuperArmor != null)
             {
                 _controllerMonsterSuperArmor.BreakTriggered -= OnSuperArmorBreak;
-            }
-        }
-
-        private void NotifyIncomingHitCombatFeedback(MetadataDamage metadataDamage, MonsterSkillCombatOutcome outcome)
-        {
-            if (metadataDamage == null)
-                return;
-
-            var attacker = metadataDamage.attacker;
-            // 스킬 데미지 처리
-            if (attacker == null || metadataDamage.SkillUid <= 0)
-                return;
-
-            var feedback = new IncomingHitCombatFeedback(
-                attacker,
-                _characterBase != null ? _characterBase.gameObject : null,
-                metadataDamage.SkillUid,
-                metadataDamage.AttackId,
-                outcome,
-                Time.time);
-
-            var behaviours = attacker.GetComponents<MonoBehaviour>();
-            if (behaviours == null || behaviours.Length == 0)
-                return;
-
-            for (int i = 0; i < behaviours.Length; i++)
-            {
-                if (behaviours[i] is IIncomingHitCombatFeedbackSink sink)
-                {
-                    sink.NotifyIncomingHitResolved(in feedback);
-                }
-            }
-        }
-
-        /// <summary>
-        /// 실제 타격 확정 결과를 공격자 오브젝트에 되돌려줍니다.
-        /// </summary>
-        /// <param name="metadataDamage">타격에 사용된 데미지 메타데이터입니다.</param>
-        /// <param name="outcome">최종 전투 결과입니다.</param>
-        private void NotifyOutgoingAttackHitFeedback(MetadataDamage metadataDamage, MonsterSkillCombatOutcome outcome)
-        {
-            if (metadataDamage == null)
-                return;
-
-            GameObject attacker = metadataDamage.attacker;
-            if (attacker == null)
-                return;
-
-            var feedback = new OutgoingAttackHitFeedback(
-                attacker,
-                _characterBase != null ? _characterBase.gameObject : null,
-                metadataDamage,
-                outcome,
-                Time.time);
-
-            var behaviours = attacker.GetComponents<MonoBehaviour>();
-            if (behaviours == null || behaviours.Length == 0)
-                return;
-
-            for (int i = 0; i < behaviours.Length; i++)
-            {
-                if (behaviours[i] is IOutgoingAttackHitFeedbackSink sink)
-                {
-                    sink.NotifyOutgoingAttackHitResolved(in feedback);
-                }
             }
         }
 
@@ -449,52 +381,7 @@ namespace GGemCo2DCore
         /// </remarks>
         public void TakeDamage(MetadataDamage metadataDamage)
         {
-            if (metadataDamage == null)
-                return;
-
-            _pendingDamageRequests.Enqueue(metadataDamage.Clone());
-
-            if (_isDrainingDamageRequests)
-                return;
-
-            DrainDamageRequests();
-        }
-
-        /// <summary>
-        /// 큐에 쌓인 데미지 요청을 FIFO 순서로 처리합니다.
-        /// </summary>
-        /// <remarks>
-        /// 일반 호출은 즉시 처리되지만, 처리 중 새로 들어온 요청은 현재 요청이 끝난 뒤 이어서 실행됩니다.
-        /// 무한 재귀성 데미지 루프를 방어하기 위해 한 번의 Drain에서 처리 가능한 최대 요청 수를 제한합니다.
-        /// </remarks>
-        private void DrainDamageRequests()
-        {
-            _isDrainingDamageRequests = true;
-
-            try
-            {
-                int processedCount = 0;
-
-                while (_pendingDamageRequests.Count > 0)
-                {
-                    if (++processedCount > MaxDamageRequestsPerDrain)
-                    {
-                        GcLogger.LogError(
-                            $"[DamageQueue] 데미지 요청이 과도하게 중첩되어 남은 요청을 폐기합니다. " +
-                            $"Target={(_characterBase != null ? _characterBase.name : "None")}, " +
-                            $"Limit={MaxDamageRequestsPerDrain}, Remaining={_pendingDamageRequests.Count}");
-                        _pendingDamageRequests.Clear();
-                        break;
-                    }
-
-                    MetadataDamage queuedDamage = _pendingDamageRequests.Dequeue();
-                    ProcessDamageNow(queuedDamage);
-                }
-            }
-            finally
-            {
-                _isDrainingDamageRequests = false;
-            }
+            _damageRequestQueue.EnqueueAndDrain(metadataDamage);
         }
 
         /// <summary>
@@ -504,7 +391,7 @@ namespace GGemCo2DCore
         private void ProcessDamageNow(MetadataDamage metadataDamage)
         {
             if (metadataDamage == null) return;
-            _suppressNextIncomingHitAnimationEventVfx = false;
+            _incomingHitVfxController.BeginDamageRequest();
 
             if (SceneGame.Instance.CutsceneManager.IsPlaying()) return;
             if (_characterBase.IsStatusDead() || _characterBase.IsDeathPending)
@@ -515,8 +402,14 @@ namespace GGemCo2DCore
 
             if (!_characterBase.CanReceiveDamage(metadataDamage))
             {
-                NotifyIncomingHitCombatFeedback(metadataDamage, MonsterSkillCombatOutcome.Immune);
-                NotifyOutgoingAttackHitFeedback(metadataDamage, MonsterSkillCombatOutcome.Immune);
+                CombatHitFeedbackNotifier.NotifyIncoming(
+                    _characterBase,
+                    metadataDamage,
+                    MonsterSkillCombatOutcome.Immune);
+                CombatHitFeedbackNotifier.NotifyOutgoing(
+                    _characterBase,
+                    metadataDamage,
+                    MonsterSkillCombatOutcome.Immune);
                 return;
             }
 
@@ -554,7 +447,8 @@ namespace GGemCo2DCore
                 metadataDamage.damage = damage;
                 metadataDamage.damageType = damageType;
 
-                if (damage <= 0L && HasAnyImmuneDamagePart(incomingBreakdown))
+                if (damage <= 0L &&
+                    CharacterDamageCalculationUtility.HasAnyImmuneDamagePart(incomingBreakdown))
                 {
                     MetadataDamageText metadataDamageText = new MetadataDamageText
                     {
@@ -565,7 +459,10 @@ namespace GGemCo2DCore
                         FontSize = 20
                     };
                     SceneGame.Instance.damageTextManager.ShowDamageText(metadataDamageText);
-                    NotifyIncomingHitCombatFeedback(metadataDamage, MonsterSkillCombatOutcome.Immune);
+                    CombatHitFeedbackNotifier.NotifyIncoming(
+                        _characterBase,
+                        metadataDamage,
+                        MonsterSkillCombatOutcome.Immune);
                 }
             }
             else
@@ -579,7 +476,9 @@ namespace GGemCo2DCore
             {
                 if (crowdControlUid > 0)
                 {
-                    NotifyIncomingHitActionCancelers(IncomingHitCancelReason.Damage);
+                    IncomingHitExtensionResolver.NotifyActionCancelers(
+                        _characterBase,
+                        IncomingHitCancelReason.Damage);
                     _characterBase.ApplyCrowdControl(crowdControlUid, attacker);
                 }
                 return;
@@ -593,14 +492,18 @@ namespace GGemCo2DCore
             List<CrowdControlRuntimeData> guardCrowdControlRuntimeList = null;
             var guardResolver = _characterBase.GetComponent<IIncomingHitGuardResolver>();
 
-            if (guardResolver != null && ShouldEvaluateGuardResolution(metadataDamage))
+            if (guardResolver != null &&
+                CharacterDamageCalculationUtility.ShouldEvaluateGuardResolution(metadataDamage))
             {
                 metadataDamage.damage = damage;
                 if (guardResolver.TryResolveIncomingHit(metadataDamage, out var guardResult) && guardResult.IsResolved)
                 {
                     damage = guardResult.RemainingDamage < 0 ? 0 : guardResult.RemainingDamage;
                     metadataDamage.damage = damage;
-                    metadataDamage.DamageBreakdown = ScaleDamageBreakdownFinalDamage(metadataDamage.DamageBreakdown, damage);
+                    metadataDamage.DamageBreakdown =
+                        CharacterDamageCalculationUtility.ScaleFinalDamage(
+                            metadataDamage.DamageBreakdown,
+                            damage);
                     suppressHitReactionByGuard = guardResult.SuppressHitReaction;
                     isGuardResolved = true;
 
@@ -639,7 +542,8 @@ namespace GGemCo2DCore
                         hasGuardFeedback = true;
                     }
 
-                    NotifyIncomingHitCombatFeedback(
+                    CombatHitFeedbackNotifier.NotifyIncoming(
+                        _characterBase,
                         metadataDamage,
                         ResolveCombatOutcomeByGuardResult(guardResult));
 
@@ -685,7 +589,10 @@ namespace GGemCo2DCore
             }
 
             // 외부 시스템(예: 보스 페이즈 전환)이 최종 HP를 보정할 수 있는 확장 지점입니다.
-            long adjustedHp = ResolveFinalHpOnIncomingHit(metadataDamage, remainHp);
+            long adjustedHp = IncomingHitExtensionResolver.ResolveFinalHp(
+                _characterBase,
+                metadataDamage,
+                remainHp);
             bool isHpAdjusted = adjustedHp != remainHp;
             remainHp = adjustedHp;
 
@@ -698,15 +605,22 @@ namespace GGemCo2DCore
             }
 
             // 타격 확정: 즉시 타격에 한해 공격자 OnHit와 속성 게이지 누적력을 처리합니다.
-            if (attacker != null && ShouldProcessConfirmedAttackHit(metadataDamage))
+            if (attacker != null &&
+                CharacterDamageCalculationUtility.ShouldProcessConfirmedAttackHit(metadataDamage))
             {
                 CharacterBase attackerCharacter = attacker.GetComponentInParent<CharacterBase>();
                 ElementGaugeOnHitApplier.Apply(attackerCharacter, _characterBase, metadataDamage);
                 AffectRuntimeBridge.NotifyOnHit(attacker, _characterBase.gameObject);
             }
 
-            NotifyIncomingHitCombatFeedback(metadataDamage, MonsterSkillCombatOutcome.Hit);
-            NotifyOutgoingAttackHitFeedback(metadataDamage, MonsterSkillCombatOutcome.Hit);
+            CombatHitFeedbackNotifier.NotifyIncoming(
+                _characterBase,
+                metadataDamage,
+                MonsterSkillCombatOutcome.Hit);
+            CombatHitFeedbackNotifier.NotifyOutgoing(
+                _characterBase,
+                metadataDamage,
+                MonsterSkillCombatOutcome.Hit);
             TryPlayDamageCameraShake(metadataDamage);
 
             if (!hasGuardFeedback)
@@ -729,7 +643,9 @@ namespace GGemCo2DCore
                     _characterBase.ApplyCrowdControl(crowdControlUid, metadataDamage.attacker);
                 }
                 // 사망 처리 전에 입력 액션을 먼저 정리해 후속 입력이 잠기지 않도록 합니다.
-                NotifyIncomingHitActionCancelers(IncomingHitCancelReason.Death);
+                IncomingHitExtensionResolver.NotifyActionCancelers(
+                    _characterBase,
+                    IncomingHitCancelReason.Death);
 
                 // 사망했을 때, UI 표현을 위해 0으로 처리
                 remainHp = 0;
@@ -773,7 +689,9 @@ namespace GGemCo2DCore
                 if (shouldPlayDamageReaction)
                 {
                     // 피격 상태/CC 적용 전에 입력 액션을 먼저 정리해 가드/점프/대시 상태가 남지 않도록 합니다.
-                    NotifyIncomingHitActionCancelers(IncomingHitCancelReason.Damage);
+                    IncomingHitExtensionResolver.NotifyActionCancelers(
+                        _characterBase,
+                        IncomingHitCancelReason.Damage);
 
                     if (hitReactionType == CharacterConstants.HitReactionType.Flinch)
                     {
@@ -788,7 +706,8 @@ namespace GGemCo2DCore
                     {
                         // 순서 중요.
                         _characterBase.SetStatusDamage();
-                        _suppressNextIncomingHitAnimationEventVfx = metadataDamage.SuppressHitEffect;
+                        _incomingHitVfxController.SetSuppressNextAnimationEventVfx(
+                            metadataDamage.SuppressHitEffect);
                         _characterBase.CharacterAnimationController.PlayDamageAnimation();
                     }
                 }
@@ -815,242 +734,7 @@ namespace GGemCo2DCore
             
             _characterBase.CurrentHp.OnNext(remainHp);
 
-            ApplyConfirmedAttackHitStop(metadataDamage);
-        }
-
-        /// <summary>
-        /// 확정 타격 후속 처리 대상인지 확인합니다.
-        /// </summary>
-        /// <param name="metadataDamage">피격 처리에 사용되는 데미지 메타데이터입니다.</param>
-        /// <returns>즉시 타격이면 true, 지속 피해 Tick이면 false입니다.</returns>
-        /// <remarks>
-        /// 지속 피해는 HP 데미지 타입이 속성이더라도 속성 게이지, Affect OnHit, 공격 성공 후속 처리와 연동하지 않습니다.
-        /// </remarks>
-        private static bool ShouldProcessConfirmedAttackHit(MetadataDamage metadataDamage)
-        {
-            if (metadataDamage == null || metadataDamage.IsDamageOverTime)
-                return false;
-
-            DamageCalculationBreakdown breakdown = metadataDamage.DamageBreakdown;
-            if (breakdown == null || !breakdown.HasParts)
-                return true;
-
-            IReadOnlyList<DamagePartResult> parts = breakdown.Parts;
-            for (int i = 0; i < parts.Count; i++)
-            {
-                if (!parts[i].IsDot)
-                    return true;
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        /// 데미지 분해 결과에 면역 처리된 파트가 포함되어 있는지 확인합니다.
-        /// </summary>
-        /// <param name="breakdown">확인할 데미지 분해 결과입니다.</param>
-        /// <returns>면역 처리된 데미지 파트가 하나 이상 있으면 true입니다.</returns>
-        private static bool HasAnyImmuneDamagePart(DamageCalculationBreakdown breakdown)
-        {
-            if (breakdown == null || !breakdown.HasParts)
-                return false;
-
-            IReadOnlyList<DamagePartResult> parts = breakdown.Parts;
-            for (int i = 0; i < parts.Count; i++)
-            {
-                if (parts[i].IsImmune)
-                    return true;
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        /// 현재 데미지가 가드/저스트 가드 판정 대상인지 확인합니다.
-        /// </summary>
-        /// <param name="metadataDamage">피격 처리에 사용되는 데미지 메타데이터입니다.</param>
-        /// <returns>가드 판정을 수행해야 하면 true, 지속 피해처럼 가드 대상이 아니면 false입니다.</returns>
-        /// <remarks>
-        /// 지속 피해는 상태 효과 Tick에 의해 누적되는 피해이므로 플레이어의 가드 입력으로 막지 않습니다.
-        /// 상위 패키지가 명시 플래그를 설정하지 않은 경우에도 모든 데미지 파트가 Dot이면 방어적으로 제외합니다.
-        /// </remarks>
-        private static bool ShouldEvaluateGuardResolution(MetadataDamage metadataDamage)
-        {
-            if (metadataDamage == null)
-                return false;
-
-            if (metadataDamage.IsDamageOverTime)
-                return false;
-
-            DamageCalculationBreakdown breakdown = metadataDamage.DamageBreakdown;
-            if (breakdown == null || !breakdown.HasParts)
-                return true;
-
-            IReadOnlyList<DamagePartResult> parts = breakdown.Parts;
-            for (int i = 0; i < parts.Count; i++)
-            {
-                if (!parts[i].IsDot)
-                    return true;
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        /// 가드 등 후처리로 변경된 최종 데미지에 맞춰 파트별 최종 데미지를 비례 보정합니다.
-        /// </summary>
-        /// <param name="source">보정 전 데미지 분해 결과입니다.</param>
-        /// <param name="targetFinalDamage">후처리까지 반영된 전체 최종 데미지입니다.</param>
-        /// <returns>전체 최종 데미지에 맞춰 보정된 데미지 분해 결과입니다.</returns>
-        /// <remarks>
-        /// 가드가 총 피해만 줄이는 현재 구조에서 속성 게이지가 가드 전 피해량으로 누적되지 않도록 보정합니다.
-        /// 마지막 유효 파트에는 반올림 오차를 몰아 전체 합계가 정확히 맞도록 합니다.
-        /// </remarks>
-        private static DamageCalculationBreakdown ScaleDamageBreakdownFinalDamage(
-            DamageCalculationBreakdown source,
-            long targetFinalDamage)
-        {
-            if (source == null || !source.HasParts)
-                return source;
-
-            long sourceFinalDamage = source.TotalFinalDamage;
-            if (sourceFinalDamage == targetFinalDamage)
-                return source;
-
-            var scaled = new DamageCalculationBreakdown();
-            IReadOnlyList<DamagePartResult> parts = source.Parts;
-            long safeTargetFinalDamage = targetFinalDamage > 0L ? targetFinalDamage : 0L;
-            long assignedFinalDamage = 0L;
-            int lastPositivePartIndex = FindLastPositiveDamagePartIndex(parts);
-
-            for (int i = 0; i < parts.Count; i++)
-            {
-                DamagePartResult part = parts[i];
-                long scaledFinalDamage = 0L;
-
-                if (sourceFinalDamage > 0L && part.FinalDamage > 0L && safeTargetFinalDamage > 0L)
-                {
-                    scaledFinalDamage = i == lastPositivePartIndex
-                        ? safeTargetFinalDamage - assignedFinalDamage
-                        : (long)System.Math.Round(part.FinalDamage * (double)safeTargetFinalDamage / sourceFinalDamage);
-                    if (scaledFinalDamage < 0L)
-                        scaledFinalDamage = 0L;
-                    assignedFinalDamage += scaledFinalDamage;
-                }
-
-                scaled.AddPart(new DamagePartResult(
-                    part.RawDamage,
-                    scaledFinalDamage,
-                    part.DamageType,
-                    ScalePartAttackerElementDamage(part, scaledFinalDamage),
-                    part.IsImmune,
-                    part.AppliedDefaultDamage,
-                    part.IsDot));
-            }
-
-            return scaled;
-        }
-
-        /// <summary>
-        /// 가드 후 최종 파트 데미지에 맞춰 공격자 속성 데미지 기준값도 함께 보정합니다.
-        /// </summary>
-        /// <param name="part">보정 전 데미지 파트입니다.</param>
-        /// <param name="scaledFinalDamage">보정된 최종 파트 데미지입니다.</param>
-        /// <returns>게이지 누적 기준으로 사용할 보정된 공격자 속성 데미지입니다.</returns>
-        private static long ScalePartAttackerElementDamage(in DamagePartResult part, long scaledFinalDamage)
-        {
-            if (part.AttackerElementDamage <= 0L)
-                return 0L;
-
-            if (part.FinalDamage <= 0L)
-                return scaledFinalDamage > 0L ? part.AttackerElementDamage : 0L;
-
-            if (scaledFinalDamage <= 0L)
-                return 0L;
-
-            double ratio = scaledFinalDamage / (double)part.FinalDamage;
-            double scaled = part.AttackerElementDamage * ratio;
-            if (scaled <= 0d)
-                return 0L;
-            if (scaled >= long.MaxValue)
-                return long.MaxValue;
-
-            return (long)System.Math.Round(scaled);
-        }
-
-        /// <summary>
-        /// 최종 데미지가 있는 마지막 파트 인덱스를 찾습니다.
-        /// </summary>
-        /// <param name="parts">검색할 데미지 파트 목록입니다.</param>
-        /// <returns>최종 데미지가 있는 마지막 파트 인덱스입니다. 없으면 -1입니다.</returns>
-        private static int FindLastPositiveDamagePartIndex(IReadOnlyList<DamagePartResult> parts)
-        {
-            if (parts == null)
-                return -1;
-
-            for (int i = parts.Count - 1; i >= 0; i--)
-            {
-                if (parts[i].FinalDamage > 0L)
-                    return i;
-            }
-
-            return -1;
-        }
-
-
-        /// <summary>
-        /// 데미지가 실제로 확정된 뒤 공격 메타데이터에 포함된 HitStop 설정을 적용합니다.
-        /// </summary>
-        /// <param name="metadataDamage">이번 피격 처리에 사용한 데미지 메타데이터입니다.</param>
-        /// <remarks>
-        /// 공격 애니메이션 시작 시점이 아니라 실제 데미지 확정 이후에 호출하여,
-        /// 빗맞은 공격이나 무효 처리된 공격에서 HitStop이 발생하지 않도록 합니다.
-        /// </remarks>
-        private void ApplyConfirmedAttackHitStop(MetadataDamage metadataDamage)
-        {
-            if (metadataDamage == null || !metadataDamage.HasAttackHitStopSettings)
-                return;
-
-            AttackHitStopSettings hitStopSettings = metadataDamage.AttackHitStopSettings;
-            if (!hitStopSettings.HasAnyHitStop)
-                return;
-
-            CharacterBase attackerCharacter = metadataDamage.attacker != null
-                ? metadataDamage.attacker.GetComponent<CharacterBase>()
-                : null;
-            if (attackerCharacter == null)
-                return;
-
-            CharacterBase.HitStopConfig hitStopConfig = attackerCharacter.GetResolvedHitStopConfig();
-            if (!hitStopConfig.Enabled)
-                return;
-
-            int sourceSkillUid = metadataDamage.SkillUid;
-            if (hitStopSettings.useHitStopSelf)
-            {
-                float selfSeconds = hitStopSettings.ResolveSelfSeconds(hitStopConfig);
-                if (selfSeconds > 0f)
-                {
-                    attackerCharacter.ApplyHitStop(new HitStopRequest(
-                        selfSeconds,
-                        pauseAnimation: hitStopConfig.PauseAnimation,
-                        freezePhysics: hitStopConfig.FreezePhysics,
-                        sourceSkillUid: sourceSkillUid));
-                }
-            }
-
-            if (hitStopSettings.useHitStopTarget && _characterBase != null)
-            {
-                float targetSeconds = hitStopSettings.ResolveTargetSeconds(hitStopConfig);
-                if (targetSeconds > 0f)
-                {
-                    _characterBase.ApplyHitStop(new HitStopRequest(
-                        targetSeconds,
-                        pauseAnimation: hitStopConfig.PauseAnimation,
-                        freezePhysics: hitStopConfig.FreezePhysics,
-                        sourceSkillUid: sourceSkillUid));
-                }
-            }
+            AttackHitStopProcessor.Apply(_characterBase, metadataDamage);
         }
 
         /// <summary>
@@ -1304,7 +988,7 @@ namespace GGemCo2DCore
                 return;
 
             _characterBase.TryPlaySpriteWhiteOverlayOnHit();
-            TryPlayIncomingHitVfxByTrigger(IncomingHitVfxTriggerType.OnDamageConfirmed);
+            _incomingHitVfxController.TryPlay(IncomingHitVfxTriggerType.OnDamageConfirmed);
         }
 
         /// <summary>
@@ -1316,7 +1000,7 @@ namespace GGemCo2DCore
         /// </remarks>
         internal void TryPlayPlayerIncomingHitVfxByTrigger(GGemCoPlayerSettings.IncomingHitVfxTriggerType triggerType)
         {
-            TryPlayIncomingHitVfxByTrigger(IncomingHitVfxSettings.ConvertTriggerType(triggerType));
+            _incomingHitVfxController.TryPlay(triggerType);
         }
 
         /// <summary>
@@ -1329,193 +1013,13 @@ namespace GGemCo2DCore
         /// </remarks>
         internal void TryPlayIncomingHitVfxByTrigger(IncomingHitVfxTriggerType triggerType)
         {
-            if (_characterBase == null)
-            {
-                return;
-            }
-
-            if (triggerType == IncomingHitVfxTriggerType.OnAnimationEventHit &&
-                _suppressNextIncomingHitAnimationEventVfx)
-            {
-                _suppressNextIncomingHitAnimationEventVfx = false;
-                return;
-            }
-
-            if (_characterBase is Player)
-            {
-                TryPlayPlayerIncomingHitVfx(triggerType);
-                return;
-            }
-
-            if (_characterBase is Monster)
-            {
-                TryPlayMonsterIncomingHitVfx(triggerType);
-            }
+            _incomingHitVfxController.TryPlay(triggerType);
         }
 
         /// <summary>
-        /// 플레이어 설정에 저장된 단일 피격 VFX 재생을 시도합니다.
+        /// 확정 데미지에 설정된 방향성 카메라 흔들림을 재생합니다.
         /// </summary>
-        /// <param name="triggerType">현재 호출 경로의 트리거 타입입니다.</param>
-        /// <remarks>
-        /// 플레이어 ScriptableObject의 기존 직렬화 타입을 유지하기 위해 런타임에서 공통 설정 타입으로 변환합니다.
-        /// </remarks>
-        private void TryPlayPlayerIncomingHitVfx(IncomingHitVfxTriggerType triggerType)
-        {
-            if (_playerSettings == null && AddressableLoaderSettings.Instance != null)
-            {
-                _playerSettings = AddressableLoaderSettings.Instance.playerSettings;
-            }
-
-            if (_playerSettings == null)
-            {
-                return;
-            }
-
-            IncomingHitVfxSettings settings = IncomingHitVfxSettings.FromPlayerSettings(_playerSettings.incomingHitVfx);
-            TryPlayIncomingHitVfxSettings(settings, PlayerIncomingHitVfxCooldownKey, triggerType);
-        }
-
-        /// <summary>
-        /// 몬스터 설정에 등록된 피격 VFX 목록을 순회하며 재생을 시도합니다.
-        /// </summary>
-        /// <param name="triggerType">현재 호출 경로의 트리거 타입입니다.</param>
-        /// <remarks>
-        /// 각 VFX 항목은 독립된 최소 재생 간격을 가집니다.
-        /// 따라서 한 VFX가 쿨타임 중이어도 다른 VFX는 조건이 맞으면 재생될 수 있습니다.
-        /// </remarks>
-        private void TryPlayMonsterIncomingHitVfx(IncomingHitVfxTriggerType triggerType)
-        {
-            if (_monsterSettings == null && AddressableLoaderSettings.Instance != null)
-            {
-                _monsterSettings = AddressableLoaderSettings.Instance.monsterSettings;
-            }
-
-            if (_monsterSettings == null || _monsterSettings.incomingHitVfxList == null)
-            {
-                return;
-            }
-
-            for (int i = 0; i < _monsterSettings.incomingHitVfxList.Count; i++)
-            {
-                TryPlayIncomingHitVfxSettings(_monsterSettings.incomingHitVfxList[i], i, triggerType);
-            }
-        }
-
-        /// <summary>
-        /// 피격 VFX 설정 1개에 대한 조건을 검사하고 실제 VFX 생성을 요청합니다.
-        /// </summary>
-        /// <param name="settings">검사할 피격 VFX 설정입니다.</param>
-        /// <param name="cooldownKey">최소 재생 간격을 구분하기 위한 키입니다.</param>
-        /// <param name="triggerType">현재 호출 경로의 트리거 타입입니다.</param>
-        /// <returns>VFX 생성 요청을 보냈으면 <see langword="true"/>를 반환합니다.</returns>
-        private bool TryPlayIncomingHitVfxSettings(
-            IncomingHitVfxSettings settings,
-            int cooldownKey,
-            IncomingHitVfxTriggerType triggerType)
-        {
-            if (!settings.enabled)
-            {
-                return false;
-            }
-
-            StruckAnimationEventVfx vfxPayload = settings.GetRuntimeVfx();
-            if (vfxPayload == null || vfxPayload.Uid <= 0)
-            {
-                return false;
-            }
-
-            // 설정된 트리거 정책과 현재 호출 경로가 다르면 재생하지 않습니다.
-            if (!IsIncomingHitVfxTriggerMatched(settings.triggerType, triggerType))
-            {
-                return false;
-            }
-
-            if (settings.minIntervalSeconds > 0f &&
-                _nextIncomingHitVfxPlayableTimesByKey.TryGetValue(cooldownKey, out float nextPlayableTime) &&
-                Time.time < nextPlayableTime)
-            {
-                return false;
-            }
-
-            SceneGame scene = SceneGame.Instance;
-            if (scene == null || scene.VfxManager == null)
-            {
-                return false;
-            }
-
-            // AnimationEvent VFX와 동일한 payload 변환 경로를 사용해 위치/Flip/Offset 정책 중복을 제거합니다.
-            VfxSpawnRequest spawnRequest = VfxSpawnRequest.FromAnimationEvent(vfxPayload, _characterBase.gameObject);
-            spawnRequest.Owner = _characterBase;
-            spawnRequest.Target = _characterBase;
-            spawnRequest.OwnerGameObject = _characterBase.gameObject;
-            spawnRequest.ForceOneShot = !IncomingHitVfxSettings.IsFollowVfx(vfxPayload);
-            ApplyIncomingHitVfxFollowMode(ref spawnRequest, settings, vfxPayload);
-
-            scene.VfxManager.CreateVfx(spawnRequest);
-
-            if (settings.minIntervalSeconds > 0f)
-            {
-                _nextIncomingHitVfxPlayableTimesByKey[cooldownKey] = Time.time + settings.minIntervalSeconds;
-            }
-
-            return true;
-        }
-
-        /// <summary>
-        /// 피격 VFX 설정에 지정된 Follow 모드와 Follow 위치 기준 정책을 생성 요청에 반영합니다.
-        /// </summary>
-        /// <param name="spawnRequest">수정할 VFX 생성 요청입니다.</param>
-        /// <param name="settings">현재 피격 VFX 설정입니다.</param>
-        /// <param name="vfxPayload">실제 재생에 사용할 VFX payload입니다.</param>
-        /// <remarks>
-        /// <see cref="IncomingHitVfxSettings.followMode"/>가 지정되어 있으면 해당 값을 우선 사용하고,
-        /// 값이 없으면 기존 <see cref="AnimationEventVfxFlipPolicy.EventCharacterFollow"/> 정책을 호환 처리합니다.
-        /// Follow 위치 기준은 피격 설정 값을 우선 사용하고, 기본값이면 VFX payload 값을 사용합니다.
-        /// </remarks>
-        private void ApplyIncomingHitVfxFollowMode(
-            ref VfxSpawnRequest spawnRequest,
-            IncomingHitVfxSettings settings,
-            StruckAnimationEventVfx vfxPayload)
-        {
-            VfxConstants.FollowMode resolvedFollowMode = settings.GetRuntimeFollowMode(vfxPayload);
-            if (resolvedFollowMode == VfxConstants.FollowMode.None)
-            {
-                spawnRequest.ForceOneShot = true;
-                return;
-            }
-
-            spawnRequest.FollowTarget = _characterBase;
-            spawnRequest.FollowModeOverride = resolvedFollowMode;
-            spawnRequest.FollowAnchorModeOverride = settings.GetRuntimeFollowAnchorMode(vfxPayload);
-            spawnRequest.ForceOneShot = false;
-        }
-
-        /// <summary>
-        /// 설정된 피격 VFX 트리거 정책과 현재 호출 트리거의 일치 여부를 반환합니다.
-        /// </summary>
-        /// <param name="configuredTriggerType">설정 자산에 저장된 트리거 정책입니다.</param>
-        /// <param name="currentTriggerType">현재 실행 중인 트리거 경로입니다.</param>
-        /// <returns>정책이 현재 트리거를 허용하면 <see langword="true"/>를 반환합니다.</returns>
-        private static bool IsIncomingHitVfxTriggerMatched(
-            IncomingHitVfxTriggerType configuredTriggerType,
-            IncomingHitVfxTriggerType currentTriggerType)
-        {
-            switch (configuredTriggerType)
-            {
-                case IncomingHitVfxTriggerType.OnDamageConfirmed:
-                    return currentTriggerType == IncomingHitVfxTriggerType.OnDamageConfirmed;
-                case IncomingHitVfxTriggerType.OnAnimationEventHit:
-                    return currentTriggerType == IncomingHitVfxTriggerType.OnAnimationEventHit;
-                case IncomingHitVfxTriggerType.Both:
-                    return currentTriggerType == IncomingHitVfxTriggerType.OnDamageConfirmed
-                           || currentTriggerType == IncomingHitVfxTriggerType.OnAnimationEventHit;
-                default:
-                    // 신규 enum 값이 추가되기 전 구버전 데이터와의 호환을 위해 기본 경로를 유지합니다.
-                    return currentTriggerType == IncomingHitVfxTriggerType.OnDamageConfirmed;
-            }
-        }
-
+        /// <param name="metadataDamage">카메라 흔들림 설정과 공격자 정보를 가진 데미지 메타데이터입니다.</param>
         private void TryPlayDamageCameraShake(MetadataDamage metadataDamage)
         {
             if (metadataDamage == null)
@@ -1547,14 +1051,19 @@ namespace GGemCo2DCore
             cameraManager.PlayShake(request);
         }
 
+        /// <summary>
+        /// 현재 캐릭터의 슈퍼아머 활성 상태를 변경합니다.
+        /// </summary>
+        /// <param name="enable">슈퍼아머를 활성화하려면 <see langword="true"/>입니다.</param>
         public void EnableSuperArmor(bool enable)
         {
             _controllerMonsterSuperArmor.EnableSuperArmor(enable);
         }
+
         /// <summary>
-        /// 슈퍼 아머가 0이 되었을 때 한번 호출 
+        /// 슈퍼아머가 소진되었을 때 그로기 Affect를 적용합니다.
         /// </summary>
-        /// <param name="hitReactionType"></param>
+        /// <param name="hitReactionType">슈퍼아머를 소진시킨 피격 리액션 타입입니다.</param>
         private void OnSuperArmorBreak(CharacterConstants.HitReactionType hitReactionType)
         {
             // GcLogger.LogError($"그로기 상태");
@@ -1566,49 +1075,5 @@ namespace GGemCo2DCore
             _characterBase.AddAffect(_monsterGroggyAffectUid, _monsterGroggyAffectDuration);
         }
         
-        private void NotifyIncomingHitActionCancelers(IncomingHitCancelReason reason)
-        {
-            if (_characterBase == null)
-                return;
-
-            var behaviours = _characterBase.GetComponents<MonoBehaviour>();
-            if (behaviours == null || behaviours.Length == 0)
-                return;
-
-            for (int i = 0; i < behaviours.Length; i++)
-            {
-                if (behaviours[i] is IIncomingHitActionCanceler canceler)
-                {
-                    canceler.CancelActionsOnIncomingHit(reason);
-                }
-            }
-        }
-
-        /// <summary>
-        /// 피격 계산으로 도출된 최종 HP에 대해 외부 보정기를 순차 적용합니다.
-        /// </summary>
-        /// <param name="metadataDamage">현재 피격 메타데이터입니다.</param>
-        /// <param name="proposedHp">Core 계산 기준 최종 HP입니다.</param>
-        /// <returns>보정이 반영된 최종 HP입니다.</returns>
-        private long ResolveFinalHpOnIncomingHit(MetadataDamage metadataDamage, long proposedHp)
-        {
-            if (_characterBase == null)
-                return proposedHp;
-
-            long resolvedHp = proposedHp;
-            var behaviours = _characterBase.GetComponents<MonoBehaviour>();
-            if (behaviours == null || behaviours.Length == 0)
-                return resolvedHp;
-
-            for (int i = 0; i < behaviours.Length; i++)
-            {
-                if (behaviours[i] is IIncomingHitFinalHpResolver resolver)
-                {
-                    resolvedHp = resolver.ResolveFinalHpOnIncomingHit(resolvedHp, metadataDamage);
-                }
-            }
-
-            return resolvedHp;
-        }
     }
 }
