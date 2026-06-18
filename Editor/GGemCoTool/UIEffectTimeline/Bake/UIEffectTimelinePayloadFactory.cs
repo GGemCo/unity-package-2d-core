@@ -56,6 +56,11 @@ namespace GGemCo2DCoreEditor
             return payload;
         }
 
+        /// <summary>
+        /// Move Clip 필드를 런타임 Move Payload로 복사합니다.
+        /// </summary>
+        /// <param name="clip">베이크할 Move Clip입니다.</param>
+        /// <returns>생성된 Move Payload입니다.</returns>
         private static UIEffectMovePayload CreateMovePayload(UIEffectMoveClip clip)
         {
             var payload = ScriptableObject.CreateInstance<UIEffectMovePayload>();
@@ -64,7 +69,7 @@ namespace GGemCo2DCoreEditor
             payload.fromOffset = clip.fromOffset;
             payload.toOffset = clip.toOffset;
             payload.useCurrentPositionAsFrom = clip.useCurrentPositionAsFrom;
-            payload.relativeToInitialPosition = clip.relativeToInitialPosition;
+            payload.destinationPolicy = clip.destinationPolicy;
             payload.snapToTargetOnComplete = clip.snapToTargetOnComplete;
             return payload;
         }
