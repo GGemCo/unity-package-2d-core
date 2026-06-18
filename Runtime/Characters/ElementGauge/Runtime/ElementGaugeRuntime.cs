@@ -12,18 +12,23 @@ namespace GGemCo2DCore
         public float LastAccumulatedTime = float.MinValue;
         public float DecayElapsed;
         public bool IsThresholdReached;
+        public bool IsRepeatedEventConsumed;
 
         /// <summary>
-        /// 게이지 누적값과 임계 상태를 초기화합니다.
+        /// 게이지 누적값, 임계 상태, 반복 이벤트 소비 상태를 초기화합니다.
         /// </summary>
         /// <returns>초기화 전 표시 값 또는 임계 상태가 남아 있었으면 <see langword="true"/>입니다.</returns>
         public bool Reset()
         {
-            bool changed = !Mathf.Approximately(CurrentValue, 0f) || !Mathf.Approximately(DecayElapsed, 0f) || IsThresholdReached;
+            bool changed = !Mathf.Approximately(CurrentValue, 0f) ||
+                           !Mathf.Approximately(DecayElapsed, 0f) ||
+                           IsThresholdReached ||
+                           IsRepeatedEventConsumed;
             CurrentValue = 0f;
             LastAccumulatedTime = float.MinValue;
             DecayElapsed = 0f;
             IsThresholdReached = false;
+            IsRepeatedEventConsumed = false;
             return changed;
         }
     }

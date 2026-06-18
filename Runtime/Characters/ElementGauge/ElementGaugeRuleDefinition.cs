@@ -5,6 +5,22 @@ using UnityEngine;
 namespace GGemCo2DCore
 {
     /// <summary>
+    /// 속성 게이지가 임계값에 도달한 뒤 값을 유지하는 방식을 정의합니다.
+    /// </summary>
+    public enum ElementGaugeThresholdPolicy
+    {
+        /// <summary>
+        /// 임계 도달 이후에도 기존 감쇠 규칙을 적용합니다.
+        /// </summary>
+        DecayAfterThreshold = 0,
+
+        /// <summary>
+        /// 임계값을 유지하고 동일 속성 입력 이벤트가 한 번 발생할 때까지 감쇠하지 않습니다.
+        /// </summary>
+        HoldUntilReset = 1,
+    }
+
+    /// <summary>
     /// 속성 데미지 누적으로 채워지는 게이지 규칙입니다.
     /// </summary>
     /// <remarks>
@@ -33,6 +49,9 @@ namespace GGemCo2DCore
         [Tooltip("감쇠 Tick마다 줄어드는 비율(%)입니다. 예: 0.5 = 0.5%")]
         public float decayPercentPerTick = 0.5f;
 
+        [Tooltip("임계값 도달 이후 게이지를 감쇠할지, 명시적으로 초기화할 때까지 최대값으로 유지할지 결정합니다.")]
+        public ElementGaugeThresholdPolicy thresholdPolicy = ElementGaugeThresholdPolicy.DecayAfterThreshold;
+
         /// <summary>
         /// 런타임에서 사용할 복사본을 생성합니다.
         /// </summary>
@@ -46,6 +65,7 @@ namespace GGemCo2DCore
                 decayDelaySeconds = decayDelaySeconds,
                 decayTickSeconds = decayTickSeconds,
                 decayPercentPerTick = decayPercentPerTick,
+                thresholdPolicy = thresholdPolicy,
             };
         }
 
@@ -78,6 +98,7 @@ namespace GGemCo2DCore
                 decayDelaySeconds = 2f,
                 decayTickSeconds = 0.1f,
                 decayPercentPerTick = 0.5f,
+                thresholdPolicy = ElementGaugeThresholdPolicy.DecayAfterThreshold,
             };
         }
     }

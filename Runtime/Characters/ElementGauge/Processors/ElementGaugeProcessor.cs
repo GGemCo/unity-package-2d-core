@@ -35,21 +35,31 @@ namespace GGemCo2DCore
             float maxValue = Mathf.Max(1f, rule.gaugeMax);
             bool wasThresholdReached = gaugeState.IsThresholdReached;
 
-            gaugeState.LastAccumulatedTime = now;
-            gaugeState.DecayElapsed = 0f;
-
             if (wasThresholdReached)
             {
                 gaugeState.CurrentValue = maxValue;
+
+                if (gaugeState.IsRepeatedEventConsumed)
+                    return ElementGaugeApplyResult.None;
+
+                // 핸들러 실행 중 동일 속성 피해가 재진입해도 이벤트가 중복 발행되지 않도록
+                // 결과를 반환하기 전에 현재 임계 사이클의 반복 이벤트를 먼저 소비 처리합니다.
+                gaugeState.IsRepeatedEventConsumed = true;
                 return new ElementGaugeApplyResult(false, false, true, damageType, BuildSnapshot(rule, gaugeState));
             }
+
+            gaugeState.LastAccumulatedTime = now;
+            gaugeState.DecayElapsed = 0f;
 
             float previousValue = gaugeState.CurrentValue;
             gaugeState.CurrentValue = Mathf.Clamp(gaugeState.CurrentValue + gaugeAmount, 0f, maxValue);
 
             bool reachedNow = !wasThresholdReached && gaugeState.CurrentValue >= maxValue;
             if (reachedNow)
+            {
                 gaugeState.IsThresholdReached = true;
+                gaugeState.IsRepeatedEventConsumed = false;
+            }
 
             bool changed = !Mathf.Approximately(previousValue, gaugeState.CurrentValue) || reachedNow;
             return new ElementGaugeApplyResult(changed, reachedNow, false, damageType, BuildSnapshot(rule, gaugeState));
@@ -78,6 +88,16 @@ namespace GGemCo2DCore
                 if (!runtime.TryGetGaugeState(pair.Key, out RuntimeGaugeState state) || state == null || state.CurrentValue <= 0f)
                     continue;
 
+                if (state.IsThresholdReached &&
+                    rule.thresholdPolicy == ElementGaugeThresholdPolicy.HoldUntilReset)
+                {
+                    // 임계 유지 정책에서는 프로젝트 핸들러가 ResetGauge를 호출할 때까지
+                    // 최대값과 임계 상태를 고정하며 감쇠 시간을 누적하지 않습니다.
+                    state.CurrentValue = Mathf.Max(1f, rule.gaugeMax);
+                    state.DecayElapsed = 0f;
+                    continue;
+                }
+
                 if (now - state.LastAccumulatedTime < Mathf.Max(0f, rule.decayDelaySeconds))
                     continue;
 
@@ -100,6 +120,7 @@ namespace GGemCo2DCore
                     if (state.IsThresholdReached && state.CurrentValue < Mathf.Max(1f, rule.gaugeMax))
                     {
                         state.IsThresholdReached = false;
+                        state.IsRepeatedEventConsumed = false;
                         gaugeChanged = true;
                     }
 
@@ -108,6 +129,7 @@ namespace GGemCo2DCore
                         state.CurrentValue = 0f;
                         state.DecayElapsed = 0f;
                         state.IsThresholdReached = false;
+                        state.IsRepeatedEventConsumed = false;
                         break;
                     }
                 }

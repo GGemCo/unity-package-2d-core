@@ -107,7 +107,7 @@ namespace GGemCo2DCore
         public bool ThresholdReached { get; }
 
         /// <summary>
-        /// 이미 임계 상태인 속성에 같은 속성 데미지가 다시 들어왔는지 여부입니다.
+        /// 이미 임계 상태인 속성에 같은 속성 수치가 다시 들어와 이번 임계 사이클의 반복 이벤트가 발생했는지 여부입니다.
         /// </summary>
         public bool RepeatedElementDamage { get; }
 

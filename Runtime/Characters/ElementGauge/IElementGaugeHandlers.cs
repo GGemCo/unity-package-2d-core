@@ -17,12 +17,12 @@ namespace GGemCo2DCore
     }
 
     /// <summary>
-    /// 이미 임계 상태인 속성에 같은 속성 데미지가 다시 들어왔을 때 호출되는 확장 핸들러입니다.
+    /// 이미 임계 상태인 속성에 같은 속성 수치가 다시 들어왔을 때 임계 사이클당 한 번 호출되는 확장 핸들러입니다.
     /// </summary>
     public interface IElementGaugeRepeatedHitHandler
     {
         /// <summary>
-        /// 임계 상태에서 같은 속성 데미지를 다시 받았을 때 호출됩니다.
+        /// 임계 상태에서 같은 속성 수치를 처음 다시 받았을 때 호출됩니다.
         /// </summary>
         /// <param name="snapshot">현재 게이지 스냅샷입니다.</param>
         /// <param name="context">누적 원인과 대상 정보를 담은 컨텍스트입니다.</param>
@@ -81,7 +81,7 @@ namespace GGemCo2DCore
     }
 
     /// <summary>
-    /// 아무 동작도 하지 않는 기본 임계 상태 재피격 핸들러입니다.
+    /// 아무 동작도 하지 않는 기본 임계 상태 반복 입력 핸들러입니다.
     /// </summary>
     public sealed class NullElementGaugeRepeatedHitHandler : IElementGaugeRepeatedHitHandler
     {

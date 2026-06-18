@@ -53,7 +53,7 @@ namespace GGemCo2DCore
         public event Action<ElementGaugeSnapshot, ElementGaugeAccumulationContext> ThresholdReached;
 
         /// <summary>
-        /// 이미 임계 상태인 속성에 같은 속성 데미지가 다시 들어왔을 때 발생합니다.
+        /// 이미 임계 상태인 속성에 같은 속성 수치가 다시 들어왔을 때 임계 사이클당 한 번 발생합니다.
         /// </summary>
         public event Action<ElementGaugeSnapshot, ElementGaugeAccumulationContext> RepeatedElementDamageReceived;
 
