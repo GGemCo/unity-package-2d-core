@@ -109,7 +109,12 @@ namespace GGemCo2DCore
                 if (uid <= 0) continue;
                 var info = _tableMonster.GetDataByUid(uid);
                 if (info.Uid <= 0 || info.AnimationUid <= 0) continue;
-                SpawnMonster(uid, monsterData, mapTileCommon, currentMapTableData);
+                SpawnMonster(
+                    uid,
+                    monsterData,
+                    mapTileCommon,
+                    currentMapTableData,
+                    MonsterSpawnRegistrationPolicy.NormalRespawn);
             }
         }
 
@@ -117,65 +122,148 @@ namespace GGemCo2DCore
         /// 단일 몬스터를 생성하거나 풀에서 가져와 현재 맵 정책을 적용합니다.
         /// </summary>
         /// <param name="monsterUid">생성할 몬스터 UID입니다.</param>
-        /// <param name="monsterData">몬스터 리젠 데이터입니다.</param>
+        /// <param name="monsterData">몬스터 배치 데이터입니다.</param>
         /// <param name="mapTileCommon">몬스터를 배치할 맵 루트입니다.</param>
         /// <param name="currentMapTableData">현재 맵 테이블 데이터입니다.</param>
+        /// <param name="registrationPolicy">생성된 몬스터를 리젠 목록에 등록할지 결정하는 정책입니다.</param>
         /// <param name="forcedVid">리스폰처럼 기존 VID를 유지해야 할 때 사용할 VID입니다.</param>
-        private void SpawnMonster(
+        /// <returns>생성되었거나 풀에서 재사용된 몬스터 컴포넌트입니다. 생성에 실패하면 null입니다.</returns>
+        public Monster SpawnMonster(
             int monsterUid,
             CharacterRegenData monsterData,
             MapTileCommon mapTileCommon,
             StruckTableMap currentMapTableData,
+            MonsterSpawnRegistrationPolicy registrationPolicy = MonsterSpawnRegistrationPolicy.NormalRespawn,
             int forcedVid = 0)
         {
+            if (monsterUid <= 0 || monsterData == null || mapTileCommon == null)
+            {
+                return null;
+            }
+
             GameObject monster = SceneGame.Instance.CharacterManager.RentMonster(monsterUid, monsterData);
-            if (!monster) return;
+            if (!monster) return null;
             monster.transform.SetParent(mapTileCommon.gameObject.transform, worldPositionStays: true);
 
             Monster myMonsterScript = monster.GetComponent<Monster>();
             if (myMonsterScript == null)
-                return;
+            {
+                return null;
+            }
 
-            int spawnVid = forcedVid > 0 ? forcedVid : ++_characterVid;
-            if (spawnVid > _characterVid)
-                _characterVid = spawnVid;
-
+            int spawnVid = ResolveSpawnVid(forcedVid);
             myMonsterScript.vid = spawnVid;
-            ApplyMapVisibilityPolicy(monster, monsterData);
-            ApplyMonsterMapBoundaryOverrides(myMonsterScript, currentMapTableData);
-            mapTileCommon.AddMonster(spawnVid, monster);
-            _monsterRegenDataByVid[spawnVid] = monsterData;
-            _monsterRespawnPending.Remove(spawnVid);
+            ApplySpawnedMonsterState(monster, myMonsterScript, monsterData, currentMapTableData);
+            RegisterSpawnedMonster(spawnVid, monster, monsterData, mapTileCommon, registrationPolicy);
 
             _ = CharacterSpawnHooks.InvokeAsync(myMonsterScript);
+            CreatePatrolObjectIfNeeded(monster, myMonsterScript, monsterData, mapTileCommon);
+            return myMonsterScript;
+        }
 
-            if (monsterData.patrolData != null)
+        /// <summary>
+        /// 강제 VID가 있으면 해당 값을 사용하고, 없으면 맵 캐릭터 VID를 새로 발급합니다.
+        /// </summary>
+        /// <param name="forcedVid">외부에서 유지하고 싶은 VID입니다.</param>
+        /// <returns>이번 스폰에 사용할 VID입니다.</returns>
+        private int ResolveSpawnVid(int forcedVid)
+        {
+            int spawnVid = forcedVid > 0 ? forcedVid : ++_characterVid;
+            if (spawnVid > _characterVid)
             {
-                var patrolData = monsterData.patrolData;
-                GameObject prefabPatrol =
-                    AddressableLoaderPrefabCommon.Instance.GetPreLoadGamePrefabByName(ConfigAddressableMap.ObjectPatrol.Key);
-                if (prefabPatrol)
-                {
-                    GameObject warp = Object.Instantiate(prefabPatrol,
-                        new Vector3(patrolData.x, patrolData.y, patrolData.z), Quaternion.identity,
-                        mapTileCommon.gameObject.transform);
+                _characterVid = spawnVid;
+            }
 
-                    ObjectPatrol objectPatrol = warp.GetComponent<ObjectPatrol>();
-                    if (objectPatrol)
-                    {
-                        objectPatrol.patrolData = patrolData;
-                        objectPatrol.SetParentMonster(monster);
-                        myMonsterScript.SetPatrolObject(objectPatrol.gameObject);
-                    }
-                    else
-                    {
-                        GcLogger.LogError($"{nameof(ObjectPatrol)}이 없습니다.");
-                    }
+            return spawnVid;
+        }
+
+        /// <summary>
+        /// 생성된 몬스터에 맵 표시 정책과 이동 경계 정책을 적용합니다.
+        /// </summary>
+        /// <param name="monsterObject">생성되었거나 풀에서 재사용된 몬스터 오브젝트입니다.</param>
+        /// <param name="monster">생성된 몬스터 컴포넌트입니다.</param>
+        /// <param name="monsterData">몬스터 배치 데이터입니다.</param>
+        /// <param name="currentMapTableData">현재 맵 테이블 데이터입니다.</param>
+        private static void ApplySpawnedMonsterState(
+            GameObject monsterObject,
+            Monster monster,
+            CharacterRegenData monsterData,
+            StruckTableMap currentMapTableData)
+        {
+            ApplyMapVisibilityPolicy(monsterObject, monsterData);
+            ApplyMonsterMapBoundaryOverrides(monster, currentMapTableData);
+        }
+
+        /// <summary>
+        /// 생성된 몬스터를 현재 맵과 리젠 목록에 등록합니다.
+        /// </summary>
+        /// <param name="spawnVid">생성된 몬스터 VID입니다.</param>
+        /// <param name="monsterObject">생성되었거나 풀에서 재사용된 몬스터 오브젝트입니다.</param>
+        /// <param name="monsterData">몬스터 배치 데이터입니다.</param>
+        /// <param name="mapTileCommon">몬스터가 배치된 맵 루트입니다.</param>
+        /// <param name="registrationPolicy">생성된 몬스터를 리젠 목록에 등록할지 결정하는 정책입니다.</param>
+        private void RegisterSpawnedMonster(
+            int spawnVid,
+            GameObject monsterObject,
+            CharacterRegenData monsterData,
+            MapTileCommon mapTileCommon,
+            MonsterSpawnRegistrationPolicy registrationPolicy)
+        {
+            mapTileCommon.AddMonster(spawnVid, monsterObject);
+            _monsterRespawnPending.Remove(spawnVid);
+
+            if (registrationPolicy == MonsterSpawnRegistrationPolicy.NormalRespawn)
+            {
+                _monsterRegenDataByVid[spawnVid] = monsterData;
+                return;
+            }
+
+            // 웨이브 또는 일회성 몬스터는 사망 후 기본 개별 리젠 코루틴에 들어가지 않도록 등록 정보를 제거합니다.
+            _monsterRegenDataByVid.Remove(spawnVid);
+        }
+
+        /// <summary>
+        /// 리젠 데이터에 순찰 정보가 있으면 패트롤 오브젝트를 생성하고 몬스터에 연결합니다.
+        /// </summary>
+        /// <param name="monsterObject">생성되었거나 풀에서 재사용된 몬스터 오브젝트입니다.</param>
+        /// <param name="monster">생성된 몬스터 컴포넌트입니다.</param>
+        /// <param name="monsterData">몬스터 배치 데이터입니다.</param>
+        /// <param name="mapTileCommon">패트롤 오브젝트를 배치할 맵 루트입니다.</param>
+        private static void CreatePatrolObjectIfNeeded(
+            GameObject monsterObject,
+            Monster monster,
+            CharacterRegenData monsterData,
+            MapTileCommon mapTileCommon)
+        {
+            if (monsterData.patrolData == null)
+            {
+                return;
+            }
+
+            var patrolData = monsterData.patrolData;
+            GameObject prefabPatrol =
+                AddressableLoaderPrefabCommon.Instance.GetPreLoadGamePrefabByName(ConfigAddressableMap.ObjectPatrol.Key);
+            if (prefabPatrol)
+            {
+                GameObject warp = Object.Instantiate(prefabPatrol,
+                    new Vector3(patrolData.x, patrolData.y, patrolData.z), Quaternion.identity,
+                    mapTileCommon.gameObject.transform);
+
+                ObjectPatrol objectPatrol = warp.GetComponent<ObjectPatrol>();
+                if (objectPatrol)
+                {
+                    objectPatrol.patrolData = patrolData;
+                    objectPatrol.SetParentMonster(monsterObject);
+                    monster.SetPatrolObject(objectPatrol.gameObject);
                 }
                 else
                 {
-                    GcLogger.LogError($"패트롤 프리팹이 없습니다. path: {ConfigAddressableMap.ObjectPatrol.Path}");
+                    GcLogger.LogError($"{nameof(ObjectPatrol)}이 없습니다.");
                 }
+            }
+            else
+            {
+                GcLogger.LogError($"패트롤 프리팹이 없습니다. path: {ConfigAddressableMap.ObjectPatrol.Path}");
             }
         }
 
@@ -233,7 +321,13 @@ namespace GGemCo2DCore
             if (uid <= 0) yield break;
             if (mapTileCommon == null) yield break;
 
-            SpawnMonster(uid, monsterData, mapTileCommon, _mapManager?.GetCurrentMapTableData(), monsterVid);
+            SpawnMonster(
+                uid,
+                monsterData,
+                mapTileCommon,
+                _mapManager?.GetCurrentMapTableData(),
+                MonsterSpawnRegistrationPolicy.NormalRespawn,
+                monsterVid);
         }
         #endregion
 
