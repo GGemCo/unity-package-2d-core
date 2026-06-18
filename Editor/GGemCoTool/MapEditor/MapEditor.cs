@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace GGemCo2DCoreEditor
 {
-    public sealed class MapEditor : DefaultEditorWindow
+    public sealed partial class MapEditor : DefaultEditorWindow
     {
         private const string Title = "Map 배치툴";
 
@@ -27,6 +27,7 @@ namespace GGemCo2DCoreEditor
         private readonly NpcExporter _npcExporter = new NpcExporter();
         private readonly MonsterExporter _monsterExporter = new MonsterExporter();
         private readonly WarpExporter _warpExporter = new WarpExporter();
+        private readonly WaveExporter _waveExporter = new WaveExporter();
         // private readonly PatrolExporter _patrolExporter = new PatrolExporter();
 
         // ---- UI State ----
@@ -181,6 +182,7 @@ namespace GGemCo2DCoreEditor
             _npcExporter.Initialize(_tableNpc, _tableAnimation, defaultMap, _characterManager);
             _monsterExporter.Initialize(_tableMonster, _tableAnimation, defaultMap, _characterManager);
             _warpExporter.Initialize(defaultMap);
+            _waveExporter.Initialize(_tableMonster, _tableAnimation, defaultMap);
             // _patrolExporter.Initialize(defaultMap);
         }
 
@@ -262,6 +264,8 @@ namespace GGemCo2DCoreEditor
                 DrawMonsterSection();
                 GUILayout.Space(12);
                 DrawMonsterEditSection();
+                GUILayout.Space(12);
+                DrawWaveSection();
                 GUILayout.Space(12);
                 DrawWarpSection();
             }
@@ -1008,7 +1012,7 @@ namespace GGemCo2DCoreEditor
         /// </summary>
         private void DrawWarpSection()
         {
-            _foldWarp = EditorGUILayout.Foldout(_foldWarp, "6) 워프 추가", true);
+            _foldWarp = EditorGUILayout.Foldout(_foldWarp, "7) 워프 추가", true);
             if (!_foldWarp) return;
 
             using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
@@ -1075,6 +1079,7 @@ namespace GGemCo2DCoreEditor
             _npcExporter.LoadNpcData(ConfigAddressableMap.GetAssetPathRegenNpc(mapData.FolderName));
             _monsterExporter.LoadMonsterData(ConfigAddressableMap.GetAssetPathRegenMonster(mapData.FolderName));
             _warpExporter.LoadWarpData(ConfigAddressableMap.GetAssetPathWarp(mapData.FolderName));
+            _waveExporter.LoadWaveData(ConfigAddressableMap.GetAssetPathWaveSpawn(mapData.FolderName));
             // _patrolExporter.LoadJsonData(ConfigAddressableMap.GetAssetPathPatrol(mapData.FolderName));
 
             return true;
@@ -1108,6 +1113,11 @@ namespace GGemCo2DCoreEditor
             _npcExporter.ExportNpcDataToJson(jsonFolderPath, ConfigAddressableMap.GetFileName(MapAssetType.RegenNpcJson), mapUid, mapInfo);
             _monsterExporter.ExportMonsterDataToJson(jsonFolderPath, ConfigAddressableMap.GetFileName(MapAssetType.RegenMonsterJson), mapUid, mapInfo);
             _warpExporter.ExportWarpDataToJson(jsonFolderPath, ConfigAddressableMap.GetFileName(MapAssetType.WarpJson), mapUid);
+            _waveExporter.ExportWaveDataToJson(
+                jsonFolderPath,
+                ConfigAddressableMap.GetFileName(MapAssetType.WaveSpawnJson),
+                mapUid,
+                mapInfo);
             // _patrolExporter.ExportPatrolDataToJson(jsonFolderPath, ConfigAddressableMap.GetFileName(MapAssetType.PatrolJson), mapUid);
 
             AssetDatabase.Refresh();
@@ -1215,6 +1225,8 @@ namespace GGemCo2DCoreEditor
             _npcExporter.SetDefaultMap(_defaultMap);
             _monsterExporter.SetDefaultMap(_defaultMap);
             _warpExporter.SetDefaultMap(_defaultMap);
+            _waveExporter.SetDefaultMap(_defaultMap);
+            ResetWaveEditorSelection();
             // _patrolExporter.SetDefaultMap(_defaultMap);
         }
 
