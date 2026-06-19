@@ -311,13 +311,6 @@ namespace GGemCo2DCoreEditor
 
                 TableRowEditorUtility.DrawResult result = TableRowEditorUtility.DrawObjectEditor(_editingResource, ResourceRowEditorFields, NormalizeResourceFieldValue);
 
-                EditorGUILayout.Space(4);
-                bool useFadeDurationOverride = EditorGUILayout.Toggle(
-                    "FadeDuration Override",
-                    _editingResource.HasFadeDurationOverride());
-                if (useFadeDurationOverride != _editingResource.HasFadeDurationOverride())
-                    _editingResource.SetFadeDurationOverride(useFadeDurationOverride);
-
                 EditorGUILayout.LabelField("Addressables Key", _editingResource.BuildAddressKey());
 
                 using (new EditorGUILayout.HorizontalScope())
@@ -780,9 +773,6 @@ namespace GGemCo2DCoreEditor
         private void NormalizeResourceFieldValue(object target, string memberName)
         {
             StruckTableSoundResource row = target as StruckTableSoundResource;
-            if (row != null && memberName == nameof(StruckTableSoundResource.FadeDuration))
-                row.SetFadeDurationOverride(true);
-
             NormalizeResourceRow(row);
         }
 
@@ -1143,9 +1133,7 @@ namespace GGemCo2DCoreEditor
                     "PitchMin" => MathHelper.FormatFloat(row.PitchMin),
                     "PitchMax" => MathHelper.FormatFloat(row.PitchMax),
                     "Loop" => MathHelper.FormatBool(row.Loop),
-                    "FadeDuration" => row.HasFadeDurationOverride()
-                        ? MathHelper.FormatFloat(row.FadeDuration)
-                        : string.Empty,
+                    "FadeDuration" => MathHelper.FormatFloat(row.FadeDuration),
                     "UseIntroScene" => MathHelper.FormatBool(row.UseIntroScene),
                     "PreLoad" => MathHelper.FormatBool(row.PreLoad),
                     _ => string.Empty,
@@ -1392,7 +1380,6 @@ namespace GGemCo2DCoreEditor
             destination.PitchMax = source.PitchMax;
             destination.Loop = source.Loop;
             destination.FadeDuration = source.FadeDuration;
-            destination.SetFadeDurationOverride(source.HasFadeDurationOverride());
             destination.UseIntroScene = source.UseIntroScene;
             destination.PreLoad = source.PreLoad;
         }

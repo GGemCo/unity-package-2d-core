@@ -50,7 +50,8 @@ namespace GGemCo2DCore
             TableRowReader reader = ReadRow(data);
             string roleValue = reader.String("Role", string.Empty);
             string fadeDurationValue = reader.String("FadeDurationOverride", string.Empty);
-            bool useFadeDurationOverride = !string.IsNullOrWhiteSpace(fadeDurationValue);
+            float fadeDurationOverride = Math.Max(0f, MathHelper.ParseFloat(fadeDurationValue));
+            bool useFadeDurationOverride = fadeDurationOverride > 0f;
 
             return new StruckTableMapSound
             {
@@ -63,9 +64,7 @@ namespace GGemCo2DCore
                     : EnumHelper.ConvertEnum<MapSoundRole>(roleValue),
                 LayerKey = reader.String("LayerKey", string.Empty),
                 AutoPlay = reader.BoolLoose("AutoPlay", true),
-                FadeDurationOverride = useFadeDurationOverride
-                    ? Math.Max(0f, MathHelper.ParseFloat(fadeDurationValue))
-                    : 0f,
+                FadeDurationOverride = fadeDurationOverride,
                 UseFadeDurationOverride = useFadeDurationOverride,
                 Enabled = reader.BoolLoose("Enabled", true),
                 Memo = reader.String("Memo", string.Empty),

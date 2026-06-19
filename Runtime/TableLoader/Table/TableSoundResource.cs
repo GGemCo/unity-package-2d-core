@@ -19,26 +19,16 @@ namespace GGemCo2DCore
         public float PitchMax;
         public bool Loop;
         public float FadeDuration;
-        internal bool UseFadeDurationOverride;
         public bool UseIntroScene;
         public bool PreLoad;
 
         /// <summary>
-        /// 리소스 테이블에 FadeDuration 값이 명시되어 글로벌 기본값을 덮어쓰는지 확인합니다.
+        /// 리소스 테이블의 FadeDuration이 글로벌 기본값을 덮어쓸 수 있는 양수인지 확인합니다.
         /// </summary>
-        /// <returns>테이블 값이 명시되어 있으면 true입니다.</returns>
+        /// <returns>FadeDuration이 0보다 크면 true입니다.</returns>
         public bool HasFadeDurationOverride()
         {
-            return UseFadeDurationOverride;
-        }
-
-        /// <summary>
-        /// Editor 도구에서 FadeDuration Override 사용 여부를 갱신합니다.
-        /// </summary>
-        /// <param name="enabled">테이블 값을 명시적으로 저장할지 여부입니다.</param>
-        public void SetFadeDurationOverride(bool enabled)
-        {
-            UseFadeDurationOverride = enabled;
+            return FadeDuration > 0f;
         }
 
         /// <summary>
@@ -85,7 +75,7 @@ namespace GGemCo2DCore
         {
             TableRowReader reader = new TableRowReader(data, nameof(TableSoundResourceParser));
             string fadeDurationValue = reader.String("FadeDuration", string.Empty);
-            bool useFadeDurationOverride = !string.IsNullOrWhiteSpace(fadeDurationValue);
+            float fadeDuration = System.Math.Max(0f, MathHelper.ParseFloat(fadeDurationValue));
 
             return new TResource
             {
@@ -99,10 +89,7 @@ namespace GGemCo2DCore
                 PitchMin = reader.Float("PitchMin", 1f),
                 PitchMax = reader.Float("PitchMax", 1f),
                 Loop = reader.BoolYN("Loop"),
-                FadeDuration = useFadeDurationOverride
-                    ? System.Math.Max(0f, MathHelper.ParseFloat(fadeDurationValue))
-                    : 0f,
-                UseFadeDurationOverride = useFadeDurationOverride,
+                FadeDuration = fadeDuration,
                 UseIntroScene = reader.BoolYN("UseIntroScene"),
                 PreLoad = reader.BoolYN("PreLoad"),
                 Type = type,

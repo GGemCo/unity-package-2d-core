@@ -156,7 +156,7 @@ namespace GGemCo2DCore
 
             float pitch = Mathf.Approximately(pitchMin, pitchMax) ? pitchMin : Random.Range(pitchMin, pitchMax);
             resolved = new ResolvedSound(sound.Uid, resource.Uid, resource.Type, resource.FileName, volume, pitch,
-                resource.Loop, resource.FadeDuration, resource.UseFadeDurationOverride, sound, resource);
+                resource.Loop, resource.FadeDuration, resource.HasFadeDurationOverride(), sound, resource);
             return true;
         }
     }
