@@ -53,6 +53,8 @@ namespace GGemCo2DCore
         private readonly List<Collider2D> _releasedEnvironmentHitColliders = new();
         private bool _isTerminatedByHit;
         private bool _isWaitingForEndVisual;
+        private bool _hasReachedRouteEnd;
+        private bool _hasPlayedImpactSound;
 
         /// <summary>
         /// 즉시 충돌 데미지 정책을 사용할지 여부입니다.
@@ -208,6 +210,8 @@ namespace GGemCo2DCore
             _releasedEnvironmentHitColliders.Clear();
             _isTerminatedByHit = false;
             _isWaitingForEndVisual = false;
+            _hasReachedRouteEnd = false;
+            _hasPlayedImpactSound = false;
 
             // Visual 연결(Effect/Sprite/Animator/None)
             _visual = ProjectileVisualFactory.Attach(transform, info, metadata);
@@ -351,6 +355,12 @@ namespace GGemCo2DCore
             // Visual update (flip 등)
             UpdateVisual(newPos, delta);
             OnProjectileMoved(newPos, delta, t);
+
+            if (reachedRouteEnd && !_hasReachedRouteEnd)
+            {
+                _hasReachedRouteEnd = true;
+                TryPlayImpactSound(ProjectileImpactSoundTrigger.Arrived);
+            }
 
             if (reachedRouteEnd && !continueAfterArrived)
             {
@@ -778,6 +788,7 @@ namespace GGemCo2DCore
 
             MarkEnvironmentHitCollider(other);
             NotifyHitVisual(other, hitWorldPos);
+            TryPlayImpactSound(ProjectileImpactSoundTrigger.EnvironmentHit);
 
             ProjectileConstants.EnvironmentHitPolicy policy = EffectiveEnvironmentHitPolicy;
             bool shouldTerminate = policy == ProjectileConstants.EnvironmentHitPolicy.PlayHitVisualAndDestroy ||
@@ -1577,6 +1588,7 @@ namespace GGemCo2DCore
         {
             Vector2 hitVfxWorldPosition = ResolveHitVfxWorldPosition(area, hitCollider, target, hitWorldPosition);
             NotifyHitVisual(hitCollider, hitVfxWorldPosition);
+            TryPlayImpactSound(ProjectileImpactSoundTrigger.TargetHit);
             ApplyDamageToTarget(target);
         }
 
@@ -1641,6 +1653,31 @@ namespace GGemCo2DCore
 
             _flightSoundHandle.Stop();
             _flightSoundHandle = null;
+        }
+
+        /// <summary>
+        /// 현재 프로젝타일의 충돌 사운드 설정과 발생 지점을 확인하여 사운드를 재생합니다.
+        /// </summary>
+        /// <param name="trigger">현재 발생한 프로젝타일 수명주기 지점입니다.</param>
+        private void TryPlayImpactSound(ProjectileImpactSoundTrigger trigger)
+        {
+            if (Runtime == null || Runtime.ImpactSound == null || !Runtime.ImpactSound.IsValid)
+                return;
+
+            if ((Runtime.ImpactSoundTrigger & trigger) == 0)
+                return;
+
+            if (Runtime.ImpactSoundRepeatPolicy == ProjectileImpactSoundRepeatPolicy.OncePerProjectile &&
+                _hasPlayedImpactSound)
+                return;
+
+            SoundManager soundManager = SceneGame.Instance != null ? SceneGame.Instance.soundManager : null;
+            if (soundManager == null)
+                return;
+
+            // SoundManager가 요청 객체를 보관하거나 변경하더라도 런타임 메타데이터가 오염되지 않도록 복사본을 전달합니다.
+            soundManager.Play(Runtime.ImpactSound.Clone());
+            _hasPlayedImpactSound = true;
         }
     }
 }

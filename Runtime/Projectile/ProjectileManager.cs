@@ -93,6 +93,9 @@ namespace GGemCo2DCore
         public readonly int VisualVfxUidOverride;
         public readonly SoundPlayRequest FlightSound;
         public readonly ProjectileFlightSoundLifetimePolicy FlightSoundLifetimePolicy;
+        public readonly SoundPlayRequest ImpactSound;
+        public readonly ProjectileImpactSoundTrigger ImpactSoundTrigger;
+        public readonly ProjectileImpactSoundRepeatPolicy ImpactSoundRepeatPolicy;
 
         // --- Hit VFX Position (dynamic) ---
         public readonly ProjectileConstants.HitVfxPositionPolicy HitVfxPositionPolicy;
@@ -127,6 +130,9 @@ namespace GGemCo2DCore
             int visualVfxUidOverride = 0,
             SoundPlayRequest flightSound = null,
             ProjectileFlightSoundLifetimePolicy flightSoundLifetimePolicy = ProjectileFlightSoundLifetimePolicy.Default,
+            SoundPlayRequest impactSound = null,
+            ProjectileImpactSoundTrigger impactSoundTrigger = ProjectileImpactSoundTrigger.None,
+            ProjectileImpactSoundRepeatPolicy impactSoundRepeatPolicy = ProjectileImpactSoundRepeatPolicy.OncePerProjectile,
             bool useTargetPositionOverride = false,
             Vector2 targetPositionOverride = default,
             int skillUid = 0,
@@ -178,6 +184,9 @@ namespace GGemCo2DCore
             VisualVfxUidOverride = visualVfxUidOverride;
             FlightSound = flightSound != null && flightSound.IsValid ? flightSound.Clone() : null;
             FlightSoundLifetimePolicy = flightSoundLifetimePolicy;
+            ImpactSound = impactSound != null && impactSound.IsValid ? impactSound.Clone() : null;
+            ImpactSoundTrigger = impactSoundTrigger;
+            ImpactSoundRepeatPolicy = impactSoundRepeatPolicy;
 
             HitVfxPositionPolicy = hitVfxPositionPolicy;
             HitVfxOffset = hitVfxOffset;
