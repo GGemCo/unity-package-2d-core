@@ -19,9 +19,6 @@ namespace GGemCo2DCore
         // 환경음 Audio Mixer. 비어 있으면 BGM 믹서 그룹을 사용합니다.
         public AudioMixerGroup ambientMixerGroup;
 
-        // BGM 페이드 시간
-        [SerializeField] private float bgmFadeDuration = 0.7f;
-
         private SoundControllerBgm _soundControllerBgm;
         private SoundControllerSfx _soundControllerSfx;
         private SoundControllerAmbient _soundControllerAmbient;
@@ -30,6 +27,8 @@ namespace GGemCo2DCore
         private TableLoaderManager _tableLoaderManager;
         private AddressableLoaderSound _addressableLoaderSound;
         private int _bgmRequestVersion;
+        private float _defaultBgmFadeDuration;
+        private float _defaultAmbientFadeDuration;
 
         /// <summary>
         /// 사운드 컨트롤러와 테이블 기반 해석기를 초기화합니다.
@@ -50,12 +49,20 @@ namespace GGemCo2DCore
                 _addressableLoaderSound = AddressableLoaderSound.Instance;
             }
 
+            GGemCoSoundSettings soundSettings = AddressableLoaderSettings.Instance?.soundSettings;
+            _defaultBgmFadeDuration = soundSettings != null
+                ? soundSettings.GetDefaultBgmFadeDurationSeconds()
+                : 0.7f;
+            _defaultAmbientFadeDuration = soundSettings != null
+                ? soundSettings.GetDefaultAmbientFadeDurationSeconds()
+                : 0.7f;
+
             _soundControllerBgm = new SoundControllerBgm(
                 gameObject,
                 mainAudioMixer,
                 bgmMixerGroup,
                 SoundConstants.NameExposedParameterBGM,
-                bgmFadeDuration);
+                _defaultBgmFadeDuration);
             _soundControllerSfx = new SoundControllerSfx(
                 transform,
                 mainAudioMixer,
@@ -64,8 +71,14 @@ namespace GGemCo2DCore
                 _addressableLoaderSound);
             _soundControllerAmbient = new SoundControllerAmbient(
                 gameObject,
-                ambientMixerGroup != null ? ambientMixerGroup : bgmMixerGroup,
-                _addressableLoaderSound);
+                ambientMixerGroup,
+                _addressableLoaderSound,
+                _defaultAmbientFadeDuration);
+            if (ambientMixerGroup == null)
+            {
+                GcLogger.LogError(
+                    "[SoundManager] Ambient 전용 AudioMixerGroup이 설정되지 않았습니다. 환경음 Fade 전환을 위해 전용 그룹을 연결해주세요.");
+            }
             _soundResolver = new SoundResolver(_tableLoaderManager);
 
             ClickSoundEventDispatcher.OnClickDispatched += OnButtonClicked;
@@ -178,7 +191,11 @@ namespace GGemCo2DCore
             if (resolved.Type == SoundConstants.Type.Bgm)
             {
                 int requestVersion = ++_bgmRequestVersion;
-                PlayBgmAsync(resolved, requestVersion, bgmFadeDurationOverride);
+                PlayBgmAsync(
+                    resolved,
+                    requestVersion,
+                    bgmFadeDurationOverride,
+                    bgmFadeDurationOverride > 0f);
             }
             else if (resolved.Type == SoundConstants.Type.Ambient)
             {
@@ -220,10 +237,12 @@ namespace GGemCo2DCore
         /// <param name="resolved">해석된 BGM 재생 정보입니다.</param>
         /// <param name="requestVersion">최신 BGM 요청을 식별하는 버전입니다.</param>
         /// <param name="fadeDurationOverride">0보다 크면 리소스 FadeDuration보다 우선할 페이드 시간입니다.</param>
+        /// <param name="useFadeDurationOverride">0초를 포함해 요청 값을 명시적으로 사용할지 여부입니다</param>
         private async void PlayBgmAsync(
             ResolvedSound resolved,
             int requestVersion,
-            float fadeDurationOverride)
+            float fadeDurationOverride,
+            bool useFadeDurationOverride)
         {
             if (!resolved.ShouldPlay || _addressableLoaderSound == null || string.IsNullOrWhiteSpace(resolved.FileName))
                 return;
@@ -252,7 +271,12 @@ namespace GGemCo2DCore
             }
 
             // BGM은 사용자 BGM 볼륨과 별개로, 테이블별 Volume/VolumeScale 값을 배율로 적용합니다.
-            _soundControllerBgm.Play(lease, this, resolved.Volume, fadeDurationOverride > 0f ? fadeDurationOverride : resolved.FadeDuration);
+            float fadeDuration = useFadeDurationOverride
+                ? fadeDurationOverride
+                : resolved.UseFadeDurationOverride
+                    ? resolved.FadeDuration
+                    : _defaultBgmFadeDuration;
+            _soundControllerBgm.Play(lease, this, resolved.Volume, fadeDuration);
         }
 
         /// <summary>
@@ -263,6 +287,20 @@ namespace GGemCo2DCore
         /// <param name="fadeDurationOverride">0보다 크면 실제 BGM 리소스의 FadeDuration 대신 사용할 시간입니다.</param>
         public void PlayBgmByUid(int uid, float fadeDurationOverride = 0f)
         {
+            PlayBgmByUid(uid, fadeDurationOverride, fadeDurationOverride > 0f);
+        }
+
+        /// <summary>
+        /// 대표 sound UID를 BGM으로 재생하고 요청 단위 페이드 Override 사용 여부를 명시합니다.
+        /// </summary>
+        /// <param name="uid">재생할 대표 sound UID입니다.</param>
+        /// <param name="fadeDurationOverride">요청 단위 페이드 시간입니다.</param>
+        /// <param name="useFadeDurationOverride">0초를 포함해 요청 값을 명시적으로 사용할지 여부입니다.</param>
+        public void PlayBgmByUid(
+            int uid,
+            float fadeDurationOverride,
+            bool useFadeDurationOverride)
+        {
             if (!TryResolveSound(uid, out ResolvedSound resolved) ||
                 !resolved.ShouldPlay ||
                 resolved.Type != SoundConstants.Type.Bgm)
@@ -272,7 +310,11 @@ namespace GGemCo2DCore
             }
 
             int requestVersion = ++_bgmRequestVersion;
-            PlayBgmAsync(resolved, requestVersion, Mathf.Max(0f, fadeDurationOverride));
+            PlayBgmAsync(
+                resolved,
+                requestVersion,
+                Mathf.Max(0f, fadeDurationOverride),
+                useFadeDurationOverride);
         }
 
         /// <summary>
@@ -281,20 +323,55 @@ namespace GGemCo2DCore
         public void StopBgm()
         {
             _bgmRequestVersion++;
-            _soundControllerBgm?.Stop();
+            _soundControllerBgm?.Stop(this);
         }
 
         /// <summary>
-        /// Ambient 전체 정지
+        /// 모든 환경음을 글로벌 기본 시간으로 Fade Out한 뒤 정지합니다.
         /// </summary>
-        public void StopAmbient() => _soundControllerAmbient?.StopAll();
+        public void StopAmbient() => _soundControllerAmbient?.StopAll(this);
 
         /// <summary>
         /// 특정 Ambient 실제 리소스 UID의 재생을 정지합니다.
         /// 사운드 테스트 툴에서 개별 환경음 루프를 멈출 때 사용합니다.
         /// </summary>
         /// <param name="resourceUid">정지할 sound_ambient 실제 리소스 UID입니다.</param>
-        public void StopAmbientByResourceUid(int resourceUid) => _soundControllerAmbient?.Stop(resourceUid);
+        public void StopAmbientByResourceUid(int resourceUid) => _soundControllerAmbient?.Stop(resourceUid, this);
+
+        /// <summary>
+        /// 다음 맵에서 필요한 환경음 목록으로 전환합니다.
+        /// 공통 리소스는 유지하고 제거·추가되는 리소스만 Fade Out/In합니다.
+        /// </summary>
+        /// <param name="requests">대표 sound UID와 선택적 요청 단위 페이드 Override 목록입니다.</param>
+        public void TransitionAmbient(IReadOnlyList<SoundFadeRequest> requests)
+        {
+            List<ResolvedSound> resolvedSounds = new List<ResolvedSound>(requests?.Count ?? 0);
+            HashSet<int> registeredResourceUids = new HashSet<int>();
+            if (requests != null)
+            {
+                for (int i = 0; i < requests.Count; i++)
+                {
+                    SoundFadeRequest request = requests[i];
+                    if (request.SoundUid <= 0 ||
+                        !TryResolveSound(request.SoundUid, out ResolvedSound resolved) ||
+                        !resolved.ShouldPlay ||
+                        resolved.Type != SoundConstants.Type.Ambient ||
+                        !registeredResourceUids.Add(resolved.ResourceUid))
+                    {
+                        continue;
+                    }
+
+                    float fadeDuration = request.UseFadeDurationOverride
+                        ? request.FadeDurationOverride
+                        : resolved.UseFadeDurationOverride
+                            ? resolved.FadeDuration
+                            : _defaultAmbientFadeDuration;
+                    resolvedSounds.Add(resolved.WithFadeDuration(fadeDuration));
+                }
+            }
+
+            _soundControllerAmbient?.TransitionTo(resolvedSounds, this);
+        }
 
         /// <summary>
         /// BGM 볼륨 변경

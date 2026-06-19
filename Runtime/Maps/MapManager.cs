@@ -605,14 +605,15 @@ namespace GGemCo2DCore
             if (soundManager == null || mapData == null)
                 return;
 
-            soundManager.StopAmbient();
-
             int[] ambientSoundUids = mapData.AmbientSoundUids;
+            List<SoundFadeRequest> ambientRequests =
+                new List<SoundFadeRequest>(ambientSoundUids?.Length ?? 0);
             for (int i = 0; ambientSoundUids != null && i < ambientSoundUids.Length; i++)
             {
                 if (ambientSoundUids[i] > 0)
-                    soundManager.PlayByUid(ambientSoundUids[i]);
+                    ambientRequests.Add(new SoundFadeRequest(ambientSoundUids[i]));
             }
+            soundManager.TransitionAmbient(ambientRequests);
 
             int[] bgmUids = mapData.BgmUids;
             if (bgmUids != null && bgmUids.Length > 0)

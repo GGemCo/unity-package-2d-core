@@ -140,12 +140,12 @@ namespace GGemCo2DCore
             if (_isDisposed || !_hasPendingTransition || _pendingMapUid != mapUid)
                 return;
 
-            soundManager?.StopAmbient();
-
             bool hasConfiguredBgm = false;
             HashSet<string> ambientLayerKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             HashSet<int> playedAmbientSoundUids = new HashSet<int>();
             List<StruckTableMapSound> bgmCandidates = new List<StruckTableMapSound>();
+            List<SoundFadeRequest> ambientRequests =
+                new List<SoundFadeRequest>(_pendingAmbientSoundUids.Count + _pendingRows.Count);
 
             for (int i = 0; i < _pendingAmbientSoundUids.Count; i++)
             {
@@ -157,7 +157,7 @@ namespace GGemCo2DCore
                     continue;
                 }
 
-                soundManager?.PlayByUid(soundUid);
+                ambientRequests.Add(new SoundFadeRequest(soundUid));
             }
 
             for (int i = 0; i < _pendingRows.Count; i++)
@@ -192,10 +192,17 @@ namespace GGemCo2DCore
                         }
 
                         if (playedAmbientSoundUids.Add(row.SoundUid))
-                            soundManager?.PlayByUid(row.SoundUid);
+                        {
+                            ambientRequests.Add(new SoundFadeRequest(
+                                row.SoundUid,
+                                row.UseFadeDurationOverride,
+                                row.FadeDurationOverride));
+                        }
                         break;
                 }
             }
+
+            soundManager?.TransitionAmbient(ambientRequests);
 
             if (!hasConfiguredBgm)
             {
@@ -212,7 +219,10 @@ namespace GGemCo2DCore
             {
                 StruckTableMapSound selected =
                     bgmCandidates[UnityEngine.Random.Range(0, bgmCandidates.Count)];
-                soundManager?.PlayBgmByUid(selected.SoundUid, selected.FadeDurationOverride);
+                soundManager?.PlayBgmByUid(
+                    selected.SoundUid,
+                    selected.FadeDurationOverride,
+                    selected.UseFadeDurationOverride);
             }
             else
             {

@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 namespace GGemCo2DCore
 {
@@ -43,7 +43,7 @@ namespace GGemCo2DCore
         public const string NameExposedParameterMaster = "GGemCoVolumeMaster";
         public const string NameExposedParameterBGM = "GGemCoVolumeBGM";
         public const string NameExposedParameterSfx = "GGemCoVolumeSfx";
-        public const string NameExposedParameterAmbient = NameExposedParameterBGM;
+        public const string NameExposedParameterAmbient = "GGemCoVolumeAmbient";
         
         public enum UIButtonType
         {

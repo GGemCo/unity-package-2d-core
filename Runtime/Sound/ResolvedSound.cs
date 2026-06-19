@@ -13,24 +13,15 @@ namespace GGemCo2DCore
         public readonly float Pitch;
         public readonly bool Loop;
         public readonly float FadeDuration;
+        public readonly bool UseFadeDurationOverride;
         public readonly bool ShouldPlay;
         public readonly StruckTableSound Sound;
         public readonly StruckTableSoundResource Resource;
 
         /// <summary>
-        /// 최종 재생할 사운드 정보를 생성합니다.
+        /// 기존 호출부와의 하위 호환성을 유지하며 최종 사운드 정보를 생성합니다.
+        /// 전달된 페이드 시간은 명시적인 Override 값으로 처리됩니다.
         /// </summary>
-        /// <param name="requestedSoundUid">외부에서 요청한 대표 sound UID입니다.</param>
-        /// <param name="resourceUid">실제 리소스 테이블 UID입니다.</param>
-        /// <param name="type">사운드 타입입니다.</param>
-        /// <param name="fileName">실제 AudioClip 파일명입니다.</param>
-        /// <param name="volume">최종 AudioSource 볼륨 배율입니다.</param>
-        /// <param name="pitch">최종 AudioSource 피치입니다.</param>
-        /// <param name="loop">루프 재생 여부입니다.</param>
-        /// <param name="fadeDuration">페이드 시간입니다.</param>
-        /// <param name="sound">대표 sound 행입니다.</param>
-        /// <param name="resource">실제 리소스 행입니다. 레거시 sound.txt 직접 재생이면 null입니다.</param>
-        /// <param name="shouldPlay">무음 후보를 선택했을 때 false입니다.</param>
         public ResolvedSound(
             int requestedSoundUid,
             int resourceUid,
@@ -43,6 +34,50 @@ namespace GGemCo2DCore
             StruckTableSound sound,
             StruckTableSoundResource resource,
             bool shouldPlay = true)
+            : this(
+                requestedSoundUid,
+                resourceUid,
+                type,
+                fileName,
+                volume,
+                pitch,
+                loop,
+                fadeDuration,
+                true,
+                sound,
+                resource,
+                shouldPlay)
+        {
+        }
+
+        /// <summary>
+        /// 최종 재생할 사운드 정보를 생성합니다.
+        /// </summary>
+        /// <param name="requestedSoundUid">외부에서 요청한 대표 sound UID입니다.</param>
+        /// <param name="resourceUid">실제 리소스 테이블 UID입니다.</param>
+        /// <param name="type">사운드 타입입니다.</param>
+        /// <param name="fileName">실제 AudioClip 파일명입니다.</param>
+        /// <param name="volume">최종 AudioSource 볼륨 배율입니다.</param>
+        /// <param name="pitch">최종 AudioSource 피치입니다.</param>
+        /// <param name="loop">루프 재생 여부입니다.</param>
+        /// <param name="fadeDuration">페이드 시간입니다.</param>
+        /// <param name="useFadeDurationOverride">리소스 테이블에 페이드 시간이 명시되었는지 여부입니다.</param>
+        /// <param name="sound">대표 sound 행입니다.</param>
+        /// <param name="resource">실제 리소스 행입니다. 레거시 sound.txt 직접 재생이면 null입니다.</param>
+        /// <param name="shouldPlay">무음 후보를 선택했을 때 false입니다.</param>
+        public ResolvedSound(
+            int requestedSoundUid,
+            int resourceUid,
+            SoundConstants.Type type,
+            string fileName,
+            float volume,
+            float pitch,
+            bool loop,
+            float fadeDuration,
+            bool useFadeDurationOverride,
+            StruckTableSound sound,
+            StruckTableSoundResource resource,
+            bool shouldPlay = true)
         {
             RequestedSoundUid = requestedSoundUid;
             ResourceUid = resourceUid;
@@ -52,6 +87,7 @@ namespace GGemCo2DCore
             Pitch = pitch;
             Loop = loop;
             FadeDuration = fadeDuration;
+            UseFadeDurationOverride = useFadeDurationOverride;
             Sound = sound;
             Resource = resource;
             ShouldPlay = shouldPlay;
@@ -66,7 +102,7 @@ namespace GGemCo2DCore
         public static ResolvedSound Silent(int requestedSoundUid, StruckTableSound sound)
         {
             return new ResolvedSound(requestedSoundUid, 0, sound != null ? sound.Type : SoundConstants.Type.None,
-                string.Empty, 0f, 1f, false, 0f, sound, null, false);
+                string.Empty, 0f, 1f, false, 0f, false, sound, null, false);
         }
 
         /// <summary>
@@ -77,7 +113,29 @@ namespace GGemCo2DCore
         public ResolvedSound WithLoop(bool loop)
         {
             return new ResolvedSound(RequestedSoundUid, ResourceUid, Type, FileName, Volume, Pitch,
-                loop, FadeDuration, Sound, Resource, ShouldPlay);
+                loop, FadeDuration, UseFadeDurationOverride, Sound, Resource, ShouldPlay);
+        }
+
+        /// <summary>
+        /// 현재 해석 결과의 페이드 시간을 지정한 값으로 교체합니다.
+        /// </summary>
+        /// <param name="fadeDuration">적용할 최종 페이드 시간입니다.</param>
+        /// <returns>페이드 시간이 교체된 해석 결과입니다.</returns>
+        public ResolvedSound WithFadeDuration(float fadeDuration)
+        {
+            return new ResolvedSound(
+                RequestedSoundUid,
+                ResourceUid,
+                Type,
+                FileName,
+                Volume,
+                Pitch,
+                Loop,
+                fadeDuration > 0f ? fadeDuration : 0f,
+                true,
+                Sound,
+                Resource,
+                ShouldPlay);
         }
     }
 }

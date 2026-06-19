@@ -20,6 +20,8 @@ namespace GGemCo2DCore
         private SoundPlaybackLease _currentLease;
         private SoundPlaybackLease _pendingLease;
         private int _playVersion;
+        private float _currentFadeDuration;
+        private bool _hasCurrentFadeDuration;
 
         /// <summary>
         /// BGM 재생에 사용할 AudioSource와 믹서 설정을 초기화합니다.
@@ -213,6 +215,8 @@ namespace GGemCo2DCore
             _current.loop = true;
             _current.volume = clipVolume;
             _currentLease = playbackLease;
+            _currentFadeDuration = fadeDuration;
+            _hasCurrentFadeDuration = true;
             if (ReferenceEquals(_pendingLease, playbackLease))
                 _pendingLease = null;
             _current.Play();
@@ -240,6 +244,67 @@ namespace GGemCo2DCore
         {
             _playVersion++;
             ReleasePendingLease();
+            ClearCurrentSourceAndLease();
+            ClearAudioSource(_next);
+        }
+
+        /// <summary>
+        /// 현재 BGM을 지정한 시간 동안 Fade Out한 뒤 AudioSource와 재생 임대를 정리합니다.
+        /// </summary>
+        /// <param name="coroutineHost">Fade Out Coroutine을 실행할 객체입니다.</param>
+        /// <param name="fadeDuration">Fade Out 지속 시간입니다.</param>
+        public void Stop(MonoBehaviour coroutineHost, float fadeDuration)
+        {
+            _playVersion++;
+            int version = _playVersion;
+            ReleasePendingLease();
+
+            if (coroutineHost == null || _current == null || !_current.isPlaying || fadeDuration <= 0f)
+            {
+                ClearCurrentSourceAndLease();
+                ClearAudioSource(_next);
+                return;
+            }
+
+            coroutineHost.StartCoroutine(FadeOutAndStop(version, Mathf.Max(0f, fadeDuration)));
+        }
+
+        /// <summary>
+        /// 현재 BGM에 적용된 페이드 시간을 사용하여 Fade Out한 뒤 정리합니다.
+        /// 아직 BGM이 재생되지 않았다면 생성 시 전달된 글로벌 기본 시간을 사용합니다.
+        /// </summary>
+        /// <param name="coroutineHost">Fade Out Coroutine을 실행할 객체입니다.</param>
+        public void Stop(MonoBehaviour coroutineHost)
+        {
+            float fadeDuration = _hasCurrentFadeDuration
+                ? _currentFadeDuration
+                : _fadeDuration;
+            Stop(coroutineHost, fadeDuration);
+        }
+
+        /// <summary>
+        /// BGM Mixer 볼륨을 0까지 낮춘 뒤 현재 재생 참조를 정리합니다.
+        /// 새로운 재생 요청이 들어오면 이전 Fade Out은 정리를 수행하지 않고 종료합니다.
+        /// </summary>
+        private IEnumerator FadeOutAndStop(int version, float fadeDuration)
+        {
+            _mixer.GetFloat(_volumeParam, out float currentDb);
+            float startVolume = Mathf.Pow(10f, currentDb / 20f);
+            float elapsed = 0f;
+            while (elapsed < fadeDuration)
+            {
+                if (version != _playVersion)
+                    yield break;
+
+                elapsed += Time.deltaTime;
+                float volume = Mathf.Lerp(startVolume, 0f, Mathf.Clamp01(elapsed / fadeDuration));
+                _mixer.SetFloat(_volumeParam, Mathf.Log10(Mathf.Max(volume, 0.0001f)) * 20f);
+                yield return null;
+            }
+
+            if (version != _playVersion)
+                yield break;
+
             ClearCurrentSourceAndLease();
             ClearAudioSource(_next);
         }
@@ -273,6 +338,8 @@ namespace GGemCo2DCore
             ClearAudioSource(_current);
             _currentLease?.Dispose();
             _currentLease = null;
+            _currentFadeDuration = 0f;
+            _hasCurrentFadeDuration = false;
         }
 
         /// <summary>

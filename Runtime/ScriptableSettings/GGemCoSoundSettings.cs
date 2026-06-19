@@ -10,6 +10,8 @@ namespace GGemCo2DCore
     {
         private const int DefaultPreloadConcurrentRequestCount = 3;
         private const int MaxPreloadConcurrentRequestCount = 8;
+        private const float DefaultBgmFadeDurationSeconds = 0.7f;
+        private const float DefaultAmbientFadeDurationSeconds = 0.7f;
 
         [Serializable]
         public class MappingButtonClickSound
@@ -25,6 +27,15 @@ namespace GGemCo2DCore
         [SerializeField, Range(1, MaxPreloadConcurrentRequestCount)]
         private int preloadConcurrentRequestCount = DefaultPreloadConcurrentRequestCount;
 
+        [Header("사운드 전환")]
+        [Tooltip("sound_bgm 또는 요청 단위 Override가 없을 때 사용하는 BGM 기본 Fade In/Out 시간입니다.")]
+        [SerializeField, Min(0f)]
+        private float defaultBgmFadeDurationSeconds = DefaultBgmFadeDurationSeconds;
+
+        [Tooltip("sound_ambient 또는 요청 단위 Override가 없을 때 사용하는 환경음 기본 Fade In/Out 시간입니다.")]
+        [SerializeField, Min(0f)]
+        private float defaultAmbientFadeDurationSeconds = DefaultAmbientFadeDurationSeconds;
+
         [Header("사운드 진단")]
         [Tooltip("맵 사운드 범위의 로드 시간과 개발 빌드 메모리 추정값을 로그로 출력합니다.")]
         [SerializeField]
@@ -39,6 +50,9 @@ namespace GGemCo2DCore
         /// </summary>
         private void Reset()
         {
+            preloadConcurrentRequestCount = DefaultPreloadConcurrentRequestCount;
+            defaultBgmFadeDurationSeconds = DefaultBgmFadeDurationSeconds;
+            defaultAmbientFadeDurationSeconds = DefaultAmbientFadeDurationSeconds;
             buttonClickSounds ??= new List<MappingButtonClickSound>();
             MappingButtonClickSound mappingButtonClickSound = new MappingButtonClickSound
             {
@@ -96,6 +110,24 @@ namespace GGemCo2DCore
         public float GetSlowMapScopeLoadThresholdSeconds()
         {
             return Mathf.Max(0f, slowMapScopeLoadThresholdSeconds);
+        }
+
+        /// <summary>
+        /// BGM 리소스와 요청에 별도 Override가 없을 때 사용할 글로벌 Fade In/Out 시간을 반환합니다.
+        /// </summary>
+        /// <returns>0 이상으로 보정된 BGM 기본 페이드 시간입니다.</returns>
+        public float GetDefaultBgmFadeDurationSeconds()
+        {
+            return Mathf.Max(0f, defaultBgmFadeDurationSeconds);
+        }
+
+        /// <summary>
+        /// 환경음 리소스와 요청에 별도 Override가 없을 때 사용할 글로벌 Fade In/Out 시간을 반환합니다.
+        /// </summary>
+        /// <returns>0 이상으로 보정된 환경음 기본 페이드 시간입니다.</returns>
+        public float GetDefaultAmbientFadeDurationSeconds()
+        {
+            return Mathf.Max(0f, defaultAmbientFadeDurationSeconds);
         }
 
         /// <summary>
