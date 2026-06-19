@@ -50,5 +50,11 @@ namespace GGemCo2DCore
 
         /// <summary>몬스터 스킬 RuntimeSequence의 프로젝타일 비행 사운드입니다.</summary>
         MonsterSkillProjectileFlight = 9,
+
+        /// <summary>map 테이블의 BgmUid 또는 BgmUids 컬럼에 등록된 BGM입니다.</summary>
+        MapTableBgm = 10,
+
+        /// <summary>map 테이블의 AmbientSoundUids 컬럼에 등록된 환경음입니다.</summary>
+        MapTableAmbient = 11,
     }
 }

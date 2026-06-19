@@ -1,1 +1,1 @@
-Uid	Name	Chapter	Type	Subtype	FolderName	PlayerSpawnPosition	PlayerDeadSpawnUid	BgmUid
+Uid	Name	Chapter	Type	Subtype	FolderName	PlayerSpawnPosition	PlayerDeadSpawnUid	BgmUid	BgmUids	AmbientSoundUids

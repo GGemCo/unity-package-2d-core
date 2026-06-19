@@ -60,11 +60,76 @@ namespace GGemCo2DCoreEditor
             foreach (KeyValuePair<int, StruckTableMap> pair in maps.OrderBy(item => item.Key))
             {
                 StruckTableMap map = pair.Value;
-                if (map == null || map.Uid <= 0 || string.IsNullOrWhiteSpace(map.FolderName))
+                if (map == null || map.Uid <= 0)
+                    continue;
+
+                ScanMapTableSounds(map, target);
+
+                if (string.IsNullOrWhiteSpace(map.FolderName))
                     continue;
 
                 ScanMonsterPlacements(map, target, result, context);
                 ScanNpcPlacements(map, target, result);
+            }
+        }
+
+        /// <summary>
+        /// map 테이블에 직접 등록된 복수 BGM 및 환경음 UID를 맵 사운드 사용 매니페스트에 추가합니다.
+        /// </summary>
+        /// <param name="map">분석할 map 테이블 행입니다.</param>
+        /// <param name="target">발견한 사운드 사용처를 추가할 결과 목록입니다.</param>
+        private static void ScanMapTableSounds(
+            StruckTableMap map,
+            List<SoundUsageManifestBuildRecord> target)
+        {
+            AppendMapTableSounds(
+                map,
+                map.BgmUids,
+                SoundUsageManifestSourceType.MapTableBgm,
+                nameof(StruckTableMap.BgmUids),
+                target);
+            AppendMapTableSounds(
+                map,
+                map.AmbientSoundUids,
+                SoundUsageManifestSourceType.MapTableAmbient,
+                nameof(StruckTableMap.AmbientSoundUids),
+                target);
+        }
+
+        /// <summary>
+        /// 지정한 map 테이블 사운드 UID 배열을 매니페스트 원본 레코드로 변환합니다.
+        /// </summary>
+        /// <param name="map">사운드를 소유한 map 테이블 행입니다.</param>
+        /// <param name="soundUids">등록할 sound UID 배열입니다.</param>
+        /// <param name="sourceType">매니페스트에 기록할 사용처 종류입니다.</param>
+        /// <param name="columnName">원본 map 테이블 컬럼 이름입니다.</param>
+        /// <param name="target">레코드를 추가할 결과 목록입니다.</param>
+        private static void AppendMapTableSounds(
+            StruckTableMap map,
+            int[] soundUids,
+            SoundUsageManifestSourceType sourceType,
+            string columnName,
+            List<SoundUsageManifestBuildRecord> target)
+        {
+            if (map == null || soundUids == null || soundUids.Length == 0 || target == null)
+                return;
+
+            for (int i = 0; i < soundUids.Length; i++)
+            {
+                int soundUid = soundUids[i];
+                if (soundUid <= 0)
+                    continue;
+
+                target.Add(new SoundUsageManifestBuildRecord
+                {
+                    ScopeType = SoundUsageManifestScopeType.Map,
+                    ScopeUid = map.Uid,
+                    SoundUid = soundUid,
+                    SourceType = sourceType,
+                    SourceUid = map.Uid,
+                    SourcePath = $"{ConfigAddressableTable.TableMap.Path}#Uid={map.Uid}/{columnName}",
+                    Memo = $"map={map.Name}, column={columnName}",
+                });
             }
         }
 

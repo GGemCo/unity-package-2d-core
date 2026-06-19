@@ -18,6 +18,8 @@ namespace GGemCo2DCore
         private SoundScopeLease _activeLease;
         private SoundScopeLease _pendingLease;
         private IReadOnlyList<StruckTableMapSound> _pendingRows = Array.Empty<StruckTableMapSound>();
+        private IReadOnlyList<int> _pendingBgmUids = Array.Empty<int>();
+        private IReadOnlyList<int> _pendingAmbientSoundUids = Array.Empty<int>();
         private int _pendingMapUid;
         private int _prepareVersion;
         private bool _hasPendingTransition;
@@ -38,12 +40,12 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 다음 맵에서 사용할 사운드 행을 조회하고 모든 AudioClip 범위를 미리 획득합니다.
-        /// map_sound에 BGM 행이 없을 때는 map.BgmUid를 호환용 범위에 포함합니다.
+        /// 다음 맵에서 사용할 사운드 행과 map 테이블의 복수 BGM·환경음 목록을 조회하여
+        /// 필요한 모든 AudioClip 범위를 미리 획득합니다.
         /// </summary>
         /// <param name="mapUid">준비할 맵 UID입니다.</param>
-        /// <param name="legacyBgmUid">기존 map.BgmUid 값입니다.</param>
-        public async Task PrepareAsync(int mapUid, int legacyBgmUid)
+        /// <param name="mapData">복수 BGM 및 환경음 설정을 포함한 map 테이블 행입니다.</param>
+        public async Task PrepareAsync(int mapUid, StruckTableMap mapData)
         {
             if (_isDisposed || mapUid <= 0)
                 return;
@@ -54,7 +56,10 @@ namespace GGemCo2DCore
 
             IReadOnlyList<StruckTableMapSound> rows =
                 _tableLoaderManager?.TableMapSound?.GetRowsByMapUid(mapUid) ?? Array.Empty<StruckTableMapSound>();
-            List<int> soundUids = new List<int>(rows.Count + 1);
+            IReadOnlyList<int> mapBgmUids = mapData?.BgmUids ?? Array.Empty<int>();
+            IReadOnlyList<int> mapAmbientSoundUids = mapData?.AmbientSoundUids ?? Array.Empty<int>();
+            List<int> soundUids =
+                new List<int>(rows.Count + mapBgmUids.Count + mapAmbientSoundUids.Count);
             bool hasConfiguredBgm = false;
 
             for (int i = 0; i < rows.Count; i++)
@@ -69,8 +74,10 @@ namespace GGemCo2DCore
 
             AppendGeneratedManifestSoundUids(mapUid, soundUids);
 
-            if (!hasConfiguredBgm && legacyBgmUid > 0)
-                soundUids.Add(legacyBgmUid);
+            if (!hasConfiguredBgm)
+                AppendValidSoundUids(mapBgmUids, soundUids);
+
+            AppendValidSoundUids(mapAmbientSoundUids, soundUids);
 
             IReadOnlyList<string> addressKeys = _addressKeyResolver.ResolveAddressKeys(soundUids);
             SoundScopeLease acquiredLease = null;
@@ -100,18 +107,35 @@ namespace GGemCo2DCore
 
             _pendingLease = acquiredLease;
             _pendingRows = rows;
+            _pendingBgmUids = mapBgmUids;
+            _pendingAmbientSoundUids = mapAmbientSoundUids;
             _pendingMapUid = mapUid;
             _hasPendingTransition = true;
         }
 
         /// <summary>
+        /// 기존 단일 BGM 호출부와의 하위 호환성을 유지하며 다음 맵 사운드 범위를 준비합니다.
+        /// 신규 호출부는 복수 사운드를 전달할 수 있는 <see cref="PrepareAsync(int, StruckTableMap)"/>을 사용합니다.
+        /// </summary>
+        /// <param name="mapUid">준비할 맵 UID입니다.</param>
+        /// <param name="legacyBgmUid">기존 map.BgmUid 값입니다.</param>
+        public Task PrepareAsync(int mapUid, int legacyBgmUid)
+        {
+            StruckTableMap compatibilityMapData = new StruckTableMap
+            {
+                BgmUid = legacyBgmUid,
+                BgmUids = legacyBgmUid > 0 ? new[] { legacyBgmUid } : Array.Empty<int>(),
+            };
+            return PrepareAsync(mapUid, compatibilityMapData);
+        }
+
+        /// <summary>
         /// 준비된 맵 사운드를 활성화하고 이전 맵 범위를 해제합니다.
-        /// 맵 환경음은 먼저 모두 정지한 뒤 새 행을 재생하며, BGM은 map_sound가 없을 때만 기존 map.BgmUid를 사용합니다.
+        /// 환경음은 map 테이블과 map_sound 설정을 함께 재생하고, BGM 후보가 여러 개면 하나를 무작위 선택합니다.
         /// </summary>
         /// <param name="soundManager">BGM과 환경음을 재생할 사운드 매니저입니다.</param>
         /// <param name="mapUid">활성화할 맵 UID입니다.</param>
-        /// <param name="legacyBgmUid">기존 map.BgmUid 값입니다.</param>
-        public void Activate(SoundManager soundManager, int mapUid, int legacyBgmUid)
+        public void Activate(SoundManager soundManager, int mapUid)
         {
             if (_isDisposed || !_hasPendingTransition || _pendingMapUid != mapUid)
                 return;
@@ -119,8 +143,22 @@ namespace GGemCo2DCore
             soundManager?.StopAmbient();
 
             bool hasConfiguredBgm = false;
-            bool hasPlayedBgm = false;
             HashSet<string> ambientLayerKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            HashSet<int> playedAmbientSoundUids = new HashSet<int>();
+            List<StruckTableMapSound> bgmCandidates = new List<StruckTableMapSound>();
+
+            for (int i = 0; i < _pendingAmbientSoundUids.Count; i++)
+            {
+                int soundUid = _pendingAmbientSoundUids[i];
+                if (soundUid <= 0 ||
+                    !IsSoundTypeCompatible(soundUid, MapSoundRole.Ambient, "map.AmbientSoundUids") ||
+                    !playedAmbientSoundUids.Add(soundUid))
+                {
+                    continue;
+                }
+
+                soundManager?.PlayByUid(soundUid);
+            }
 
             for (int i = 0; i < _pendingRows.Count; i++)
             {
@@ -141,15 +179,7 @@ namespace GGemCo2DCore
                 switch (role)
                 {
                     case MapSoundRole.Bgm:
-                        if (hasPlayedBgm)
-                        {
-                            GcLogger.LogWarning(
-                                $"[MapSound] 자동 재생 BGM은 맵당 한 개만 사용할 수 있습니다. mapUid={mapUid}, skippedUid={row.Uid}");
-                            continue;
-                        }
-
-                        soundManager?.PlayBgmByUid(row.SoundUid, row.FadeDurationOverride);
-                        hasPlayedBgm = true;
+                        bgmCandidates.Add(row);
                         break;
 
                     case MapSoundRole.Ambient:
@@ -161,21 +191,32 @@ namespace GGemCo2DCore
                             continue;
                         }
 
-                        soundManager?.PlayByUid(row.SoundUid);
+                        if (playedAmbientSoundUids.Add(row.SoundUid))
+                            soundManager?.PlayByUid(row.SoundUid);
                         break;
                 }
             }
 
             if (!hasConfiguredBgm)
             {
-                if (legacyBgmUid > 0)
-                    soundManager?.PlayBgmByUid(legacyBgmUid);
+                int selectedBgmUid = SelectRandomCompatibleSoundUid(
+                    _pendingBgmUids,
+                    MapSoundRole.Bgm,
+                    "map.BgmUids");
+                if (selectedBgmUid > 0)
+                    soundManager?.PlayBgmByUid(selectedBgmUid);
                 else
                     soundManager?.StopBgm();
             }
-            else if (!hasPlayedBgm)
+            else if (bgmCandidates.Count > 0)
             {
-                // BGM 행을 명시했지만 자동 재생하지 않는 맵은 기존 BGM을 정지하고 외부 연출이 직접 재생하도록 합니다.
+                StruckTableMapSound selected =
+                    bgmCandidates[UnityEngine.Random.Range(0, bgmCandidates.Count)];
+                soundManager?.PlayBgmByUid(selected.SoundUid, selected.FadeDurationOverride);
+            }
+            else
+            {
+                // BGM 행을 명시했지만 자동 재생 후보가 없는 맵은 기존 BGM을 정지하고 외부 연출이 직접 재생하도록 합니다.
                 soundManager?.StopBgm();
             }
 
@@ -183,9 +224,22 @@ namespace GGemCo2DCore
             _activeLease = _pendingLease;
             _pendingLease = null;
             _pendingRows = Array.Empty<StruckTableMapSound>();
+            _pendingBgmUids = Array.Empty<int>();
+            _pendingAmbientSoundUids = Array.Empty<int>();
             _pendingMapUid = 0;
             _hasPendingTransition = false;
             previousLease?.Dispose();
+        }
+
+        /// <summary>
+        /// 기존 단일 BGM 활성화 호출부와의 하위 호환성을 유지합니다.
+        /// </summary>
+        /// <param name="soundManager">BGM과 환경음을 재생할 사운드 매니저입니다.</param>
+        /// <param name="mapUid">활성화할 맵 UID입니다.</param>
+        /// <param name="legacyBgmUid">기존 map.BgmUid 값입니다.</param>
+        public void Activate(SoundManager soundManager, int mapUid, int legacyBgmUid)
+        {
+            Activate(soundManager, mapUid);
         }
 
         /// <summary>
@@ -329,6 +383,77 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// map 테이블에 직접 등록된 sound UID가 지정한 역할의 사운드 타입과 일치하는지 검사합니다.
+        /// </summary>
+        /// <param name="soundUid">검사할 대표 sound UID입니다.</param>
+        /// <param name="role">기대하는 맵 사운드 역할입니다.</param>
+        /// <param name="source">오류 로그에 표시할 원본 설정 위치입니다.</param>
+        /// <returns>사운드 타입이 역할과 일치하면 true입니다.</returns>
+        private bool IsSoundTypeCompatible(int soundUid, MapSoundRole role, string source)
+        {
+            StruckTableSound sound = _tableLoaderManager?.GetSoundData(soundUid, false);
+            SoundConstants.Type expectedType = role == MapSoundRole.Bgm
+                ? SoundConstants.Type.Bgm
+                : SoundConstants.Type.Ambient;
+            if (sound != null && sound.Type == expectedType)
+                return true;
+
+            GcLogger.LogWarning(
+                $"[MapSound] map 테이블의 사운드 타입이 역할과 일치하지 않아 자동 재생하지 않습니다. source={source}, soundUid={soundUid}, role={role}, type={sound?.Type}");
+            return false;
+        }
+
+        /// <summary>
+        /// 유효한 sound UID를 대상 목록에 순서대로 추가합니다.
+        /// </summary>
+        /// <param name="source">추가할 sound UID 목록입니다.</param>
+        /// <param name="target">UID를 추가할 대상 목록입니다.</param>
+        private static void AppendValidSoundUids(IReadOnlyList<int> source, List<int> target)
+        {
+            if (source == null || target == null)
+                return;
+
+            for (int i = 0; i < source.Count; i++)
+            {
+                int soundUid = source[i];
+                if (soundUid > 0)
+                    target.Add(soundUid);
+            }
+        }
+
+        /// <summary>
+        /// 지정한 역할과 타입이 일치하는 sound UID 후보 중 하나를 무작위로 선택합니다.
+        /// 별도 후보 컬렉션을 만들지 않는 reservoir sampling 방식으로 맵 전환 시 불필요한 할당을 피합니다.
+        /// </summary>
+        /// <param name="candidates">선택할 sound UID 후보 목록입니다.</param>
+        /// <param name="role">기대하는 맵 사운드 역할입니다.</param>
+        /// <param name="source">오류 로그에 표시할 원본 설정 위치입니다.</param>
+        /// <returns>선택된 sound UID이며, 후보가 없으면 0입니다.</returns>
+        private int SelectRandomCompatibleSoundUid(
+            IReadOnlyList<int> candidates,
+            MapSoundRole role,
+            string source)
+        {
+            if (candidates == null || candidates.Count == 0)
+                return 0;
+
+            int selectedSoundUid = 0;
+            int validCandidateCount = 0;
+            for (int i = 0; i < candidates.Count; i++)
+            {
+                int soundUid = candidates[i];
+                if (soundUid <= 0 || !IsSoundTypeCompatible(soundUid, role, source))
+                    continue;
+
+                validCandidateCount++;
+                if (UnityEngine.Random.Range(0, validCandidateCount) == 0)
+                    selectedSoundUid = soundUid;
+            }
+
+            return selectedSoundUid;
+        }
+
+        /// <summary>
         /// 준비 중인 임대 객체와 전환 데이터를 초기화합니다.
         /// </summary>
         private void ReleasePendingLease()
@@ -336,6 +461,8 @@ namespace GGemCo2DCore
             _pendingLease?.Dispose();
             _pendingLease = null;
             _pendingRows = Array.Empty<StruckTableMapSound>();
+            _pendingBgmUids = Array.Empty<int>();
+            _pendingAmbientSoundUids = Array.Empty<int>();
             _pendingMapUid = 0;
             _hasPendingTransition = false;
         }

@@ -455,7 +455,8 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 현재 로드 대상 맵의 map_sound 및 기존 BgmUid를 기준으로 다음 맵 사운드 범위를 준비합니다.
+        /// 현재 로드 대상 맵의 map_sound와 map 테이블의 복수 BGM·환경음 설정을 기준으로
+        /// 다음 맵 사운드 범위를 준비합니다.
         /// 타일맵과 캐릭터를 제거하기 전에 로드를 시작하여 맵 전환 중 필요한 AudioClip을 확보합니다.
         /// </summary>
         private async Task PrepareCurrentMapSoundScopeAsync()
@@ -478,7 +479,7 @@ namespace GGemCo2DCore
             }
 
             if (_mapSoundScopeController != null)
-                await _mapSoundScopeController.PrepareAsync(_currentMapUid, targetMapData.BgmUid);
+                await _mapSoundScopeController.PrepareAsync(_currentMapUid, targetMapData);
         }
 
         /// <summary>
@@ -574,18 +575,12 @@ namespace GGemCo2DCore
                 {
                     _mapSoundScopeController.Activate(
                         _sceneGame.soundManager,
-                        _currentMapUid,
-                        _currentMapTableData.BgmUid);
-                }
-                else if (_currentMapTableData.BgmUid > 0)
-                {
-                    // AddressableLoaderSound가 없는 특수 테스트 환경에서는 기존 BGM 동작을 유지합니다.
-                    _sceneGame.soundManager?.PlayByUid(_currentMapTableData.BgmUid);
+                        _currentMapUid);
                 }
                 else
                 {
-                    _sceneGame.soundManager?.StopBgm();
-                    _sceneGame.soundManager?.StopAmbient();
+                    // AddressableLoaderSound가 없는 특수 테스트 환경에서도 map 테이블의 복수 사운드 설정을 적용합니다.
+                    PlayMapTableSoundsWithoutScope(_currentMapTableData);
                 }
 
                 OnLoadTilemapCompleteMap?.Invoke(_mapTileCommon, _grid);
@@ -597,6 +592,37 @@ namespace GGemCo2DCore
             {
                 Console.WriteLine(e);
                 throw;
+            }
+        }
+
+        /// <summary>
+        /// 맵 사운드 범위 컨트롤러가 없는 테스트 환경에서 map 테이블의 BGM과 환경음을 직접 재생합니다.
+        /// </summary>
+        /// <param name="mapData">재생할 사운드 설정을 가진 map 테이블 행입니다.</param>
+        private void PlayMapTableSoundsWithoutScope(StruckTableMap mapData)
+        {
+            SoundManager soundManager = _sceneGame != null ? _sceneGame.soundManager : null;
+            if (soundManager == null || mapData == null)
+                return;
+
+            soundManager.StopAmbient();
+
+            int[] ambientSoundUids = mapData.AmbientSoundUids;
+            for (int i = 0; ambientSoundUids != null && i < ambientSoundUids.Length; i++)
+            {
+                if (ambientSoundUids[i] > 0)
+                    soundManager.PlayByUid(ambientSoundUids[i]);
+            }
+
+            int[] bgmUids = mapData.BgmUids;
+            if (bgmUids != null && bgmUids.Length > 0)
+            {
+                int selectedIndex = UnityEngine.Random.Range(0, bgmUids.Length);
+                soundManager.PlayBgmByUid(bgmUids[selectedIndex]);
+            }
+            else
+            {
+                soundManager.StopBgm();
             }
         }
 

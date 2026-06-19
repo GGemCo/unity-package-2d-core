@@ -16,7 +16,22 @@ namespace GGemCo2DCore
         public string FolderName;
         public Vector2 PlayerSpawnPosition;
         public int PlayerDeadSpawnUid;
+
+        /// <summary>
+        /// 기존 단일 BGM 설정과의 하위 호환성을 위한 대표 sound UID입니다.
+        /// <see cref="BgmUids"/>가 비어 있을 때만 복수 BGM 후보에 포함됩니다.
+        /// </summary>
         public int BgmUid;
+
+        /// <summary>
+        /// 맵 진입 시 무작위로 하나를 선택하여 재생할 BGM sound UID 목록입니다.
+        /// </summary>
+        public int[] BgmUids = System.Array.Empty<int>();
+
+        /// <summary>
+        /// 맵 진입 시 동시에 재생할 환경음 sound UID 목록입니다.
+        /// </summary>
+        public int[] AmbientSoundUids = System.Array.Empty<int>();
 
         /// <summary>
         /// 맵 진입 시 카메라 Follow Offset을 테이블 값으로 덮어쓸지 여부입니다.
@@ -106,6 +121,7 @@ namespace GGemCo2DCore
         protected override StruckTableMap BuildRow(Dictionary<string, string> data)
         {
             TableRowReader reader = ReadRow(data);
+
             return new StruckTableMap
             {
                 Uid = reader.Int("Uid"),
@@ -114,65 +130,19 @@ namespace GGemCo2DCore
                 Type = reader.Enum<MapConstants.Type>("Type"),
                 Subtype = reader.Enum<MapConstants.SubType>("Subtype"),
                 FolderName = reader.String("FolderName"),
-                PlayerSpawnPosition = ConvertPlayerSpawnPosition(reader.String("PlayerSpawnPosition")),
+                PlayerSpawnPosition = reader.Vector2("PlayerSpawnPosition"),
                 PlayerDeadSpawnUid = reader.Int("PlayerDeadSpawnUid"),
-                BgmUid = reader.Int("BgmUid"),
+                BgmUids = reader.IntArray("BgmUids"),
+                AmbientSoundUids = reader.IntArray("AmbientSoundUids"),
                 UseCameraFollowOffset = reader.BoolYN("UseCameraFollowOffset"),
                 CameraFollowOffset = reader.Vector2("CameraFollowOffset"),
                 UseCameraFollowDeadZone = reader.BoolYN("UseCameraFollowDeadZone"),
                 CameraFollowDeadZone = reader.Vector2("CameraFollowDeadZone"),
-                UseCameraBottomFollowOffsetPolicy =
-                    reader.BoolYN("UseCameraBottomFollowOffsetPolicy"),
-                BottomFollowOffsetPolicy =
-                    ConvertCameraBottomFollowOffsetPolicy(reader.String("BottomFollowOffsetPolicy")),
-                AutoMovePolicy = ConvertAutoMovePolicy(reader.String("AutoMovePolicy")),
+                UseCameraBottomFollowOffsetPolicy = reader.BoolYN("UseCameraBottomFollowOffsetPolicy"),
+                BottomFollowOffsetPolicy = reader.Enum<CameraBottomFollowOffsetPolicy>("BottomFollowOffsetPolicy"),
+                AutoMovePolicy = reader.Enum<MapAutoMovePolicy>("AutoMovePolicy"),
                 UseParallax = reader.BoolYN("UseParallax"),
             };
-        }
-
-        /// <summary>
-        /// 문자열로 저장된 플레이어 시작 좌표를 안전하게 <see cref="Vector2"/>로 변환합니다.
-        /// 잘못된 값은 <see cref="Vector2.zero"/>로 보정합니다.
-        /// </summary>
-        /// <param name="position">"x,y" 형식의 좌표 문자열입니다.</param>
-        /// <returns>파싱된 시작 좌표입니다.</returns>
-        private Vector2 ConvertPlayerSpawnPosition(string position)
-        {
-            Vector2 playerSpawnPosition = new Vector2(0, 0);
-            if (!string.IsNullOrWhiteSpace(position))
-            {
-                var result2 = position.Split(",");
-                playerSpawnPosition.x = MathHelper.ParseFloat(result2.Length > 0 ? result2[0] : "0");
-                playerSpawnPosition.y = MathHelper.ParseFloat(result2.Length > 1 ? result2[1] : "0");
-            }
-
-            return playerSpawnPosition;
-        }
-
-        /// <summary>
-        /// 카메라 하단 Follow Offset 정책 문자열을 enum 값으로 변환합니다.
-        /// 값이 비어 있으면 기존 기본 정책(<see cref="CameraBottomFollowOffsetPolicy.Manual"/>)을 사용합니다.
-        /// </summary>
-        /// <param name="value">테이블에 기록된 정책 문자열입니다.</param>
-        /// <returns>적용할 하단 Follow Offset 정책입니다.</returns>
-        private static CameraBottomFollowOffsetPolicy ConvertCameraBottomFollowOffsetPolicy(string value)
-        {
-            return string.IsNullOrWhiteSpace(value)
-                ? CameraBottomFollowOffsetPolicy.Manual
-                : EnumHelper.ConvertEnum<CameraBottomFollowOffsetPolicy>(value);
-        }
-
-        /// <summary>
-        /// 맵 자동 이동 정책 문자열을 enum 값으로 변환합니다.
-        /// 값이 비어 있거나 컬럼이 누락된 기존 테이블은 전역 설정을 따르도록 <see cref="MapAutoMovePolicy.Inherit"/>로 보정합니다.
-        /// </summary>
-        /// <param name="value">테이블에 기록된 자동 이동 정책 문자열입니다.</param>
-        /// <returns>적용할 맵 자동 이동 정책입니다.</returns>
-        private static MapAutoMovePolicy ConvertAutoMovePolicy(string value)
-        {
-            return string.IsNullOrWhiteSpace(value)
-                ? MapAutoMovePolicy.Inherit
-                : EnumHelper.ConvertEnum<MapAutoMovePolicy>(value);
         }
     }
 }
