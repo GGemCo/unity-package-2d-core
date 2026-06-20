@@ -51,7 +51,9 @@ namespace GGemCo2DCoreEditor
         private int _editNpcBoundInstanceId;
         private bool _usePatrolMonster;
         private MapCharacterVisibilityPolicy _monsterSpawnMapVisibilityPolicy;
+        private CharacterConstants.AttackType? _monsterSpawnAttackTypeOverride;
         private MapCharacterVisibilityPolicy _editMonsterMapVisibilityPolicy;
+        private CharacterConstants.AttackType? _editMonsterAttackTypeOverride;
         private bool _editMonsterApplyToSameUid;
         private int _editMonsterBoundInstanceId;
 
@@ -85,7 +87,9 @@ namespace GGemCo2DCoreEditor
             _editNpcBoundInstanceId = 0;
             _usePatrolMonster = false;
             _monsterSpawnMapVisibilityPolicy = MapCharacterVisibilityPolicy.DefaultCulling;
+            _monsterSpawnAttackTypeOverride = null;
             _editMonsterMapVisibilityPolicy = MapCharacterVisibilityPolicy.DefaultCulling;
+            _editMonsterAttackTypeOverride = null;
             _editMonsterApplyToSameUid = false;
             _editMonsterBoundInstanceId = 0;
 
@@ -423,6 +427,33 @@ namespace GGemCo2DCoreEditor
         }
 
         /// <summary>
+        /// 몬스터 배치별 AttackType Override 사용 여부와 값을 편집하는 필드를 그립니다.
+        /// </summary>
+        /// <param name="currentValue">현재 배치별 Override 값입니다.</param>
+        /// <param name="tableDefaultValue">선택한 monster 테이블 row의 기본 AttackType입니다.</param>
+        /// <returns>사용자가 선택한 Override 값이며, 테이블 기본값 사용 시 null입니다.</returns>
+        private static CharacterConstants.AttackType? DrawAttackTypeOverrideField(
+            CharacterConstants.AttackType? currentValue,
+            CharacterConstants.AttackType tableDefaultValue)
+        {
+            bool useOverride = HelperEditorUI.ToggleLeft(
+                $"AttackType Override 사용 (테이블 기본값: {tableDefaultValue})",
+                currentValue.HasValue,
+                "체크하지 않으면 monster 테이블의 AttackType을 사용합니다.");
+
+            if (!useOverride)
+            {
+                return null;
+            }
+
+            CharacterConstants.AttackType selectedValue = currentValue ?? tableDefaultValue;
+            GUIContent content = new GUIContent(
+                "AttackType Override",
+                "이 맵에 배치되는 몬스터 인스턴스에만 적용할 공격 성향입니다.");
+            return (CharacterConstants.AttackType)EditorGUILayout.EnumPopup(content, selectedValue);
+        }
+
+        /// <summary>
         /// NPC 배치 섹션을 그립니다.
         /// 배치 시점에 기본 보임 값과 맵 표시 정책을 함께 저장할 수 있도록 UI를 제공합니다.
         /// </summary>
@@ -749,12 +780,23 @@ namespace GGemCo2DCoreEditor
                     "몬스터 선택",
                     _monsterOptions,
                     selectedMonsterIndex,
-                    (_, option) => _selectedMonsterUid = option.Data,
+                    (_, option) =>
+                    {
+                        _selectedMonsterUid = option.Data;
+                        // 새 몬스터 선택 시에는 해당 monster 테이블의 AttackType을 기본값으로 다시 사용합니다.
+                        _monsterSpawnAttackTypeOverride = null;
+                    },
                     noneText: "(몬스터 선택)");
 
                 _monsterSpawnMapVisibilityPolicy = DrawMapVisibilityPolicyField(
                     "맵 표시 정책",
                     _monsterSpawnMapVisibilityPolicy);
+
+                CharacterConstants.AttackType tableAttackType =
+                    GetMonsterTableAttackType(_selectedMonsterUid);
+                _monsterSpawnAttackTypeOverride = DrawAttackTypeOverrideField(
+                    _monsterSpawnAttackTypeOverride,
+                    tableAttackType);
 
                 _usePatrolMonster = HelperEditorUI.ToggleLeft(
                     "패트롤 영역 생성",
@@ -770,7 +812,8 @@ namespace GGemCo2DCoreEditor
                         _monsterExporter.AddMonsterToMap(
                             _selectedMonsterUid,
                             _usePatrolMonster,
-                            _monsterSpawnMapVisibilityPolicy);
+                            _monsterSpawnMapVisibilityPolicy,
+                            _monsterSpawnAttackTypeOverride);
                     }
 
                     GUI.enabled = true;
@@ -779,7 +822,7 @@ namespace GGemCo2DCoreEditor
         }
 
         /// <summary>
-        /// 현재 맵에 배치된 몬스터의 맵 표시 정책을 편집하는 섹션을 그립니다.
+        /// 현재 맵에 배치된 몬스터의 맵 표시 정책과 AttackType Override를 편집하는 섹션을 그립니다.
         /// Hierarchy에서 선택한 몬스터를 기준으로 동일 UID 일괄 적용을 지원합니다.
         /// </summary>
         private void DrawMonsterEditSection()
@@ -811,6 +854,12 @@ namespace GGemCo2DCoreEditor
                     "맵 표시 정책",
                     _editMonsterMapVisibilityPolicy);
 
+                CharacterConstants.AttackType tableAttackType =
+                    GetMonsterTableAttackType(selectedMonster.uid);
+                _editMonsterAttackTypeOverride = DrawAttackTypeOverrideField(
+                    _editMonsterAttackTypeOverride,
+                    tableAttackType);
+
                 _editMonsterApplyToSameUid = HelperEditorUI.ToggleLeft(
                     "동일 UID 일괄 적용",
                     _editMonsterApplyToSameUid,
@@ -818,7 +867,7 @@ namespace GGemCo2DCoreEditor
 
                 using (new EditorGUILayout.HorizontalScope())
                 {
-                    if (GUILayout.Button("정책 적용", GUILayout.Height(26)))
+                    if (GUILayout.Button("배치 설정 적용", GUILayout.Height(26)))
                     {
                         ApplyMonsterEditPolicy(selectedMonster);
                     }
@@ -908,7 +957,7 @@ namespace GGemCo2DCoreEditor
         }
 
         /// <summary>
-        /// 선택된 몬스터의 현재 맵 표시 정책을 편집 드래프트로 강제 동기화합니다.
+        /// 선택된 몬스터의 현재 맵 표시 정책과 AttackType Override를 편집 드래프트로 강제 동기화합니다.
         /// </summary>
         /// <param name="selectedMonster">동기화할 몬스터입니다.</param>
         private void ForceBindMonsterEditDraft(Monster selectedMonster)
@@ -920,6 +969,10 @@ namespace GGemCo2DCoreEditor
 
             _editMonsterMapVisibilityPolicy =
                 MonsterPlacementEditorUtility.GetMapVisibilityPolicy(
+                    selectedMonster,
+                    GetSelectedMapUid());
+            _editMonsterAttackTypeOverride =
+                MonsterPlacementEditorUtility.GetAttackTypeOverride(
                     selectedMonster,
                     GetSelectedMapUid());
             _editMonsterBoundInstanceId = selectedMonster.GetInstanceID();
@@ -946,6 +999,8 @@ namespace GGemCo2DCoreEditor
             }
 
             int mapUid = GetSelectedMapUid();
+            CharacterConstants.AttackType tableAttackType =
+                GetMonsterTableAttackType(selectedMonster.uid);
             int appliedCount = 0;
             for (int i = 0; i < targets.Count; i++)
             {
@@ -955,11 +1010,16 @@ namespace GGemCo2DCoreEditor
                     continue;
                 }
 
-                Undo.RecordObject(targetMonster, "Edit Monster Map Visibility Policy");
+                Undo.RecordObject(targetMonster, "Edit Monster Placement Settings");
                 MonsterPlacementEditorUtility.ApplyMapVisibilityPolicy(
                     targetMonster,
                     mapUid,
                     _editMonsterMapVisibilityPolicy);
+                MonsterPlacementEditorUtility.ApplyAttackTypeOverride(
+                    targetMonster,
+                    mapUid,
+                    _editMonsterAttackTypeOverride,
+                    tableAttackType);
 
                 PrefabUtility.RecordPrefabInstancePropertyModifications(targetMonster);
                 EditorUtility.SetDirty(targetMonster);
@@ -968,12 +1028,30 @@ namespace GGemCo2DCoreEditor
 
             if (appliedCount > 0)
             {
-                Debug.Log($"몬스터 표시 정책 적용 완료: {appliedCount}개 / Uid:{selectedMonster.uid}");
+                Debug.Log($"몬스터 배치 설정 적용 완료: {appliedCount}개 / Uid:{selectedMonster.uid}");
             }
         }
 
         /// <summary>
-        /// 몬스터 표시 정책 적용 대상 목록을 구성합니다.
+        /// monster 테이블에서 지정한 UID의 기본 AttackType을 조회합니다.
+        /// </summary>
+        /// <param name="monsterUid">조회할 몬스터 UID입니다.</param>
+        /// <returns>테이블의 기본 AttackType이며, 조회할 수 없으면 None입니다.</returns>
+        private CharacterConstants.AttackType GetMonsterTableAttackType(int monsterUid)
+        {
+            if (_tableMonster == null || monsterUid <= 0)
+            {
+                return CharacterConstants.AttackType.None;
+            }
+
+            StruckTableMonster monsterData = _tableMonster.GetDataByUid(monsterUid);
+            return monsterData != null
+                ? monsterData.AttackType
+                : CharacterConstants.AttackType.None;
+        }
+
+        /// <summary>
+        /// 몬스터 배치 설정 적용 대상 목록을 구성합니다.
         /// </summary>
         /// <param name="selectedMonster">기준 몬스터입니다.</param>
         /// <param name="applyToSameUid">동일 UID 일괄 적용 여부입니다.</param>

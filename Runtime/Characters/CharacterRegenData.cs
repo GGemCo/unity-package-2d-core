@@ -21,6 +21,17 @@ namespace GGemCo2DCore
         public PatrolData patrolData;
 
         /// <summary>
+        /// 맵 배치 AttackType Override 값이 설정되었는지 여부입니다.
+        /// </summary>
+        public bool HasAttackTypeOverride;
+
+        /// <summary>
+        /// 몬스터 테이블의 기본 공격 성향 대신 사용할 맵 배치 Override 값입니다.
+        /// <see cref="HasAttackTypeOverride"/>가 false이면 이 값은 사용하지 않습니다.
+        /// </summary>
+        public CharacterConstants.AttackType AttackTypeOverride;
+
+        /// <summary>
         /// 카메라 컬링보다 우선 적용할 맵 표시 정책입니다.
         /// </summary>
         public MapCharacterVisibilityPolicy MapVisibilityPolicy;
@@ -39,6 +50,7 @@ namespace GGemCo2DCore
         /// <param name="canMoveY">Y축 이동 가능 여부입니다.</param>
         /// <param name="patrolData">순찰 데이터입니다.</param>
         /// <param name="mapVisibilityPolicy">맵 컬링 및 표시 정책입니다.</param>
+        /// <param name="attackTypeOverride">몬스터 테이블의 기본 공격 성향을 덮어쓸 값입니다. null이면 테이블 값을 사용합니다.</param>
         public CharacterRegenData(
             int uid,
             Vector3 position,
@@ -50,7 +62,8 @@ namespace GGemCo2DCore
             bool canMoveX = true,
             bool canMoveY = true,
             PatrolData patrolData = null,
-            MapCharacterVisibilityPolicy mapVisibilityPolicy = MapCharacterVisibilityPolicy.DefaultCulling)
+            MapCharacterVisibilityPolicy mapVisibilityPolicy = MapCharacterVisibilityPolicy.DefaultCulling,
+            CharacterConstants.AttackType? attackTypeOverride = null)
         {
             Uid = uid;
             MapUid = mapUid;
@@ -65,6 +78,26 @@ namespace GGemCo2DCore
             CanMoveY = canMoveY;
             this.patrolData = patrolData;
             MapVisibilityPolicy = mapVisibilityPolicy;
+            HasAttackTypeOverride = attackTypeOverride.HasValue;
+            AttackTypeOverride = attackTypeOverride.GetValueOrDefault();
+        }
+
+        /// <summary>
+        /// JSON 저장 시 AttackType Override 사용 여부를 기록할지 결정합니다.
+        /// </summary>
+        /// <returns>배치별 AttackType Override가 설정되어 있으면 <see langword="true"/>를 반환합니다.</returns>
+        public bool ShouldSerializeHasAttackTypeOverride()
+        {
+            return HasAttackTypeOverride;
+        }
+
+        /// <summary>
+        /// JSON 저장 시 AttackType Override 값을 기록할지 결정합니다.
+        /// </summary>
+        /// <returns>배치별 AttackType Override가 설정되어 있으면 <see langword="true"/>를 반환합니다.</returns>
+        public bool ShouldSerializeAttackTypeOverride()
+        {
+            return HasAttackTypeOverride;
         }
     }
     

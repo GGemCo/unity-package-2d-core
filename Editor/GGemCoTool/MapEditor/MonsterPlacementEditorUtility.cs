@@ -59,6 +59,25 @@ namespace GGemCo2DCoreEditor
         }
 
         /// <summary>
+        /// 몬스터의 현재 맵 배치 AttackType Override 값을 조회합니다.
+        /// </summary>
+        /// <param name="monster">조회할 몬스터입니다.</param>
+        /// <param name="fallbackMapUid">리젠 데이터 보정 시 사용할 대체 맵 UID입니다.</param>
+        /// <returns>배치별 Override 값이며, 값이 없으면 monster 테이블의 기본값을 사용합니다.</returns>
+        public static CharacterConstants.AttackType? GetAttackTypeOverride(
+            Monster monster,
+            int fallbackMapUid)
+        {
+            CharacterRegenData regenData = EnsureRegenData(monster, fallbackMapUid);
+            if (regenData == null || !regenData.HasAttackTypeOverride)
+            {
+                return null;
+            }
+
+            return regenData.AttackTypeOverride;
+        }
+
+        /// <summary>
         /// 몬스터의 맵 표시 정책을 리젠 데이터와 런타임 상태에 함께 적용합니다.
         /// </summary>
         /// <param name="monster">적용 대상 몬스터입니다.</param>
@@ -94,6 +113,36 @@ namespace GGemCo2DCoreEditor
         }
 
         /// <summary>
+        /// 몬스터의 배치별 AttackType Override를 리젠 데이터와 현재 런타임 상태에 함께 적용합니다.
+        /// </summary>
+        /// <param name="monster">적용 대상 몬스터입니다.</param>
+        /// <param name="fallbackMapUid">리젠 데이터 보정 시 사용할 대체 맵 UID입니다.</param>
+        /// <param name="attackTypeOverride">배치별 Override 값입니다. null이면 테이블 기본값을 사용합니다.</param>
+        /// <param name="tableAttackType">Override가 없을 때 사용할 monster 테이블의 기본값입니다.</param>
+        public static void ApplyAttackTypeOverride(
+            Monster monster,
+            int fallbackMapUid,
+            CharacterConstants.AttackType? attackTypeOverride,
+            CharacterConstants.AttackType tableAttackType)
+        {
+            if (!monster)
+            {
+                return;
+            }
+
+            CharacterRegenData regenData = EnsureRegenData(monster, fallbackMapUid);
+            if (regenData == null)
+            {
+                return;
+            }
+
+            regenData.HasAttackTypeOverride = attackTypeOverride.HasValue;
+            regenData.AttackTypeOverride = attackTypeOverride.GetValueOrDefault();
+            monster.ApplyAttackTypeOverride(attackTypeOverride, tableAttackType);
+            UpdateInfoText(monster);
+        }
+
+        /// <summary>
         /// 에디터에서 표시하는 몬스터 오버레이 텍스트를 현재 맵 표시 정책으로 갱신합니다.
         /// </summary>
         /// <param name="monster">텍스트를 갱신할 몬스터입니다.</param>
@@ -114,10 +163,14 @@ namespace GGemCo2DCoreEditor
             MapCharacterVisibilityPolicy mapVisibilityPolicy = regenData != null
                 ? regenData.MapVisibilityPolicy
                 : monster.MapVisibilityPolicy;
+            string attackTypeText = regenData != null && regenData.HasAttackTypeOverride
+                ? $"{regenData.AttackTypeOverride} (Override)"
+                : $"{monster.GetAttackType()} (Table)";
             Vector3 pos = monster.transform.position;
             float scaleX = Mathf.Abs(monster.transform.localScale.x);
             text.text =
-                $"Uid: {monster.uid}\nPos: ({pos.x:F2}, {pos.y:F2})\nScale: {scaleX:F2}\nVisibilityPolicy: {mapVisibilityPolicy}";
+                $"Uid: {monster.uid}\nPos: ({pos.x:F2}, {pos.y:F2})\nScale: {scaleX:F2}\n" +
+                $"AttackType: {attackTypeText}\nVisibilityPolicy: {mapVisibilityPolicy}";
         }
 
         /// <summary>

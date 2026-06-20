@@ -382,7 +382,32 @@ namespace GGemCo2DCore
             SetFlip(CharacterRegenData.IsFlip);
             canMoveX = CharacterRegenData.CanMoveX;
             canMoveY = CharacterRegenData.CanMoveY;
+
+            // Override 값이 없는 기존 배치 데이터는 InitializeByTable에서 적용한 테이블 기본값을 유지합니다.
+            if (CharacterRegenData.HasAttackTypeOverride)
+            {
+                SetAttackType(CharacterRegenData.AttackTypeOverride);
+            }
+
             _homeLeashController?.CaptureHome(CharacterRegenData);
+        }
+
+        /// <summary>
+        /// 맵 배치 AttackType Override를 리젠 데이터와 현재 몬스터 상태에 함께 적용합니다.
+        /// </summary>
+        /// <param name="attackTypeOverride">배치별 Override 값입니다. null이면 테이블 기본값을 적용합니다.</param>
+        /// <param name="tableAttackType">Override가 없을 때 사용할 monster 테이블의 기본 공격 성향입니다.</param>
+        public void ApplyAttackTypeOverride(
+            CharacterConstants.AttackType? attackTypeOverride,
+            CharacterConstants.AttackType tableAttackType)
+        {
+            if (CharacterRegenData != null)
+            {
+                CharacterRegenData.HasAttackTypeOverride = attackTypeOverride.HasValue;
+                CharacterRegenData.AttackTypeOverride = attackTypeOverride.GetValueOrDefault();
+            }
+
+            SetAttackType(attackTypeOverride ?? tableAttackType);
         }
 
         /// <summary>
