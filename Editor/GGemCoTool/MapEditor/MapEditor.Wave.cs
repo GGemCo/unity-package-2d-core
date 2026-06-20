@@ -367,6 +367,13 @@ namespace GGemCo2DCoreEditor
                 group.NextAfterSeconds = Mathf.Max(0f, EditorGUILayout.FloatField("시간 전환 기준", group.NextAfterSeconds));
                 group.NextDelaySeconds = Mathf.Max(0f, EditorGUILayout.FloatField("다음 그룹 지연", group.NextDelaySeconds));
                 group.NextGroupUid = DrawGroupUidPopup("명시 다음 그룹", scenario, group.NextGroupUid, group.GroupUid);
+                group.NavigationPointId = DrawOptionalSpawnPointIdPopup(
+                    "이동 유도 포인트",
+                    scenario,
+                    group.NavigationPointId);
+                EditorGUILayout.HelpBox(
+                    "이동 유도 포인트가 없으면 그룹 몬스터들의 스폰 위치 평균을 사용합니다.",
+                    MessageType.None);
             }
         }
 
@@ -530,6 +537,47 @@ namespace GGemCo2DCoreEditor
                 }
 
                 return 0;
+            }
+
+            int selectedIndex = ids.IndexOf(currentPointId);
+            if (selectedIndex < 0)
+            {
+                selectedIndex = 0;
+            }
+
+            int nextIndex = EditorGUILayout.Popup(label, selectedIndex, labels.ToArray());
+            nextIndex = Mathf.Clamp(nextIndex, 0, ids.Count - 1);
+            return ids[nextIndex];
+        }
+
+        /// <summary>
+        /// 선택하지 않음 값을 포함하는 스폰 포인트 드롭다운을 그리고 선택 결과를 반환합니다.
+        /// </summary>
+        /// <param name="label">필드 라벨입니다.</param>
+        /// <param name="scenario">스폰 포인트 목록을 가진 시나리오입니다.</param>
+        /// <param name="currentPointId">현재 선택된 포인트 ID이며, 0이면 자동 계산입니다.</param>
+        /// <returns>선택된 스폰 포인트 ID이며, 자동 계산을 선택하면 0입니다.</returns>
+        private static int DrawOptionalSpawnPointIdPopup(
+            string label,
+            MapWaveScenarioData scenario,
+            int currentPointId)
+        {
+            List<int> ids = new List<int> { 0 };
+            List<string> labels = new List<string> { "자동 계산(그룹 스폰 위치 평균)" };
+
+            if (scenario?.SpawnPoints != null)
+            {
+                for (int i = 0; i < scenario.SpawnPoints.Count; i++)
+                {
+                    MapWaveSpawnPointData point = scenario.SpawnPoints[i];
+                    if (point == null || point.PointId <= 0)
+                    {
+                        continue;
+                    }
+
+                    ids.Add(point.PointId);
+                    labels.Add($"Point {point.PointId} ({point.x:F1}, {point.y:F1}, {point.z:F1})");
+                }
             }
 
             int selectedIndex = ids.IndexOf(currentPointId);

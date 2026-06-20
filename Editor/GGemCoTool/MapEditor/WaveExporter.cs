@@ -204,7 +204,7 @@ namespace GGemCo2DCoreEditor
 
         /// <summary>
         /// 지정 시나리오에서 스폰 포인트를 제거합니다.
-        /// 이 스폰 포인트를 참조하던 몬스터 스폰 데이터는 참조 ID를 0으로 되돌립니다.
+        /// 이 스폰 포인트를 참조하던 몬스터 스폰 데이터와 그룹 이동 유도 포인트는 참조 ID를 0으로 되돌립니다.
         /// </summary>
         /// <param name="scenario">대상 시나리오입니다.</param>
         /// <param name="pointId">제거할 스폰 포인트 ID입니다.</param>
@@ -233,7 +233,17 @@ namespace GGemCo2DCoreEditor
                 for (int groupIndex = 0; groupIndex < scenario.Groups.Count; groupIndex++)
                 {
                     MapWaveGroupData group = scenario.Groups[groupIndex];
-                    if (group?.Monsters == null)
+                    if (group == null)
+                    {
+                        continue;
+                    }
+
+                    if (group.NavigationPointId == pointId)
+                    {
+                        group.NavigationPointId = 0;
+                    }
+
+                    if (group.Monsters == null)
                     {
                         continue;
                     }

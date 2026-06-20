@@ -44,6 +44,12 @@ namespace GGemCo2DCore
         public int NextGroupUid;
 
         /// <summary>
+        /// 이 그룹이 시작될 방향을 상위 게임 계층에 안내할 스폰 포인트 ID입니다.
+        /// 0이면 그룹 몬스터의 스폰 위치 평균을 이동 유도 기준으로 사용합니다.
+        /// </summary>
+        public int NavigationPointId;
+
+        /// <summary>
         /// 이 그룹에서 생성할 몬스터 목록입니다.
         /// </summary>
         public List<MapWaveMonsterSpawnData> Monsters = new List<MapWaveMonsterSpawnData>();

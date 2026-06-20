@@ -590,6 +590,9 @@ namespace GGemCo2DCore
             scenarioRuntime.IncrementPendingTransition();
             LogDebug($"웨이브 다음 그룹 전환 요청. scenarioUid:{scenarioRuntime.Data.ScenarioUid}, groupUid:{groupRuntime.Data.GroupUid}, instanceId:{groupRuntime.InstanceId}, reason:{reason}, pending:{scenarioRuntime.PendingTransitionCount}");
 
+            MapWaveGroupData nextGroup = ResolveNextGroupForTransition(scenarioRuntime, groupRuntime);
+            NotifyWaveTransitionRequested(scenarioRuntime, groupRuntime, nextGroup, reason);
+
             Coroutine routine = _mapManager.StartCoroutine(ProceedToNextGroupCoroutine(scenarioRuntime, groupRuntime));
             TrackCoroutine(routine);
 
@@ -597,6 +600,135 @@ namespace GGemCo2DCore
             {
                 RemoveGroupRuntime(scenarioRuntime, groupRuntime);
             }
+        }
+
+        /// <summary>
+        /// 반복 설정과 명시 다음 그룹 설정을 고려하여 실제 다음 실행 그룹을 계산합니다.
+        /// </summary>
+        /// <param name="scenarioRuntime">전환할 시나리오 런타임입니다.</param>
+        /// <param name="previousGroup">전환 기준 이전 그룹입니다.</param>
+        /// <returns>다음에 실행할 그룹이며, 시나리오가 종료되면 null입니다.</returns>
+        private static MapWaveGroupData ResolveNextGroupForTransition(
+            MapWaveScenarioRuntime scenarioRuntime,
+            MapWaveGroupRuntime previousGroup)
+        {
+            if (scenarioRuntime == null || previousGroup == null)
+            {
+                return null;
+            }
+
+            if (TryResolveRepeatedGroup(previousGroup, out MapWaveGroupData repeatedGroup, out _))
+            {
+                return repeatedGroup;
+            }
+
+            return scenarioRuntime.GetNextGroup(previousGroup.Data);
+        }
+
+        /// <summary>
+        /// 다음 그룹과 이동 유도 위치를 계산하여 맵 매니저의 범용 웨이브 전환 이벤트를 발행합니다.
+        /// </summary>
+        /// <param name="scenarioRuntime">전환할 시나리오 런타임입니다.</param>
+        /// <param name="previousGroup">전환 기준 이전 그룹입니다.</param>
+        /// <param name="nextGroup">다음에 실행할 그룹입니다.</param>
+        /// <param name="reason">전환을 요청한 원인입니다.</param>
+        private void NotifyWaveTransitionRequested(
+            MapWaveScenarioRuntime scenarioRuntime,
+            MapWaveGroupRuntime previousGroup,
+            MapWaveGroupData nextGroup,
+            WaveNextTriggerReason reason)
+        {
+            if (_mapManager == null || scenarioRuntime == null || previousGroup?.Data == null)
+            {
+                return;
+            }
+
+            bool hasNavigationPosition = TryResolveGroupNavigationPosition(
+                scenarioRuntime.Data,
+                nextGroup,
+                out Vector3 navigationPosition);
+            MapWaveTransitionContext context = new MapWaveTransitionContext(
+                scenarioRuntime.Data.ScenarioUid,
+                previousGroup.Data.GroupUid,
+                nextGroup?.GroupUid ?? 0,
+                previousGroup.Data.NextPolicy,
+                reason,
+                previousGroup.Data.NextDelaySeconds,
+                hasNavigationPosition,
+                navigationPosition);
+            _mapManager.NotifyWaveTransitionRequested(context);
+        }
+
+        /// <summary>
+        /// 그룹의 명시 이동 유도 포인트를 우선 사용하고, 없으면 몬스터 스폰 위치의 가중 평균을 계산합니다.
+        /// </summary>
+        /// <param name="scenarioData">스폰 포인트 목록을 가진 시나리오입니다.</param>
+        /// <param name="groupData">이동 유도 위치를 계산할 다음 그룹입니다.</param>
+        /// <param name="navigationPosition">계산된 이동 유도 위치입니다.</param>
+        /// <returns>유효한 위치를 계산했으면 <see langword="true"/>를 반환합니다.</returns>
+        private static bool TryResolveGroupNavigationPosition(
+            MapWaveScenarioData scenarioData,
+            MapWaveGroupData groupData,
+            out Vector3 navigationPosition)
+        {
+            navigationPosition = Vector3.zero;
+            if (scenarioData == null || groupData == null)
+            {
+                return false;
+            }
+
+            if (groupData.NavigationPointId > 0)
+            {
+                MapWaveSpawnPointData navigationPoint =
+                    FindSpawnPoint(scenarioData, groupData.NavigationPointId);
+                if (navigationPoint != null)
+                {
+                    navigationPosition = new Vector3(
+                        navigationPoint.x,
+                        navigationPoint.y,
+                        navigationPoint.z);
+                    return true;
+                }
+            }
+
+            if (groupData.Monsters == null)
+            {
+                return false;
+            }
+
+            Vector3 weightedPositionSum = Vector3.zero;
+            int totalCount = 0;
+            for (int i = 0; i < groupData.Monsters.Count; i++)
+            {
+                MapWaveMonsterSpawnData monsterSpawn = groupData.Monsters[i];
+                if (monsterSpawn == null)
+                {
+                    continue;
+                }
+
+                MapWaveSpawnPointData spawnPoint =
+                    FindSpawnPoint(scenarioData, monsterSpawn.SpawnPointId);
+                if (spawnPoint == null)
+                {
+                    continue;
+                }
+
+                int count = Mathf.Max(1, monsterSpawn.Count);
+                Vector3 spawnPosition = new Vector3(
+                    spawnPoint.x + monsterSpawn.OffsetX,
+                    spawnPoint.y + monsterSpawn.OffsetY,
+                    spawnPoint.z + monsterSpawn.OffsetZ);
+                weightedPositionSum += spawnPosition * count;
+                totalCount += count;
+            }
+
+            if (totalCount <= 0)
+            {
+                return false;
+            }
+
+            navigationPosition = weightedPositionSum / totalCount;
+            return true;
         }
 
         /// <summary>

@@ -50,6 +50,12 @@ namespace GGemCo2DCore
         public static event Action<MapTileCommon, GameObject> OnLoadCompletePlayer;
         public static event Action<MapTileCommon, GameObject> OnLoadCompleteNpc;
 
+        /// <summary>
+        /// 웨이브 그룹의 다음 전환이 요청되었을 때 발생합니다.
+        /// Core는 전환 정보만 제공하며, 자동 이동이나 UI 연출 여부는 상위 게임 계층에서 결정합니다.
+        /// </summary>
+        public static event Action<MapWaveTransitionContext> OnWaveTransitionRequested;
+
         // 현재 맵 테이블 데이터
         private StruckTableMap _currentMapTableData;
 
@@ -737,6 +743,20 @@ namespace GGemCo2DCore
         private bool TryHandleWaveMonsterDead(int monsterVid)
         {
             return _mapWaveSpawnController?.TryHandleWaveMonsterDead(monsterVid) == true;
+        }
+
+        /// <summary>
+        /// 웨이브 컨트롤러에서 계산한 다음 그룹 전환 정보를 외부 구독자에게 전달합니다.
+        /// </summary>
+        /// <param name="context">다음 그룹 및 이동 유도 위치를 포함한 전환 컨텍스트입니다.</param>
+        internal void NotifyWaveTransitionRequested(MapWaveTransitionContext context)
+        {
+            if (context == null)
+            {
+                return;
+            }
+
+            OnWaveTransitionRequested?.Invoke(context);
         }
 
         /// <summary>
