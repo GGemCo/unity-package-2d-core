@@ -89,7 +89,13 @@ namespace GGemCo2DCore
         public string GetStatusNameByKey(string key) => GetString(LocalizationConstants.Tables.StatusName, key);
         public string GetUIWindowItemUpgradeByKey(string key) => GetString(LocalizationConstants.Tables.UIWindowItemUpgrade, key);
         public string GetUIWindowItemCraftByKey(string key) => GetString(LocalizationConstants.Tables.UIWindowItemCraft, key);
-        public string GetUIWindowQuestRewardByKey(string key) => GetString(LocalizationConstants.Tables.UIWindowQuestReward, key);
+        /// <summary>
+        /// 외부 패키지가 지정한 문자열 테이블과 키로 현지화 문자열을 조회합니다.
+        /// </summary>
+        /// <param name="tableName">조회할 문자열 테이블 이름입니다.</param>
+        /// <param name="key">조회할 문자열 키입니다.</param>
+        /// <returns>현지화된 문자열입니다.</returns>
+        public string GetExternalString(string tableName, string key) => GetString(tableName, key);
         public string GetItemNameByKey(string key) => GetString(LocalizationConstants.Tables.ItemName, key);
         public string GetItemDescriptionByKey(string key) => GetString(LocalizationConstants.Tables.ItemDescription, key);
         public string GetItemTaxonomyByKey(string key) => GetString(LocalizationConstants.Tables.ItemTaxonomy, key);

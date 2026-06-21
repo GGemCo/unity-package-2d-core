@@ -770,9 +770,7 @@ namespace GGemCo2DCore
                 return true;
             }
 
-            if (SceneGame.Instance?.QuestManager?.HasActiveObjective(
-                    _currentMapUid,
-                    QuestConstants.ObjectiveType.KillMonsterInMap) == true)
+            if (MonsterRespawnSuppressionPolicyRegistry.ShouldSuppress(_currentMapUid))
             {
                 return true;
             }
@@ -928,7 +926,7 @@ namespace GGemCo2DCore
             {
                 EnsureCharacterRegenDataForMapSettlement(character);
                 ApplyMonsterMapBoundaryOverrides(character);
-                RefreshNpcQuestInfoIfNeeded(character);
+                RefreshCharacterPresentationIfNeeded(character);
                 return true;
             }
 
@@ -958,7 +956,7 @@ namespace GGemCo2DCore
             if (character.type == CharacterConstants.Type.Npc)
             {
                 _mapTileCommon.AddNpc(registrationVid, character.gameObject);
-                RefreshNpcQuestInfoIfNeeded(character);
+                RefreshCharacterPresentationIfNeeded(character);
                 return true;
             }
 
@@ -1199,15 +1197,12 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// NPC 등록 직후 퀘스트 상태 아이콘 갱신을 즉시 반영합니다.
+        /// NPC 등록 직후 외부 패키지의 캐릭터 표시 상태 갱신을 즉시 요청합니다.
         /// </summary>
         /// <param name="character">등록된 캐릭터입니다.</param>
-        private static void RefreshNpcQuestInfoIfNeeded(CharacterBase character)
+        private static void RefreshCharacterPresentationIfNeeded(CharacterBase character)
         {
-            if (character is Npc npc)
-            {
-                npc.UpdateQuestInfo();
-            }
+            CharacterPresentationRefreshRegistry.Refresh(character);
         }
 
         /// <summary>

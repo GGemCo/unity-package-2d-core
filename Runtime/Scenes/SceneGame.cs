@@ -93,7 +93,6 @@ namespace GGemCo2DCore
         public KeyboardManager KeyboardManager;
         public InteractionManager InteractionManager;
         public CutsceneManager CutsceneManager;
-        public QuestManager QuestManager;
         public VfxManager VfxManager;
         public ProjectileManager ProjectileManager;
         public LaserManager LaserManager;
@@ -201,7 +200,6 @@ namespace GGemCo2DCore
             }
 
             ItemManager?.OnStartBySceneGame();
-            QuestManager?.OnStartBySceneGame();
             VfxManager?.OnStartBySceneGame();
 
             _uiWindowInventory = uIWindowManager?.GetUIWindowByUid<UIWindowInventory>(UIWindowConstants.WindowUid.Inventory);
@@ -296,8 +294,6 @@ namespace GGemCo2DCore
             InteractionManager.Initialize(this);
             CutsceneManager = new CutsceneManager();
             CutsceneManager.Initialize(this);
-            QuestManager = new QuestManager();
-            QuestManager.Initialize(this);
             VfxManager = new VfxManager();
             VfxManager.Initialize(this);
             VfxManager.SetAnimationEventMediator(animationEventMediator);
@@ -611,7 +607,6 @@ namespace GGemCo2DCore
             CharacterManager?.OnDestroy();
             KeyboardManager?.OnDestroy();
             InteractionManager?.OnDestroy();
-            QuestManager?.OnDestroy();
             CutsceneManager?.OnDestroy();
 
             ServiceLocator.UnregisterAll();

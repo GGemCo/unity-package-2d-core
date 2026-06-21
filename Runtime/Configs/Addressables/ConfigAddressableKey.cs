@@ -1,4 +1,4 @@
-﻿namespace GGemCo2DCore
+namespace GGemCo2DCore
 {
     /// <summary>
     /// Addressables Key 네이밍 규칙(개별 에셋 식별자).
@@ -24,7 +24,6 @@
 
         // Dialogue / Quest / Cutscene
         public const string Dialogue = ConfigDefine.NameSDK + "_Dialogue";
-        public const string Quest    = ConfigDefine.NameSDK + "_Quest";
         public const string Cutscene = ConfigDefine.NameSDK + "_Cutscene";
 
         // Icons

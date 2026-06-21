@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using GGemCo2DCore;
 using UnityEditor;
 using UnityEditorInternal;
@@ -17,26 +17,21 @@ namespace GGemCo2DCoreEditor
         
         private TableNpc _tableNpc;
         private TableMonster _tableMonster;
-        private TableQuest _tableQuest;
         
         private readonly List<string> _nameNpc = new List<string>();
         private readonly List<string> _nameMonster = new List<string>();
-        private readonly List<string> _nameQuest = new List<string>();
         
         private readonly Dictionary<int, StruckTableNpc> _struckTableNpcs = new Dictionary<int, StruckTableNpc>(); 
         private readonly Dictionary<int, StruckTableMonster> _struckTableMonsters = new Dictionary<int, StruckTableMonster>(); 
-        private readonly Dictionary<int, StruckTableQuest> _struckTableQuest = new Dictionary<int, StruckTableQuest>(); 
         
         private int _selectedIndexNpc;
         private int _selectedIndexMonster;
-        private int _selectedIndexQuest;
         
         protected override void OnEnable()
         {
             base.OnEnable();
             _selectedIndexNpc = 0;
             _selectedIndexMonster = 0;
-            _selectedIndexQuest = 0;
             
             LoadTable();
         }
@@ -50,11 +45,9 @@ namespace GGemCo2DCoreEditor
                 
                 _tableNpc = TableLoaderManager.LoadNpcTable();
                 _tableMonster = TableLoaderManager.LoadMonsterTable();
-                _tableQuest = TableLoaderManager.LoadQuestTable();
             
                 LoadNpcInfoData();
                 LoadMonsterInfoData();
-                LoadQuestInfoData();
             
                 _optionList = new ReorderableList(serializedObject,
                     serializedObject.FindProperty("options"),
@@ -71,9 +64,6 @@ namespace GGemCo2DCoreEditor
                         : 0;
                     _selectedIndexMonster = dialogueNode.characterUid > 0
                         ? _nameMonster.FindIndex(x => x.Contains(dialogueNode.characterUid.ToString()))
-                        : 0;
-                    _selectedIndexQuest = dialogueNode.startQuestUid > 0
-                        ? _nameQuest.FindIndex(x => x.Contains(dialogueNode.startQuestUid.ToString()))
                         : 0;
                 }
             
@@ -101,23 +91,6 @@ namespace GGemCo2DCoreEditor
             catch (System.Exception ex)
             {
                 ShowLoadTableException(Title, ex);
-            }
-        }
-
-        private void LoadQuestInfoData()
-        {
-            Dictionary<int, StruckTableQuest> dictionary = _tableQuest.GetDatas();
-             
-            int index = 0;
-            _nameQuest.Add("0");
-            _struckTableQuest.TryAdd(index++, new StruckTableQuest());
-            foreach (KeyValuePair<int, StruckTableQuest> outerPair in dictionary)
-            {
-                var info = outerPair.Value;
-                if (info.Uid <= 0) continue;
-                _nameQuest.Add($"{info.Uid} - {info.Name}");
-                _struckTableQuest.TryAdd(index, info);
-                index++;
             }
         }
 
@@ -198,13 +171,8 @@ namespace GGemCo2DCoreEditor
             EditorGUILayout.PropertyField(serializedObject.FindProperty("thumbnailSourceFacing"));
 
             GUILayout.Space(20);
-            GUILayout.Label("현재 대화가 끝났을때 시작되는 퀘스트", EditorStyles.boldLabel);
-            if (dialogueNode)
-            {
-                _selectedIndexQuest = EditorGUILayout.Popup("startQuestUid", _selectedIndexQuest, _nameQuest.ToArray());
-                dialogueNode.startQuestUid = _struckTableQuest.GetValueOrDefault(_selectedIndexQuest)?.Uid ?? 0;
-            }
-
+            GUILayout.Label("현재 대화가 끝났을 때 시작되는 외부 콘텐츠", EditorStyles.boldLabel);
+            EditorGUILayout.PropertyField(serializedObject.FindProperty("startQuestUid"));
             EditorGUILayout.PropertyField(serializedObject.FindProperty("startQuestStep"));
             
             GUILayout.Space(20);

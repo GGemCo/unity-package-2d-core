@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -49,12 +49,12 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// NPC 인터랙션 정보를 UI에 바인딩하고 대화 세션을 시작합니다.
+        /// NPC 인터랙션 정보와 외부 선택지를 UI에 바인딩하고 대화 세션을 시작합니다.
         /// </summary>
         /// <param name="npc">대상 NPC입니다.</param>
         /// <param name="npcData">NPC 테이블 데이터입니다.</param>
         /// <param name="interactionData">인터랙션 테이블 데이터입니다.</param>
-        /// <param name="npcQuestDatas">퀘스트 목록입니다.</param>
+        /// <param name="externalChoices">외부 패키지가 제공한 선택지 목록입니다.</param>
         /// <param name="npcInteractionSettings">NPC 인터랙션 설정입니다.</param>
         /// <param name="dialogueSelection">이번 인터랙션에서 선택된 dialogue 정보입니다.</param>
         /// <param name="textContext">대사 포맷에 사용할 텍스트 컨텍스트입니다.</param>
@@ -62,7 +62,7 @@ namespace GGemCo2DCore
             CharacterBase npc,
             StruckTableNpc npcData,
             StruckTableInteraction interactionData,
-            List<NpcQuestData> npcQuestDatas,
+            List<InteractionChoiceContribution> externalChoices,
             GGemCoNpcInteractionSettings npcInteractionSettings = null,
             InteractionDialogueSelectionResult dialogueSelection = default(InteractionDialogueSelectionResult),
             InteractionDialogueTextContext textContext = null)
@@ -75,13 +75,17 @@ namespace GGemCo2DCore
                 ? dialogueSelection
                 : InteractionDialogueSelector.Select(interactionData);
             _currentTextContext = textContext ?? InteractionDialogueTextContext.Empty;
-            _currentQuestDatas = npcQuestDatas != null ? new List<NpcQuestData>(npcQuestDatas) : new List<NpcQuestData>();
+            _currentExternalChoices.Clear();
+            if (externalChoices != null)
+            {
+                _currentExternalChoices.AddRange(externalChoices);
+            }
             _npcInteractionSettings = npcInteractionSettings != null ? npcInteractionSettings : ResolveNpcInteractionSettings();
             _currentCharacterUid = npcData != null ? npcData.Uid : 0;
             _isLoadingDialogue = false;
 
             ResetRuntimeStateForNewInteraction();
-            CacheDefaultChoices(_currentQuestDatas, interactionData);
+            CacheDefaultChoices(_currentExternalChoices, interactionData);
             RestoreNpcPresentation();
 
             BeginDeferredInitialReveal(_dialogueLoadVersion);
@@ -178,7 +182,9 @@ namespace GGemCo2DCore
         {
             RestoreNpcPresentation();
             BindVisibleChoices(_defaultChoices);
-            ApplyDialogueMessage(ResolveInitialMessage(_currentInteractionData, _currentQuestDatas), revealImmediately: false);
+            ApplyDialogueMessage(
+                ResolveInitialMessage(_currentInteractionData, _currentExternalChoices),
+                revealImmediately: false);
             RefreshChoiceButtonsVisibility();
             RefreshThumbnailPosition();
             TryCompleteDeferredInitialReveal(_dialogueLoadVersion);
@@ -277,30 +283,32 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 기본 interaction/quest 선택지 목록을 캐시합니다.
+        /// 기본 interaction 및 외부 패키지 선택지 목록을 캐시합니다.
         /// dialogue 종료 후 같은 데이터를 다시 바인딩할 수 있도록 UI 상태와 분리해 저장합니다.
         /// </summary>
-        /// <param name="questList">NPC 퀘스트 목록입니다.</param>
+        /// <param name="externalChoices">외부 패키지가 제공한 선택지 목록입니다.</param>
         /// <param name="interactionData">interaction 테이블 데이터입니다.</param>
-        private void CacheDefaultChoices(List<NpcQuestData> questList, StruckTableInteraction interactionData)
+        private void CacheDefaultChoices(
+            List<InteractionChoiceContribution> externalChoices,
+            StruckTableInteraction interactionData)
         {
             _defaultChoices.Clear();
 
-            if (questList != null)
+            if (externalChoices != null)
             {
-                foreach (NpcQuestData npcQuestData in questList)
+                for (int i = 0; i < externalChoices.Count; i++)
                 {
-                    if (npcQuestData == null)
+                    InteractionChoiceContribution externalChoice = externalChoices[i];
+                    if (externalChoice == null)
                     {
                         continue;
                     }
 
-                    StruckTableQuest info = _tableQuest.GetDataByUid(npcQuestData.QuestUid);
                     _defaultChoices.Add(new InteractionData
                     {
-                        ChoiceType = ChoiceType.Quest,
-                        NpcQuestData = npcQuestData,
-                        Label = info != null ? info.Name : string.Empty,
+                        ChoiceType = ChoiceType.External,
+                        ExternalChoice = externalChoice,
+                        Label = externalChoice.Label,
                     });
                 }
             }
@@ -738,16 +746,18 @@ namespace GGemCo2DCore
         /// 인터랙션 시작 시 표시할 첫 메시지를 계산합니다.
         /// </summary>
         /// <param name="interactionData">인터랙션 데이터입니다.</param>
-        /// <param name="questList">퀘스트 목록입니다.</param>
+        /// <param name="externalChoices">외부 패키지가 제공한 선택지 목록입니다.</param>
         /// <returns>초기 표시 메시지입니다.</returns>
-        private string ResolveInitialMessage(StruckTableInteraction interactionData, List<NpcQuestData> questList)
+        private string ResolveInitialMessage(
+            StruckTableInteraction interactionData,
+            List<InteractionChoiceContribution> externalChoices)
         {
             if (interactionData != null && !string.IsNullOrEmpty(interactionData.Message))
             {
                 return ResolveInteractionLocalizedMessage(interactionData.Message);
             }
 
-            if (questList != null && questList.Count > 0)
+            if (externalChoices != null && externalChoices.Count > 0)
             {
                 return FormatInteractionText(messageQuestSelect);
             }

@@ -55,7 +55,6 @@ namespace GGemCo2DCore
         public const string ItemCraft        = "item_craft";
         public const string Cutscene         = "cutscene";
         public const string Dialogue         = "dialogue";
-        public const string Quest            = "quest";
         public const string License          = "license";
         public const string Projectile       = "projectile";
         public const string Laser            = "laser";
@@ -118,7 +117,6 @@ namespace GGemCo2DCore
         public static readonly AddressableAssetInfo TableItemCraft       = Make(ItemCraft);
         public static readonly AddressableAssetInfo TableCutscene        = Make(Cutscene);
         public static readonly AddressableAssetInfo TableDialogue        = Make(Dialogue);
-        public static readonly AddressableAssetInfo TableQuest           = Make(Quest);
         public static readonly AddressableAssetInfo TableLicense         = Make(License);
         public static readonly AddressableAssetInfo TableProjectile      = Make(Projectile);
         public static readonly AddressableAssetInfo TableLaser           = Make(Laser);
@@ -153,7 +151,7 @@ namespace GGemCo2DCore
             // Others
             TableVfx, TableVfxEffect, TableVfxParticle, TableVfxVariant, TableInteraction,
             TableShop, TableShopItem, TableShopPromotion, TableItemUpgrade, TableItemSalvage, TableItemCraft,
-            TableCutscene, TableDialogue, TableQuest, TableLicense,
+            TableCutscene, TableDialogue, TableLicense,
             TableProjectile, TableLaser, TableProjectileLinear, TableProjectileArc, TableProjectilePath, TableProjectileLinearThenSegments,
             TableSound, TableSoundBgm, TableSoundAmbient, TableSoundSfx, TableSoundVariant, TableSoundUsageManifest, TableSimulationTool,
             TableSimulationGrowth, TableCrowdControl, TableCrowdControlKnockBack, TableCrowdControlKnockDown, TableCrowdControlKnockUp, TableCrowdControlKnockDownAir, TableItemUse, TableItemUseAction

@@ -1,4 +1,4 @@
-﻿using UnityEditor;
+using UnityEditor;
 using UnityEngine;
 
 namespace GGemCo2DCoreEditor
@@ -23,7 +23,6 @@ namespace GGemCo2DCoreEditor
         private SettingVfx _settingVfx;
         private SettingItem _settingItem;
         private SettingDialogue _settingDialogue;
-        private SettingQuest _settingQuest;
         private SettingCutscene _settingCutscene;
         private SettingSound _settingSound;
         private SettingWorldMap _settingWorldMap;
@@ -63,7 +62,6 @@ namespace GGemCo2DCoreEditor
             _settingVfx = new SettingVfx(this);
             _settingItem = new SettingItem(this);
             _settingDialogue = new SettingDialogue(this);
-            _settingQuest = new SettingQuest(this);
             _settingCutscene = new SettingCutscene(this);
             _settingSound = new SettingSound(this);
             _settingWorldMap = new SettingWorldMap(this);
@@ -111,7 +109,6 @@ namespace GGemCo2DCoreEditor
 
                 using (new EditorGUILayout.HorizontalScope())
                 {
-                    _settingQuest?.OnGUI();
                     _settingCutscene?.OnGUI();
                 }
 

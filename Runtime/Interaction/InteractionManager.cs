@@ -17,6 +17,8 @@ namespace GGemCo2DCore
         private object _interactionControlLockToken;
         private GGemCoNpcInteractionSettings _npcInteractionSettings;
         private readonly Dictionary<int, InteractionBlockReason> _interactionBlockReasons = new();
+        private readonly List<InteractionChoiceContribution> _externalChoices =
+            new List<InteractionChoiceContribution>();
         private int _nextInteractionBlockTokenId;
 
         public CharacterBase CurrentNpc => _currentNpc;
@@ -92,16 +94,20 @@ namespace GGemCo2DCore
                 BeginPlayerControlLockForInteraction();
             }
 
-            // 퀘스트 정보
-            Npc npc = _currentNpc as Npc;
-            List<NpcQuestData> npcQuestDatas = npc?.GetQuestInfos();
-
             // 인터렉션 정보
             StruckTableInteraction infoInteraction = null;
             if (infoNpc.InteractionUid > 0)
             {
                 infoInteraction = _tableInteraction.GetDataByUid(infoNpc.InteractionUid);
             }
+
+            // 외부 패키지 선택지는 호출마다 재사용 목록을 비운 뒤 수집하여 불필요한 할당을 줄입니다.
+            _externalChoices.Clear();
+            InteractionChoiceContributorRegistry.Collect(
+                _currentNpc,
+                infoNpc,
+                infoInteraction,
+                _externalChoices);
 
             // 다른 윈도우가 열려있으면 닫아주기
             if (_npcInteractionSettings != null && _npcInteractionSettings.ui.hideOtherUiOnStart)
@@ -121,7 +127,7 @@ namespace GGemCo2DCore
                 _currentNpc,
                 infoNpc,
                 infoInteraction,
-                npcQuestDatas,
+                _externalChoices,
                 _npcInteractionSettings,
                 dialogueSelection,
                 textContext);
@@ -133,7 +139,7 @@ namespace GGemCo2DCore
         /// <param name="npc">현재 NPC입니다.</param>
         /// <param name="struckTableNpc">NPC 테이블 데이터입니다.</param>
         /// <param name="struckTableInteraction">인터랙션 테이블 데이터입니다.</param>
-        /// <param name="questInfos">NPC 퀘스트 목록입니다.</param>
+        /// <param name="externalChoices">외부 패키지가 제공한 선택지 목록입니다.</param>
         /// <param name="npcInteractionSettings">NPC 인터랙션 설정입니다.</param>
         /// <param name="dialogueSelection">이번 인터랙션에서 선택된 dialogue 정보입니다.</param>
         /// <param name="textContext">대사 포맷에 사용할 텍스트 컨텍스트입니다.</param>
@@ -141,7 +147,7 @@ namespace GGemCo2DCore
             CharacterBase npc,
             StruckTableNpc struckTableNpc,
             StruckTableInteraction struckTableInteraction,
-            List<NpcQuestData> questInfos,
+            List<InteractionChoiceContribution> externalChoices,
             GGemCoNpcInteractionSettings npcInteractionSettings,
             InteractionDialogueSelectionResult dialogueSelection,
             InteractionDialogueTextContext textContext)
@@ -157,7 +163,7 @@ namespace GGemCo2DCore
                 npc,
                 struckTableNpc,
                 struckTableInteraction,
-                questInfos,
+                externalChoices,
                 npcInteractionSettings,
                 dialogueSelection,
                 textContext);

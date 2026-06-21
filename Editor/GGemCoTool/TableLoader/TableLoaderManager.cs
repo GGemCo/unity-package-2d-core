@@ -86,10 +86,6 @@ namespace GGemCo2DCoreEditor
         {
             return LoadTable<TableDialogue>(ConfigAddressableTable.TableDialogue.Path, forceReload);
         }
-        public static TableQuest LoadQuestTable(bool forceReload = true)
-        {
-            return LoadTable<TableQuest>(ConfigAddressableTable.TableQuest.Path, forceReload);
-        }
 
         /// <summary>
         /// 에디터 환경에서 license 테이블을 로드합니다.

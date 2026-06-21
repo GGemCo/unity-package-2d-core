@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine.Localization;
 using UnityEngine.Localization.Settings;
 
@@ -51,7 +51,6 @@ namespace GGemCo2DCore
             public const string UIWindowItemInfo = "GGemCo_UIWindowItemInfo";
             public const string UIWindowItemUpgrade = "GGemCo_UIWindowItemUpgrade";
             public const string UIWindowItemCraft = "GGemCo_UIWindowItemCraft";
-            public const string UIWindowQuestReward = "GGemCo_UIWindowQuestReward";
             public const string UIWindowOption = "GGemCo_UIWindowOption";
             public const string UIWindowInteractionDialogue = "GGemCo_UIWindowInteractionDialogue";
             public const string UIWindowTcgBattleHud = "GGemCo_UIWindowTcgBattleHud";

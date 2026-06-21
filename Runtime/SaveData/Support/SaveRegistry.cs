@@ -35,13 +35,28 @@ namespace GGemCo2DCore
 
         public static IReadOnlyList<ISaveContributor> All => List;
 
-        /// <summary>로드 직후 SaveDataManager에서 호출. 현재 등록분엔 즉시 Restore, 이후 등록분엔 자동 적용.</summary>
+        /// <summary>
+        /// 저장 파일 로드 직후 현재 등록된 기여자에게 복원 데이터를 전달합니다.
+        /// 여러 패키지 저장 파일이 순차적으로 로드될 수 있으므로 보류 봉투는 섹션 단위로 병합합니다.
+        /// 이후 등록되는 기여자에게도 병합된 전체 봉투가 자동 적용됩니다.
+        /// </summary>
+        /// <param name="env">이번 저장 파일에서 복원한 확장 섹션 봉투입니다.</param>
         public static void ApplyRestore(SaveEnvelope env)
         {
-            _pendingRestore = env;
+            if (env == null)
+            {
+                return;
+            }
+
+            _pendingRestore ??= new SaveEnvelope();
+            foreach (KeyValuePair<string, Newtonsoft.Json.Linq.JToken> section in env.Sections)
+            {
+                _pendingRestore.Sections[section.Key] = section.Value;
+            }
+
             var list = All;
             for (int i = 0; i < list.Count; i++)
-                list[i].Restore(env);
+                list[i].Restore(_pendingRestore);
         }
         public static void Unregister(ISaveContributor contributor)
         {

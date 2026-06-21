@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 namespace GGemCo2DCore
 {
@@ -229,7 +229,7 @@ namespace GGemCo2DCore
             _currentDialogueSelection = InteractionDialogueSelectionResult.None;
             ClearCurrentDialogueNode();
             _currentTextContext = InteractionDialogueTextContext.Empty;
-            _currentQuestDatas.Clear();
+            _currentExternalChoices.Clear();
             if (imageThumbnail != null)
             {
                 imageThumbnail.sprite = null;

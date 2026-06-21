@@ -53,7 +53,6 @@ namespace GGemCo2DCore
         public TableItemCraft TableItemCraft { get; private set; } = new TableItemCraft();
         public TableCutscene TableCutscene { get; private set; } = new TableCutscene();
         public TableDialogue TableDialogue { get; private set; } = new TableDialogue();
-        public TableQuest TableQuest { get; private set; } = new TableQuest();
         public TableLicense TableLicense { get; private set; } = new TableLicense();
         public TableProjectile TableProjectile { get; private set; } = new TableProjectile();
         public TableLaser TableLaser { get; private set; } = new TableLaser();
@@ -126,7 +125,6 @@ namespace GGemCo2DCore
                 registry.Register(TableItemCraft);
                 registry.Register(TableCutscene);
                 registry.Register(TableDialogue);
-                registry.Register(TableQuest);
                 registry.Register(TableLicense);
                 registry.Register(TableProjectile);
                 registry.Register(TableLaser);
@@ -442,12 +440,6 @@ namespace GGemCo2DCore
             => GetData(TableDialogue, uid, "Dialogue", (t, i) => t.GetDataByUid(i), logIfMissing);
         public bool TryGetDialogueData(int uid, out StruckTableDialogue data, bool logIfMissing = false)
             => TryGetData(TableDialogue, uid, out data, "Dialogue", (t, i) => t.GetDataByUid(i), logIfMissing);
-
-        // Quest
-        public StruckTableQuest GetQuestData(int uid, bool logIfMissing = true)
-            => GetData(TableQuest, uid, "Quest", (t, i) => t.GetDataByUid(i), logIfMissing);
-        public bool TryGetQuestData(int uid, out StruckTableQuest data, bool logIfMissing = false)
-            => TryGetData(TableQuest, uid, out data, "Quest", (t, i) => t.GetDataByUid(i), logIfMissing);
 
         /// <summary>
         /// license 테이블에서 UID로 라이센스 정의를 조회합니다.

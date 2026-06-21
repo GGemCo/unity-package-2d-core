@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 namespace GGemCo2DCoreEditor
 {
@@ -29,9 +29,6 @@ namespace GGemCo2DCoreEditor
             
             var settingDialogue = new SettingDialogue(addressableEditor);
             settingDialogue.Setup(ctx);
-            
-            var settingQuest = new SettingQuest(addressableEditor);
-            settingQuest.Setup(ctx);
             
             var settingCutscene = new SettingCutscene(addressableEditor);
             settingCutscene.Setup(ctx);

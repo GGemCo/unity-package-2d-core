@@ -1,4 +1,4 @@
-﻿using System.Text.RegularExpressions;
+using System.Text.RegularExpressions;
 
 namespace GGemCo2DCore
 {
@@ -155,9 +155,6 @@ namespace GGemCo2DCore
         {
             /// <summary>Assets/{SDK}/DataAddressable/Dialogue</summary>
             public static string Dialogue => Combine(Root, "Dialogue");
-
-            /// <summary>Assets/{SDK}/DataAddressable/Quests</summary>
-            public static string Quests => Combine(Root, "Quests");
 
             /// <summary>Assets/{SDK}/DataAddressable/Cutscene</summary>
             public static string Cutscene => Combine(Root, "Cutscene");

@@ -11,7 +11,6 @@ namespace GGemCo2DCore
     {
         private GameObject _containerNpcName;
         private TagNameNpc _tagNameNpc;
-        private NpcQuestController _npcQuestController;
         private GameObject _sliderHpBar;
         private GameObject _prefabSliderHpBar;
         private Transform _containerNpcHpBar;
@@ -20,8 +19,6 @@ namespace GGemCo2DCore
         protected override void Awake()
         {
             base.Awake();
-            // 퀘스트 관리
-            _npcQuestController = gameObject.AddComponent<NpcQuestController>();
         }
         protected override void Start()
         {
@@ -182,16 +179,6 @@ namespace GGemCo2DCore
             }
         }
 
-        public void UpdateQuestInfo()
-        {
-            _npcQuestController?.LoadQuest();
-        }
-
-        public List<NpcQuestData> GetQuestInfos()
-        {
-            if (_npcQuestController == null) return null;
-            return _npcQuestController.GetQuestInfos();
-        }
         /// <summary>
         /// 몬스터가 죽었을때 처리 
         /// </summary>

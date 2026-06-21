@@ -1,4 +1,4 @@
-﻿namespace GGemCo2DCore
+namespace GGemCo2DCore
 {
     /// <summary>
     /// Addressables Group 네이밍 규칙(빌드/패키징 단위).
@@ -34,7 +34,6 @@
         public const string Map      = ConfigDefine.NameSDK + "_Map";
         public const string Table    = ConfigDefine.NameSDK + "_Table";
         public const string Dialogue = ConfigDefine.NameSDK + "_Dialogue";
-        public const string Quest    = ConfigDefine.NameSDK + "_Quest";
         public const string Cutscene = ConfigDefine.NameSDK + "_Cutscene";
 
         // Icons

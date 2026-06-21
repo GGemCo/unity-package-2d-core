@@ -4,23 +4,21 @@
 
 ## 방향(절대 위반 금지)
 
-Core  
-⬆  
-Control  
-⬆  
-Skill  
-⬆  
-AI_BT
+```text
+Core ← Quest
+Core ← Control ← Skill ← AI_BT
+```
 
 ## 허용(Allowed)
 
 - Control → Core
+- Quest → Core
 - Skill → Control, Core
 - AI_BT → Skill, Control, Core
 
 ## 금지(Forbidden) 예시
 
-- Core → Control/Skill/AI_BT 참조 추가
+- Core → Quest/Control/Skill/AI_BT 참조 추가
 - Control → Skill/AI_BT 참조 추가
 - Skill → AI_BT 참조 추가
 - Runtime 어셈블리에서 UnityEditor 참조

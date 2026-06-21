@@ -39,7 +39,7 @@ namespace GGemCo2DCore
         private enum ChoiceType
         {
             Interaction,
-            Quest,
+            External,
             Dialogue,
         }
 
@@ -49,7 +49,7 @@ namespace GGemCo2DCore
             public InteractionConstants.Type InteractionType;
             public string CustomTypeKey;
             public int Value;
-            public NpcQuestData NpcQuestData;
+            public InteractionChoiceContribution ExternalChoice;
             public DialogueOption DialogueOption;
             public string Label;
 
@@ -194,7 +194,8 @@ namespace GGemCo2DCore
         /// </summary>
         private DialogueNodeData _currentDialogueNode;
         private InteractionDialogueTextContext _currentTextContext = InteractionDialogueTextContext.Empty;
-        private List<NpcQuestData> _currentQuestDatas = new();
+        private readonly List<InteractionChoiceContribution> _currentExternalChoices =
+            new List<InteractionChoiceContribution>();
         private float _defaultMessageFontSize;
         private bool _isLoadingDialogue;
         private bool _isExecutingChoice;
@@ -237,8 +238,6 @@ namespace GGemCo2DCore
         private UIWindowPlayerStatReset _uiWindowPlayerStatReset;
         private UIWindowWorldMap _uiWindowWorldMap;
 
-        private TableQuest _tableQuest;
-        private QuestManager _questManager;
         private LocalizationManager _localizationManager;
         private AddressableLoaderCharacterThumbnail _addressableLoaderCharacterThumbnail;
         private GGemCoPlayerStatSettings _playerStatSettings;
@@ -274,8 +273,6 @@ namespace GGemCo2DCore
             _uiWindowPlayerStatReset = SceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowPlayerStatReset>(UIWindowConstants.WindowUid.PlayerStatReset);
             _uiWindowWorldMap = SceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowWorldMap>(UIWindowConstants.WindowUid.WorldMap);
 
-            _tableQuest = TableLoaderManager.Instance.TableQuest;
-            _questManager = SceneGame.QuestManager;
             _localizationManager = LocalizationManager.Instance;
             _addressableLoaderCharacterThumbnail = AddressableLoaderCharacterThumbnail.Instance;
             _playerStatSettings = AddressableLoaderSettings.Instance.playerStatSettings;

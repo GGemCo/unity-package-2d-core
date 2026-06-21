@@ -19,7 +19,6 @@ namespace GGemCo2DCoreEditor
             MapExporter = 101,
             TableEditor,
             WorldMapGraph = 109,
-            Quest = 110,
             CreateDialogue,
             Cutscene = 120,
             CreateVfxEffectPrefab,
@@ -88,7 +87,6 @@ namespace GGemCo2DCoreEditor
         public const string NameToolBuildProfile = NameToolDevelopment + "Build 프로파일";
         public const string NameToolMapExporter = NameToolDevelopment + "맵배치툴";
 
-        public const string NameToolQuest = NameToolDevelopment + "퀘스트 생성툴";
         public const string NameToolCreateDialogue = NameToolDevelopment + "대사 생성툴";
 
         public const string NameToolCutscene = NameToolDevelopment + "연출툴";

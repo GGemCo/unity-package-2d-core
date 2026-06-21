@@ -68,8 +68,11 @@ namespace GGemCo2DCore
 
                 switch (data.ChoiceType)
                 {
-                    case ChoiceType.Quest:
-                        await OnClickChoiceQuest(data.NpcQuestData);
+                    case ChoiceType.External:
+                        if (data.ExternalChoice?.ExecuteAsync != null)
+                        {
+                            await data.ExternalChoice.ExecuteAsync();
+                        }
                         break;
                     case ChoiceType.Interaction:
                         OnClickChoiceInteraction(data);
@@ -78,6 +81,10 @@ namespace GGemCo2DCore
                         await OnClickChoiceDialogue(index);
                         break;
                 }
+            }
+            catch (Exception exception)
+            {
+                GcLogger.LogException(exception);
             }
             finally
             {
@@ -108,35 +115,6 @@ namespace GGemCo2DCore
             if (_dialogueSession.IsCompleted)
             {
                 HandleDialogueSequenceCompleted();
-            }
-        }
-
-        /// <summary>
-        /// 퀘스트 버튼 클릭 처리를 수행합니다.
-        /// </summary>
-        /// <param name="npcQuestData">선택한 퀘스트 데이터입니다.</param>
-        private async Task OnClickChoiceQuest(NpcQuestData npcQuestData)
-        {
-            try
-            {
-                CloseDialogueByChoice();
-                if (npcQuestData.Status == QuestConstants.Status.Ready)
-                {
-                    if (await _questManager.StartQuest(npcQuestData.QuestUid, _currentCharacterUid) == false)
-                    {
-                        return;
-                    }
-                }
-                else if (npcQuestData.Status == QuestConstants.Status.InProgress)
-                {
-                    DialogEventData data = new DialogEventData(
-                        npcUid: _currentCharacterUid);
-                    GameEventManager.DialogStart(data);
-                }
-            }
-            catch (Exception e)
-            {
-                GcLogger.LogError(e.Message);
             }
         }
 

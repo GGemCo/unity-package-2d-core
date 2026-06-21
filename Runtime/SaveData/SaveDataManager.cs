@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -12,7 +12,11 @@ namespace GGemCo2DCore
         public PlayerData PlayerData;
         public InventoryData InventoryData;
         public EquipData EquipData;
-        public QuestData QuestData;
+        /// <summary>
+        /// 이전 Core 저장 파일에 포함된 퀘스트 진행 데이터입니다.
+        /// Quest 패키지가 확장 섹션으로 마이그레이션할 수 있도록 원본 JSON만 보관합니다.
+        /// </summary>
+        public JToken QuestData;
         public QuickSlotData QuickSlotData;
         public QuickSlotSimulationData QuickSlotSimulationData;
         public StashData StashData;
@@ -46,7 +50,6 @@ namespace GGemCo2DCore
         public PlayerData Player { get; private set; }
         public InventoryData Inventory { get; private set; }
         public EquipData Equip { get; private set; }
-        public QuestData Quest { get; private set; }
         public QuickSlotData QuickSlot { get; private set; }
         public QuickSlotSimulationData QuickSlotSimulation { get; private set; }
         public StashData Stash { get; private set; }
@@ -92,7 +95,6 @@ namespace GGemCo2DCore
             Player = new PlayerData();
             Inventory = new InventoryData();
             Equip = new EquipData();
-            Quest = new QuestData();
             QuickSlot = new QuickSlotData();
             QuickSlotSimulation = new QuickSlotSimulationData();
             Stash = new StashData();
@@ -113,7 +115,6 @@ namespace GGemCo2DCore
             Player.Initialize(this, tableLoaderManager, saveDataContainer);
             Inventory.Initialize(tableLoaderManager, saveDataContainer);
             Equip.Initialize(tableLoaderManager, saveDataContainer);
-            Quest.Initialize(tableLoaderManager, saveDataContainer);
             QuickSlot.Initialize(tableLoaderManager, saveDataContainer);
             QuickSlotSimulation.Initialize(tableLoaderManager, saveDataContainer);
             Stash.Initialize(tableLoaderManager, saveDataContainer);
@@ -133,15 +134,22 @@ namespace GGemCo2DCore
             ItemInstances.Restore(saveDataContainer?.ItemInstanceStoreData);
             
             // 외부 섹션 복원
+            var env = new SaveEnvelope();
             if (saveDataContainer?.Extensions != null)
             {
-                var env = new SaveEnvelope();
                 foreach (var kv in saveDataContainer.Extensions)
                     env.Sections[kv.Key] = kv.Value;
-
-                // 순서와 무관하게 복원 보장
-                SaveRegistry.ApplyRestore(env);
             }
+
+            // 기존 Core 저장 파일의 QuestData는 Quest 패키지 확장 섹션으로 한 번만 전달합니다.
+            if (saveDataContainer?.QuestData != null &&
+                !env.Sections.ContainsKey("quest.progress"))
+            {
+                env.Sections["quest.progress"] = saveDataContainer.QuestData;
+            }
+
+            // 순서와 무관하게 복원 보장
+            SaveRegistry.ApplyRestore(env);
 
             // 저장 파일이 없거나 복구가 필요해 신규 데이터로 시작한 경우,
             // Intro 단계의 Continue 버튼 오탐을 피하기 위해 즉시 저장하지 않습니다.
@@ -173,7 +181,6 @@ namespace GGemCo2DCore
                 PlayerData = Player,
                 InventoryData = Inventory,
                 EquipData = Equip,
-                QuestData = Quest,
                 QuickSlotData = QuickSlot,
                 QuickSlotSimulationData = QuickSlotSimulation,
                 StashData = Stash,
