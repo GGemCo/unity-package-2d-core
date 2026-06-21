@@ -13,7 +13,8 @@ namespace GGemCo2DCore
             Tcg,
             Affect,
             Skill,
-            AiBt
+            AiBt,
+            Quest
         }
         
         private class MetadataPackageInfo
@@ -37,6 +38,7 @@ namespace GGemCo2DCore
         public const string NamePackageAffect = "Affect";
         public const string NamePackageSkill = "Skill";
         public const string NamePackageAiBt = "AiBt";
+        public const string NamePackageQuest = "Quest";
         
         // 오브젝트 생성시 사용
         private const string NamePrefixCore = ConfigDefine.NameSDK + "_" + ConfigPackageInfo.NamePackageCore;
@@ -46,6 +48,7 @@ namespace GGemCo2DCore
         private const string NamePrefixAffect = ConfigDefine.NameSDK + "_" + ConfigPackageInfo.NamePackageAffect;
         private const string NamePrefixSkill = ConfigDefine.NameSDK + "_" + ConfigPackageInfo.NamePackageSkill;
         private const string NamePrefixAiBt = ConfigDefine.NameSDK + "_" + ConfigPackageInfo.NamePackageAiBt;
+        private const string NamePrefixQuest = ConfigDefine.NameSDK + "_" + ConfigPackageInfo.NamePackageQuest;
 
         private static readonly MetadataPackageInfo Core = new (
             PackageType.Core,
@@ -83,6 +86,11 @@ namespace GGemCo2DCore
             NamePackageAiBt,
             NamePrefixAiBt
         );
+        private static readonly MetadataPackageInfo Quest = new (
+            PackageType.Quest,
+            NamePackageQuest,
+            NamePrefixQuest
+        );
 
         private static readonly Dictionary<PackageType, MetadataPackageInfo> PackageInfos =
             new Dictionary<PackageType, MetadataPackageInfo>()
@@ -94,6 +102,7 @@ namespace GGemCo2DCore
                 {PackageType.Affect, Affect},
                 {PackageType.Skill, Skill},
                 {PackageType.AiBt, AiBt},
+                {PackageType.Quest, Quest},
             };
 
         public static string GetPackageName(PackageType packageType)

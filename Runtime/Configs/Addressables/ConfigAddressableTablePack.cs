@@ -28,6 +28,11 @@ namespace GGemCo2DCore
         public const string PackageAffect = "affect";
 
         /// <summary>
+        /// Quest 패키지 테이블 팩 식별자입니다.
+        /// </summary>
+        public const string PackageQuest = "quest";
+
+        /// <summary>
         /// 패키지 식별자에 맞는 런타임 테이블 팩 Addressables 정보를 생성합니다.
         /// </summary>
         /// <param name="packageId">패키지 식별자입니다. 예: core, skill, affect.</param>
@@ -55,13 +60,19 @@ namespace GGemCo2DCore
         public static readonly AddressableAssetInfo Affect = Make(PackageAffect);
 
         /// <summary>
+        /// Quest 테이블 팩 Addressables 정보입니다.
+        /// </summary>
+        public static readonly AddressableAssetInfo Quest = Make(PackageQuest);
+
+        /// <summary>
         /// 패키지별 런타임 테이블 팩 전체 목록입니다.
         /// </summary>
         public static readonly List<AddressableAssetInfo> All = new()
         {
             Core,
             Skill,
-            Affect
+            Affect,
+            Quest
         };
     }
 }
