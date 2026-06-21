@@ -163,18 +163,13 @@ namespace GGemCo2DCoreEditor
             }
             else
             {
-                Debug.LogError("퀘스트 node 가 없습니다.");
+                Debug.LogError("대화 노드를 찾을 수 없습니다.");
             }
             EditorGUILayout.PropertyField(serializedObject.FindProperty("thumbnailImage"));
             EditorGUILayout.PropertyField(serializedObject.FindProperty("thumbnailPositionType"));
             EditorGUILayout.PropertyField(serializedObject.FindProperty("thumbnailFlipPolicy"));
             EditorGUILayout.PropertyField(serializedObject.FindProperty("thumbnailSourceFacing"));
 
-            GUILayout.Space(20);
-            GUILayout.Label("현재 대화가 끝났을 때 시작되는 외부 콘텐츠", EditorStyles.boldLabel);
-            EditorGUILayout.PropertyField(serializedObject.FindProperty("startQuestUid"));
-            EditorGUILayout.PropertyField(serializedObject.FindProperty("startQuestStep"));
-            
             GUILayout.Space(20);
             _optionList.DoLayoutList();
 

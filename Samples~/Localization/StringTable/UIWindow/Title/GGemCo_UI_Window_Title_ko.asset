@@ -102,14 +102,6 @@ MonoBehaviour:
     m_Localized: "\uD018\uC2A4\uD2B8 \uB300\uC0AC"
     m_Metadata:
       m_Items: []
-  - m_Id: 332993417252879
-    m_Localized: "Hud \uD018\uC2A4\uD2B8 \uBAA9\uB85D"
-    m_Metadata:
-      m_Items: []
-  - m_Id: 332993417252880
-    m_Localized: "\uD018\uC2A4\uD2B8 \uBCF4\uC0C1 \uBAA9\uB85D"
-    m_Metadata:
-      m_Items: []
   - m_Id: 50084569782722560
     m_Localized: "\uAC8C\uC784 \uBA54\uB274"
     m_Metadata:

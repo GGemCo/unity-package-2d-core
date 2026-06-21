@@ -311,20 +311,6 @@ namespace GGemCo2DCore
             return character.CharacterRegenData.DefaultVisible == false;
         }
 
-        /// <summary>
-        /// 퀘스트 상태가 변경되었을때, npc 에 연결된 퀘스트 버튼 업데이트 해주기 
-        /// </summary>
-        public void OnChangeNpcQuestStatus()
-        {
-            foreach (var npc in Npcs)
-            {
-                if (npc.Value == null) continue;
-                // NpcQuestButton npcQuestButton = npc.GetComponent<NpcQuestButton>();
-                // if (npcQuestButton == null) continue;
-                // npcQuestButton.OnChangeQuestStatus();
-            }
-        }
-        
 #if UNITY_EDITOR
         /// <summary>
         /// 카메라 영역, 컬링 영역 시각화

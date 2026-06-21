@@ -22,9 +22,7 @@
           "nextNodeGuid": "b8bd15a5-7973-4a26-8198-51ae8912f03a"
         }
       ],
-      "nextNodeGuid": "",
-      "startQuestUid": 0,
-      "startQuestStep": 0
+      "nextNodeGuid": ""
     },
     {
       "guid": "6556be13-76f4-4a9c-be1a-172f4a464c13",
@@ -39,9 +37,7 @@
       "fontSize": 0.0,
       "thumbnailImage": "",
       "options": [],
-      "nextNodeGuid": "",
-      "startQuestUid": 0,
-      "startQuestStep": 0
+      "nextNodeGuid": ""
     },
     {
       "guid": "b8bd15a5-7973-4a26-8198-51ae8912f03a",
@@ -56,9 +52,7 @@
       "fontSize": 0.0,
       "thumbnailImage": "",
       "options": [],
-      "nextNodeGuid": "",
-      "startQuestUid": 0,
-      "startQuestStep": 0
+      "nextNodeGuid": ""
     }
   ]
 }

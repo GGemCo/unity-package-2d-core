@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -42,11 +42,6 @@ namespace GGemCo2DCore
         [Tooltip("원본 썸네일 이미지의 기본 바라보기 방향")]
         public DialogueBalloonThumbnailSourceFacing thumbnailSourceFacing = DialogueBalloonThumbnailSourceFacing.Right;
         public Vector2 cachedSize = Vector2.zero;
-        
-        [Header("현재 대화가 끝났을때 시작되는 퀘스트 고유번호")]
-        public int startQuestUid;
-        [Header("현재 대화가 끝났을때 startQuestUid 퀘스트 step")]
-        public int startQuestStep;
         
         [Header("선택지")]
         public List<DialogueOption> options = new List<DialogueOption>();

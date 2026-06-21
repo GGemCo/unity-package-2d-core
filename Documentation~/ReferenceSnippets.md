@@ -277,7 +277,6 @@ namespace GGemCo2DCore
         public TableItemCraft TableItemCraft { get; private set; } = new TableItemCraft();
         public TableCutscene TableCutscene { get; private set; } = new TableCutscene();
         public TableDialogue TableDialogue { get; private set; } = new TableDialogue();
-        public TableQuest TableQuest { get; private set; } = new TableQuest();
         public TableProjectile TableProjectile { get; private set; } = new TableProjectile();
         public TableSound TableSound { get; private set; } = new TableSound();
         public TableSimulationTool TableSimulationTool { get; private set; } = new TableSimulationTool();
@@ -322,7 +321,6 @@ namespace GGemCo2DCore
                 registry.Register(TableItemCraft);
                 registry.Register(TableCutscene);
                 registry.Register(TableDialogue);
-                registry.Register(TableQuest);
                 registry.Register(TableProjectile);
                 registry.Register(TableSound);
                 registry.Register(TableSimulationTool);

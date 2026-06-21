@@ -91,14 +91,6 @@ MonoBehaviour:
     m_Key: UIWindowDialogue
     m_Metadata:
       m_Items: []
-  - m_Id: 332993417252879
-    m_Key: UIWindowHudQuest
-    m_Metadata:
-      m_Items: []
-  - m_Id: 332993417252880
-    m_Key: UIWindowQuestReward
-    m_Metadata:
-      m_Items: []
   - m_Id: 135624462336
     m_Key: UIWindowLoadSaveData
     m_Metadata:

@@ -24,11 +24,6 @@ MonoBehaviour:
     m_Metadata:
       m_Items:
       - rid: 9086697494700097563
-  - m_Id: 403007148032
-    m_Key: Quest_InProgress
-    m_Metadata:
-      m_Items:
-      - rid: 9086697494700097564
   - m_Id: 403007148033
     m_Key: Skill_NoTarget
     m_Metadata:
@@ -664,10 +659,6 @@ MonoBehaviour:
       type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
       data:
         m_CommentText: Player.cs
-    - rid: 9086697494700097564
-      type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
-      data:
-        m_CommentText: QuestManager
     - rid: 9086697494700097565
       type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
       data:

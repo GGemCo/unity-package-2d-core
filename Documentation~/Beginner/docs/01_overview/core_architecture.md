@@ -306,7 +306,6 @@ Core 문서를 작성할 때 Unity의 기본 설계 원칙과 맞물리는 지�
 - `SystemMessageManager`
 - `CutsceneManager`
 - `MapManager`
-- `QuestManager`
 - `ItemManager`
 
 ---

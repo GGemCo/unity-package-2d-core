@@ -48,11 +48,9 @@
 - `Dialogue/DialogueNode.cs`
 - `Dialogue/DialogueOption.cs`
 
-### 퀘스트
-- `Quest/QuestManager.cs`
-- `Quest/Quest.cs`
-- `Quest/ObjectiveHandlerFactory.cs`
-- `Quest/*/ObjectiveHandler*.cs`
+### 퀘스트 패키지 연동
+- Quest 기능은 `com.ggemco.2d.quest` 패키지가 소유합니다.
+- Core는 인터랙션 선택지, 캐릭터 표시 갱신, 리스폰 정책 등의 확장 포트만 제공합니다.
 
 ---
 
@@ -111,7 +109,7 @@
 1. 플레이어가 NPC와 상호작용합니다.
 2. 대화 데이터가 로드되어 노드/선택지가 표시됩니다.
 3. 필요 시 퀘스트 수락 또는 진행 조건 갱신이 일어납니다.
-4. `QuestManager`와 Objective Handler가 현재 진행 상태를 업데이트합니다.
+4. Quest 패키지의 `QuestManager`와 Objective Handler가 현재 진행 상태를 업데이트합니다.
 
 ---
 
@@ -122,8 +120,7 @@
 3. `InteractionManager`
 4. `ItemManager`, `ItemUseService`, `ItemUseActionFactory`
 5. `DialogueLoader`, `DialogueData`
-6. `QuestManager`, `Quest`, `ObjectiveHandlerFactory`
-7. `Items/Options/*`
+6. `Items/Options/*`
 
 ---
 
@@ -158,7 +155,7 @@
 - UI 설명과 실제 실행 로직이 같은 데이터를 쓰는지 확인합니다.
 
 ### 퀘스트가 진행되지 않는 경우
-- `QuestManager`가 이벤트를 받고 있는지 확인합니다.
+- Quest 패키지의 `QuestManager`가 이벤트를 받고 있는지 확인합니다.
 - 해당 목표 타입용 `ObjectiveHandler`가 제대로 선택되는지 확인합니다.
 - 맵/대화/아이템 이벤트와 퀘스트 갱신이 느슨하게 연결되어 있는지 점검합니다.
 

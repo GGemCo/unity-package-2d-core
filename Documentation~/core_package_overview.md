@@ -555,16 +555,6 @@ Simulation/Quest/SaveData와 연결될 여지가 크며, 시스템 공통 시간
 
 ---
 
-### `QuestManager`
-
-**위치**
-`Quest/QuestManager.cs`
-
-**역할**
-퀘스트 상태와 진행 흐름의 중심입니다.
-
----
-
 ### `LocalizationManager`
 
 **위치**
@@ -845,7 +835,6 @@ Projectile, Trap, Vfx 등 새 리소스 생성의 진입점 역할을 합니다.
 * `PopupManager`
 * `Animation2dController`
 * `MapManager`
-* `QuestManager`
 * `ItemManager`
 
 ## Editor 1순위

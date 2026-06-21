@@ -174,8 +174,6 @@ namespace GGemCo2DCoreEditor
                     thumbnailFlipPolicy = node.thumbnailFlipPolicy,
                     thumbnailSourceFacing = node.thumbnailSourceFacing,
                     nextNodeGuid = node.nextNodeGuid,
-                    startQuestUid = node.startQuestUid,
-                    startQuestStep = node.startQuestStep,
                     options = BuildRuntimeOptions(dialogueInfo, collectionName, node),
                 };
                 data.nodes.Add(nodeData);
@@ -288,8 +286,6 @@ namespace GGemCo2DCoreEditor
                     node.position = nodeData.position.ToVector2();
                     node.options = nodeData.options ?? new List<DialogueOption>();
                     node.nextNodeGuid = nodeData.nextNodeGuid;
-                    node.startQuestUid = nodeData.startQuestUid;
-                    node.startQuestStep = nodeData.startQuestStep;
                     _editorWindowWindow.nodes.Add(node);
                 }
             }

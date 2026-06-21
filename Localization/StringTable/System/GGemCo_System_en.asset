@@ -22,10 +22,6 @@ MonoBehaviour:
     m_Localized: Your level is too low.
     m_Metadata:
       m_Items: []
-  - m_Id: 403007148032
-    m_Localized: The quest is already in progress.
-    m_Metadata:
-      m_Items: []
   - m_Id: 403007148033
     m_Localized: No target.
     m_Metadata:

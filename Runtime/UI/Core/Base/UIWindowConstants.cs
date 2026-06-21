@@ -1,4 +1,4 @@
-﻿namespace GGemCo2DCore
+namespace GGemCo2DCore
 {
     public static class UIWindowConstants
     {
@@ -24,10 +24,8 @@
             ItemUpgrade,
             ItemSalvage,
             ItemCraft,
-            Dialogue,
-            HudQuest,
-            QuestReward,
-            SaveData,
+            Dialogue = 19,
+            SaveData = 22,
             Option,
             QuickSlotSimulation,
             InputField,

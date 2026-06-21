@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 namespace GGemCo2DCore
 {
@@ -82,7 +82,6 @@ namespace GGemCo2DCore
             return _window.uid switch
             {
                 UIWindowConstants.WindowUid.ItemSalvage => new SlotIconBuildStrategyItemSalvage(),
-                // UIWindowConstants.WindowUid.QuestReward => new SlotIconBuildStrategyQuestReward(),
                 _                                       => null,
             };
         }

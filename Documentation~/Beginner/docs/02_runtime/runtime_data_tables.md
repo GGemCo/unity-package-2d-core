@@ -34,7 +34,6 @@ Core는 여러 시스템이 하드코딩보다 테이블과 설정 자산을 통
 - `TableLoader/Table/TableNpc.cs`
 - `TableLoader/Table/TableItem.cs`
 - `TableLoader/Table/TableProjectile.cs`
-- `TableLoader/Table/TableQuest.cs`
 - `TableLoader/Table/TableWindow.cs`
 - `TableLoader/Table/TableDialogue.cs`
 - `TableLoader/Table/TableStat.cs`
@@ -113,7 +112,7 @@ Core에는 다양한 기능이 들어 있지만, 실제 규칙은 코드보다 �
 4. `TableRegistry`
 5. `TableStat`, `TableState`, `TableDamageType`
 6. `TableMonster`, `TableNpc`, `TableItem`
-7. `TableProjectile`, `TableWindow`, `TableQuest`, `TableDialogue`
+7. `TableProjectile`, `TableWindow`, `TableDialogue`
 8. `LocalizationManager`
 
 ---

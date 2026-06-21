@@ -18,8 +18,6 @@ Key,Shared Comments,English(en),Korean(ko)
 "UIWindowItemSalvage","","ItemSalvage","아이템 분해"
 "UIWindowItemCraft","","ItemCraft","아이템 제작"
 "UIWindowDialogue","","Dialogue","퀘스트 대사"
-"UIWindowHudQuest","","HudQuest","Hud 퀘스트 목록"
-"UIWindowQuestReward","","QuestReward","퀘스트 보상 목록"
 "UIWindowLoadSaveData","","LoadSaveData","세이브 데이터 불러오기"
 "UIWindowOption","","Option","옵션"
 "UIWindowTcgGameMenu","","Game Menu","게임 메뉴"

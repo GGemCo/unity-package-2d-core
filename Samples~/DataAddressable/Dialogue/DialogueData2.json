@@ -13,9 +13,7 @@
       "fontSize": 0.0,
       "thumbnailImage": "",
       "options": [],
-      "nextNodeGuid": "0ca7bd97-c340-4792-8c04-d193cff29e5e",
-      "startQuestUid": 0,
-      "startQuestStep": 0
+      "nextNodeGuid": "0ca7bd97-c340-4792-8c04-d193cff29e5e"
     },
     {
       "guid": "ab8d3bc6-d10e-4663-babd-667f0c0d32f2",
@@ -30,9 +28,7 @@
       "fontSize": 0.0,
       "thumbnailImage": "",
       "options": [],
-      "nextNodeGuid": "0ca7bd97-c340-4792-8c04-d193cff29e5e",
-      "startQuestUid": 0,
-      "startQuestStep": 0
+      "nextNodeGuid": "0ca7bd97-c340-4792-8c04-d193cff29e5e"
     },
     {
       "guid": "7f5d5436-7e27-4aeb-ac66-95c73df1f49b",
@@ -47,9 +43,7 @@
       "fontSize": 0.0,
       "thumbnailImage": "",
       "options": [],
-      "nextNodeGuid": "",
-      "startQuestUid": 0,
-      "startQuestStep": 0
+      "nextNodeGuid": ""
     },
     {
       "guid": "0ca7bd97-c340-4792-8c04-d193cff29e5e",
@@ -73,9 +67,7 @@
           "nextNodeGuid": "7f5d5436-7e27-4aeb-ac66-95c73df1f49b"
         }
       ],
-      "nextNodeGuid": "",
-      "startQuestUid": 0,
-      "startQuestStep": 0
+      "nextNodeGuid": ""
     }
   ]
 }

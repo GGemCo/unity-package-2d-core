@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace GGemCo2DCore
@@ -41,7 +41,5 @@ namespace GGemCo2DCore
         public DialogueBalloonThumbnailSourceFacing thumbnailSourceFacing = DialogueBalloonThumbnailSourceFacing.Right;
         public List<DialogueOption> options = new List<DialogueOption>();
         public string nextNodeGuid;
-        public int startQuestUid;
-        public int startQuestStep;
     }
 }

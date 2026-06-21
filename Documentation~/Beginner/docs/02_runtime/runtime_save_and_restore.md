@@ -46,7 +46,6 @@
 - `SaveData/Data/InventoryData.cs`
 - `SaveData/Data/EquipData.cs`
 - `SaveData/Data/QuickSlotData.cs`
-- `SaveData/Data/QuestData.cs`
 - `SaveData/Data/GameTimeData.cs`
 - `SaveData/Data/StashData.cs`
 - 기타 `SaveData/Data/*`
@@ -111,7 +110,7 @@
 4. `ISaveContributor`
 5. `SaveRegistry`
 6. `SaveFileController`
-7. `PlayerData`, `InventoryData`, `EquipData`, `QuestData`
+7. `PlayerData`, `InventoryData`, `EquipData`
 8. `SaveDataLoader`
 
 ---

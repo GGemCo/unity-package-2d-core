@@ -12,11 +12,6 @@ namespace GGemCo2DCore
         public PlayerData PlayerData;
         public InventoryData InventoryData;
         public EquipData EquipData;
-        /// <summary>
-        /// 이전 Core 저장 파일에 포함된 퀘스트 진행 데이터입니다.
-        /// Quest 패키지가 확장 섹션으로 마이그레이션할 수 있도록 원본 JSON만 보관합니다.
-        /// </summary>
-        public JToken QuestData;
         public QuickSlotData QuickSlotData;
         public QuickSlotSimulationData QuickSlotSimulationData;
         public StashData StashData;
@@ -139,13 +134,6 @@ namespace GGemCo2DCore
             {
                 foreach (var kv in saveDataContainer.Extensions)
                     env.Sections[kv.Key] = kv.Value;
-            }
-
-            // 기존 Core 저장 파일의 QuestData는 Quest 패키지 확장 섹션으로 한 번만 전달합니다.
-            if (saveDataContainer?.QuestData != null &&
-                !env.Sections.ContainsKey("quest.progress"))
-            {
-                env.Sections["quest.progress"] = saveDataContainer.QuestData;
             }
 
             // 순서와 무관하게 복원 보장

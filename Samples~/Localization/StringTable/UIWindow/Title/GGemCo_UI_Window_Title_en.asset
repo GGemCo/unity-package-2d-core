@@ -102,14 +102,6 @@ MonoBehaviour:
     m_Localized: Dialogue
     m_Metadata:
       m_Items: []
-  - m_Id: 332993417252879
-    m_Localized: HudQuest
-    m_Metadata:
-      m_Items: []
-  - m_Id: 332993417252880
-    m_Localized: QuestReward
-    m_Metadata:
-      m_Items: []
   - m_Id: 50084569782722560
     m_Localized: Game Menu
     m_Metadata:

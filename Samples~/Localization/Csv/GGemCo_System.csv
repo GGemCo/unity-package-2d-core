@@ -1,6 +1,5 @@
 Key,Shared Comments,English(en),English(en) Comments,Korean(ko),Korean(ko) Comments
 "Player_LevelTooLow","Player.cs","Your level is too low.","","플레이어 레벨이 부족합니다.",""
-"Quest_InProgress","QuestManager","The quest is already in progress.","","진행중인 퀘스트 입니다.",""
 "Skill_NoTarget","DefaultSkill","No target.","","타겟이 없습니다.",""
 "Currency_NotEnoughGold","SystemMessageManager","Not enough gold.","","골드가 부족합니다.",""
 "Currency_NotEnoughSilver","SystemMessageManager","Not enough silver.","","실버가 부족합니다.",""
