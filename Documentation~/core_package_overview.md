@@ -13,6 +13,23 @@
 
 ---
 
+
+## 1-1. Quest 패키지 분리 기준
+
+퀘스트 상태 관리, 목표 처리기, 보상 지급 UI, NPC 퀘스트 표시, Quest 전용 테이블 로더는 Quest 패키지로 분리되었습니다.
+Core는 Quest를 직접 참조하지 않고, 다음과 같은 공통 기반만 제공합니다.
+
+* `SceneGame` 생명주기와 씬 공용 참조
+* `SaveRegistry`, `ISaveContributor`, `SaveEnvelope` 저장 확장 포트
+* `InteractionChoiceContributorRegistry` NPC 상호작용 선택지 확장 포트
+* `MonsterRespawnSuppressionPolicyRegistry` 몬스터 리스폰 억제 정책 포트
+* `GameEventManager` 맵 입장/전투 진행 이벤트
+* `UIWindow`, `UIIcon`, 공통 UI 기반 클래스
+
+Quest 관련 핵심 클래스는 `quest_package_overview.md`에서 별도로 관리합니다.
+
+---
+
 # 2. Runtime 핵심 클래스
 
 ## 2-1. 최상위 기준 클래스
@@ -519,7 +536,7 @@ VFX 생성과 요청 적용, 프리웜, SpawnPolicy 적용을 담당합니다.
 인게임 시간 흐름을 관리합니다.
 
 **왜 중요한가**
-Simulation/Quest/SaveData와 연결될 여지가 크며, 시스템 공통 시간 기준이 됩니다.
+Simulation/SaveData와 연결될 여지가 크며, 시스템 공통 시간 기준이 됩니다.
 
 ---
 
@@ -860,4 +877,4 @@ Projectile, Trap, Vfx 등 새 리소스 생성의 진입점 역할을 합니다.
 
 # 5. Core 패키지 구조를 한 문장으로 요약하면
 
-Core는 **캐릭터/전투/스탯/UI/테이블/저장/로딩/VFX 같은 공통 기반을 제공하는 하위 런타임 계층**이고, Editor는 그 위에서 **데이터 편집, 테스트, 프로젝트 셋업, 생성 툴**을 제공하는 구조로 보는 것이 가장 적절합니다.
+Core는 **캐릭터/전투/스탯/UI/테이블/저장/로딩/VFX/맵/상호작용 같은 공통 기반을 제공하는 하위 런타임 계층**이고, Editor는 그 위에서 **데이터 편집, 테스트, 프로젝트 셋업, 생성 툴**을 제공하는 구조로 보는 것이 가장 적절합니다. Quest처럼 독립 패키지로 분리된 기능은 Core의 포트와 레지스트리를 통해 연결합니다.

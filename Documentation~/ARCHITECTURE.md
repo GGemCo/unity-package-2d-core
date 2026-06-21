@@ -26,7 +26,9 @@ Core는 프로젝트의 **공통 런타임 기반**입니다.
 - Addressables 기반 로딩(AddressableLoader*)
 - 이펙트/사운드/프로젝트일(Projectile) 등 전역 시스템
 
-Core는 다른 패키지(Control/Affect/Skill/BT)에서 **의존하는 하위 계층**으로 동작합니다.
+Core는 Quest/Control/Affect/Skill/BT 같은 상위 패키지에서 **의존하는 하위 계층**으로 동작합니다.
+
+퀘스트 진행, 목표 처리, 보상 UI, NPC 퀘스트 표시와 같은 Quest 전용 로직은 `com.ggemco.2d.quest` 패키지로 분리합니다. Core는 Quest를 직접 참조하지 않고, 상위 패키지가 사용할 수 있는 공통 이벤트/레지스트리/저장 확장 포인트만 제공합니다.
 
 ## 2. 폴더(개략)와 책임
 
@@ -38,7 +40,7 @@ Core는 다른 패키지(Control/Affect/Skill/BT)에서 **의존하는 하위 �
 - `Projectile/` : 발사체 컨트롤러/충돌 처리/경계 처리 등
 - `Effect/`, `Sound/` : 이펙트/사운드 재생 및 로더 연동
 - `Configs/`, `ScriptableSettings/` : 프로젝트/게임플레이 설정(ScriptableObject 중심)
-- `Maps/`, `Quest/`, `Dialogue/`, `SaveData/` : 게임 공통 기능 영역
+- `Maps/`, `Dialogue/`, `SaveData/`, `Interaction/` : 맵, 대화, 저장, 상호작용 공통 기능 영역
 
 Editor(CoreEditor)는 아래를 담당합니다.
 - `GGemCoTool/` : UseProjectile/UseCrowdControl/UseEffect/… 같은 테스트/편집 툴
@@ -63,7 +65,8 @@ Editor(CoreEditor)는 아래를 담당합니다.
 
 - Core Runtime은 **UnityEditor 네임스페이스를 참조하지 않습니다.**
 - Editor 코드는 반드시 CoreEditor 어셈블리(또는 Editor 폴더/asmdef)로 분리합니다.
-- 상위 패키지(Control/Affect/Skill/BT)는 Core를 의존할 수 있으나, Core는 상위 패키지에 의존하지 않습니다.
+- 상위 패키지(Quest/Control/Affect/Skill/BT)는 Core를 의존할 수 있으나, Core는 상위 패키지에 의존하지 않습니다.
+- Quest는 Core의 SceneGame, SaveRegistry, InteractionChoiceContributorRegistry, MonsterRespawnSuppressionPolicyRegistry 같은 공통 포트에 연결하되, Core Runtime은 Quest Runtime을 직접 참조하지 않습니다.
 
 ## 5. 확장 포인트(권장)
 
@@ -76,3 +79,9 @@ Editor(CoreEditor)는 아래를 담당합니다.
 예)
 - Projectile: `BoundaryMode` 같은 정책은 enum + 핸들러로 분리
 - UI: UIWindow는 View/Binding 책임을 분리(값 계산은 Controller/Presenter)
+
+## 6. 패키지 분리 메모
+
+- Quest 전용 런타임 로직은 `quest_package_overview.md`에서 관리합니다.
+- Core 문서에는 Quest가 사용할 공통 기반과 포트만 문서화합니다.
+- Quest 관련 테이블/JSON/보상/HUD/에디터 툴 변경은 Quest 패키지 문서와 의존성 계약을 함께 갱신합니다.
