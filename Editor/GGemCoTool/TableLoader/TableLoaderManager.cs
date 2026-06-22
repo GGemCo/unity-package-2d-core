@@ -37,6 +37,20 @@ namespace GGemCo2DCoreEditor
         {
             return LoadTable<TableMonster>(ConfigAddressableTable.TableMonster.Path, forceReload);
         }
+
+        /// <summary>
+        /// 에디터 환경에서 monster_combat_profile 테이블을 로드합니다.
+        /// </summary>
+        /// <param name="forceReload">캐시를 무시하고 다시 로드할지 여부입니다.</param>
+        /// <returns>로드된 몬스터 전투 프로필 테이블입니다.</returns>
+        public static TableMonsterCombatProfile LoadMonsterCombatProfileTable(
+            bool forceReload = true)
+        {
+            return LoadTable<TableMonsterCombatProfile>(
+                ConfigAddressableTable.TableMonsterCombatProfile.Path,
+                forceReload);
+        }
+
         public static TableMonsterPhase LoadMonsterPhaseTable(bool forceReload = true)
         {
             return LoadTable<TableMonsterPhase>(ConfigAddressableTable.TableMonsterPhase.Path, forceReload);

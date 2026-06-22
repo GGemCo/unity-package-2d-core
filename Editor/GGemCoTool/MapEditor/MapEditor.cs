@@ -19,6 +19,7 @@ namespace GGemCo2DCoreEditor
         private TableMap _tableMap;
         private TableNpc _tableNpc;
         private TableMonster _tableMonster;
+        private TableMonsterCombatProfile _tableMonsterCombatProfile;
         private TableAnimation _tableAnimation;
 
         private GameObject _gridTileMap;
@@ -52,8 +53,10 @@ namespace GGemCo2DCoreEditor
         private bool _usePatrolMonster;
         private MapCharacterVisibilityPolicy _monsterSpawnMapVisibilityPolicy;
         private CharacterConstants.AttackType? _monsterSpawnAttackTypeOverride;
+        private int? _monsterSpawnCombatProfileUidOverride;
         private MapCharacterVisibilityPolicy _editMonsterMapVisibilityPolicy;
         private CharacterConstants.AttackType? _editMonsterAttackTypeOverride;
+        private int? _editMonsterCombatProfileUidOverride;
         private bool _editMonsterApplyToSameUid;
         private int _editMonsterBoundInstanceId;
 
@@ -61,6 +64,8 @@ namespace GGemCo2DCoreEditor
         private readonly List<SearchableDropdownUtility.Option<int>> _mapOptions = new List<SearchableDropdownUtility.Option<int>>();
         private readonly List<SearchableDropdownUtility.Option<int>> _npcOptions = new List<SearchableDropdownUtility.Option<int>>();
         private readonly List<SearchableDropdownUtility.Option<int>> _monsterOptions = new List<SearchableDropdownUtility.Option<int>>();
+        private readonly List<SearchableDropdownUtility.Option<int>> _monsterCombatProfileOptions =
+            new List<SearchableDropdownUtility.Option<int>>();
         
         // MapEditor.cs 상단 필드 추가
         private bool _suppressSceneOpsThisEnable;
@@ -88,8 +93,10 @@ namespace GGemCo2DCoreEditor
             _usePatrolMonster = false;
             _monsterSpawnMapVisibilityPolicy = MapCharacterVisibilityPolicy.DefaultCulling;
             _monsterSpawnAttackTypeOverride = null;
+            _monsterSpawnCombatProfileUidOverride = null;
             _editMonsterMapVisibilityPolicy = MapCharacterVisibilityPolicy.DefaultCulling;
             _editMonsterAttackTypeOverride = null;
+            _editMonsterCombatProfileUidOverride = null;
             _editMonsterApplyToSameUid = false;
             _editMonsterBoundInstanceId = 0;
 
@@ -125,6 +132,8 @@ namespace GGemCo2DCoreEditor
             _tableMap = TableLoaderManager.LoadMapTable();
             _tableNpc = TableLoaderManager.LoadNpcTable();
             _tableMonster = TableLoaderManager.LoadMonsterTable();
+            _tableMonsterCombatProfile =
+                TableLoaderManager.LoadMonsterCombatProfileTable();
             _tableAnimation = TableLoaderManager.LoadSpineTable();
         }
 
@@ -201,6 +210,7 @@ namespace GGemCo2DCoreEditor
             _mapOptions.Clear();
             _npcOptions.Clear();
             _monsterOptions.Clear();
+            _monsterCombatProfileOptions.Clear();
 
             if (_tableMap != null)
             {
@@ -241,6 +251,31 @@ namespace GGemCo2DCoreEditor
                         info.Uid.ToString(),
                         info.Name,
                         info.Uid));
+                }
+            }
+
+            _monsterCombatProfileOptions.Add(
+                new SearchableDropdownUtility.Option<int>(
+                    "0",
+                    "사용 안 함",
+                    0));
+            if (_tableMonsterCombatProfile != null)
+            {
+                IReadOnlyDictionary<int, StruckTableMonsterCombatProfile> profiles =
+                    _tableMonsterCombatProfile.GetDatas();
+                foreach (KeyValuePair<int, StruckTableMonsterCombatProfile> pair in profiles)
+                {
+                    StruckTableMonsterCombatProfile profile = pair.Value;
+                    if (profile == null || profile.Uid <= 0)
+                    {
+                        continue;
+                    }
+
+                    _monsterCombatProfileOptions.Add(
+                        new SearchableDropdownUtility.Option<int>(
+                            profile.Uid.ToString(),
+                            profile.Name,
+                            profile.Uid));
                 }
             }
 
@@ -303,6 +338,7 @@ namespace GGemCo2DCoreEditor
             return _tableMap != null
                    && _tableNpc != null
                    && _tableMonster != null
+                   && _tableMonsterCombatProfile != null
                    && _tableAnimation != null
                    && _mapOptions.Count > 0;
         }
@@ -311,7 +347,7 @@ namespace GGemCo2DCoreEditor
         {
             EditorGUILayout.HelpBox(
                 "테이블 또는 목록 데이터가 준비되지 않았습니다.\n" +
-                "- Map/Npc/Monster/Animation 테이블 로드 여부\n" +
+                "- Map/Npc/Monster/MonsterCombatProfile/Animation 테이블 로드 여부\n" +
                 "- 테이블의 Uid > 0 데이터 존재 여부\n" +
                 "상단 '데이터 새로고침'으로 재시도 해주세요.",
                 MessageType.Warning); // :contentReference[oaicite:4]{index=4}
@@ -451,6 +487,66 @@ namespace GGemCo2DCoreEditor
                 "AttackType Override",
                 "이 맵에 배치되는 몬스터 인스턴스에만 적용할 공격 성향입니다.");
             return (CharacterConstants.AttackType)EditorGUILayout.EnumPopup(content, selectedValue);
+        }
+
+        /// <summary>
+        /// 몬스터 배치별 CombatProfileUid Override 사용 여부와 값을 검색형 드롭다운으로 편집합니다.
+        /// </summary>
+        /// <param name="currentValue">현재 배치별 Override 값입니다. null이면 테이블 기본값을 사용합니다.</param>
+        /// <param name="tableDefaultValue">선택한 monster 테이블 row의 기본 CombatProfileUid입니다.</param>
+        /// <param name="onSelected">드롭다운에서 새 UID를 선택했을 때 편집 상태에 반영할 콜백입니다.</param>
+        /// <returns>사용자가 선택한 Override 값이며, 테이블 기본값 사용 시 null입니다. 0은 프로필 미사용을 의미합니다.</returns>
+        private int? DrawCombatProfileUidOverrideField(
+            int? currentValue,
+            int tableDefaultValue,
+            Action<int> onSelected)
+        {
+            bool useOverride = HelperEditorUI.ToggleLeft(
+                $"CombatProfileUid Override 사용 (테이블 기본값: {tableDefaultValue})",
+                currentValue.HasValue,
+                "체크하지 않으면 monster 테이블의 CombatProfileUid를 사용합니다. Override 0은 전투 프로필을 사용하지 않습니다.");
+            if (!useOverride)
+            {
+                return null;
+            }
+
+            int selectedUid = Mathf.Max(
+                0,
+                currentValue ?? tableDefaultValue);
+            int selectedIndex = FindCombatProfileOptionIndex(selectedUid);
+            if (selectedIndex < 0)
+            {
+                EditorGUILayout.HelpBox(
+                    $"선택된 Combat Profile UID {selectedUid}를 monster_combat_profile 테이블에서 찾지 못했습니다.",
+                    MessageType.Warning);
+            }
+
+            SearchableDropdownUtility.DrawLabeledFieldAndShow(
+                "Combat Profile Override",
+                _monsterCombatProfileOptions,
+                selectedIndex,
+                (_, option) => onSelected?.Invoke(option.Data),
+                noneText: "(Combat Profile 선택)");
+            return selectedUid;
+        }
+
+        /// <summary>
+        /// Combat Profile 드롭다운에서 UID가 일치하는 옵션 인덱스를 찾습니다.
+        /// UID 0은 명시적인 프로필 미사용 옵션으로 허용합니다.
+        /// </summary>
+        /// <param name="selectedUid">검색할 Combat Profile UID입니다.</param>
+        /// <returns>일치하는 옵션 인덱스이며 찾지 못하면 -1입니다.</returns>
+        private int FindCombatProfileOptionIndex(int selectedUid)
+        {
+            for (int i = 0; i < _monsterCombatProfileOptions.Count; i++)
+            {
+                if (_monsterCombatProfileOptions[i].Data == selectedUid)
+                {
+                    return i;
+                }
+            }
+
+            return -1;
         }
 
         /// <summary>
@@ -785,6 +881,7 @@ namespace GGemCo2DCoreEditor
                         _selectedMonsterUid = option.Data;
                         // 새 몬스터 선택 시에는 해당 monster 테이블의 AttackType을 기본값으로 다시 사용합니다.
                         _monsterSpawnAttackTypeOverride = null;
+                        _monsterSpawnCombatProfileUidOverride = null;
                     },
                     noneText: "(몬스터 선택)");
 
@@ -797,6 +894,14 @@ namespace GGemCo2DCoreEditor
                 _monsterSpawnAttackTypeOverride = DrawAttackTypeOverrideField(
                     _monsterSpawnAttackTypeOverride,
                     tableAttackType);
+                int tableCombatProfileUid =
+                    GetMonsterTableCombatProfileUid(_selectedMonsterUid);
+                _monsterSpawnCombatProfileUidOverride =
+                    DrawCombatProfileUidOverrideField(
+                        _monsterSpawnCombatProfileUidOverride,
+                        tableCombatProfileUid,
+                        selectedUid =>
+                            _monsterSpawnCombatProfileUidOverride = selectedUid);
 
                 _usePatrolMonster = HelperEditorUI.ToggleLeft(
                     "패트롤 영역 생성",
@@ -813,7 +918,8 @@ namespace GGemCo2DCoreEditor
                             _selectedMonsterUid,
                             _usePatrolMonster,
                             _monsterSpawnMapVisibilityPolicy,
-                            _monsterSpawnAttackTypeOverride);
+                            _monsterSpawnAttackTypeOverride,
+                            _monsterSpawnCombatProfileUidOverride);
                     }
 
                     GUI.enabled = true;
@@ -859,6 +965,14 @@ namespace GGemCo2DCoreEditor
                 _editMonsterAttackTypeOverride = DrawAttackTypeOverrideField(
                     _editMonsterAttackTypeOverride,
                     tableAttackType);
+                int tableCombatProfileUid =
+                    GetMonsterTableCombatProfileUid(selectedMonster.uid);
+                _editMonsterCombatProfileUidOverride =
+                    DrawCombatProfileUidOverrideField(
+                        _editMonsterCombatProfileUidOverride,
+                        tableCombatProfileUid,
+                        selectedUid =>
+                            _editMonsterCombatProfileUidOverride = selectedUid);
 
                 _editMonsterApplyToSameUid = HelperEditorUI.ToggleLeft(
                     "동일 UID 일괄 적용",
@@ -975,6 +1089,10 @@ namespace GGemCo2DCoreEditor
                 MonsterPlacementEditorUtility.GetAttackTypeOverride(
                     selectedMonster,
                     GetSelectedMapUid());
+            _editMonsterCombatProfileUidOverride =
+                MonsterPlacementEditorUtility.GetCombatProfileUidOverride(
+                    selectedMonster,
+                    GetSelectedMapUid());
             _editMonsterBoundInstanceId = selectedMonster.GetInstanceID();
         }
 
@@ -1020,6 +1138,10 @@ namespace GGemCo2DCoreEditor
                     mapUid,
                     _editMonsterAttackTypeOverride,
                     tableAttackType);
+                MonsterPlacementEditorUtility.ApplyCombatProfileUidOverride(
+                    targetMonster,
+                    mapUid,
+                    _editMonsterCombatProfileUidOverride);
 
                 PrefabUtility.RecordPrefabInstancePropertyModifications(targetMonster);
                 EditorUtility.SetDirty(targetMonster);
@@ -1048,6 +1170,23 @@ namespace GGemCo2DCoreEditor
             return monsterData != null
                 ? monsterData.AttackType
                 : CharacterConstants.AttackType.None;
+        }
+
+        /// <summary>
+        /// monster 테이블에서 지정한 UID의 기본 CombatProfileUid를 조회합니다.
+        /// </summary>
+        /// <param name="monsterUid">조회할 몬스터 UID입니다.</param>
+        /// <returns>테이블의 기본 CombatProfileUid이며, 조회할 수 없으면 0입니다.</returns>
+        private int GetMonsterTableCombatProfileUid(int monsterUid)
+        {
+            if (_tableMonster == null || monsterUid <= 0)
+            {
+                return 0;
+            }
+
+            StruckTableMonster monsterData =
+                _tableMonster.GetDataByUid(monsterUid);
+            return Mathf.Max(0, monsterData?.CombatProfileUid ?? 0);
         }
 
         /// <summary>

@@ -50,11 +50,13 @@ namespace GGemCo2DCoreEditor
         /// <param name="usePatrolMonster">패트롤 영역을 함께 생성할지 여부입니다.</param>
         /// <param name="mapVisibilityPolicy">카메라 컬링보다 우선 적용할 맵 표시 정책입니다.</param>
         /// <param name="attackTypeOverride">monster 테이블의 기본 AttackType을 덮어쓸 배치별 값입니다.</param>
+        /// <param name="combatProfileUidOverride">monster 테이블의 CombatProfileUid를 덮어쓸 배치별 값입니다. null이면 테이블 값을 사용하고 0이면 프로필을 사용하지 않습니다.</param>
         public void AddMonsterToMap(
             int monsterUid,
             bool usePatrolMonster,
             MapCharacterVisibilityPolicy mapVisibilityPolicy,
-            CharacterConstants.AttackType? attackTypeOverride)
+            CharacterConstants.AttackType? attackTypeOverride,
+            int? combatProfileUidOverride)
         {
             if (!_defaultMap)
             {
@@ -91,7 +93,8 @@ namespace GGemCo2DCoreEditor
                 true,
                 patrolData: new PatrolData(Vector3.zero, Vector3.zero, Vector2.one, Vector2.zero),
                 mapVisibilityPolicy: mapVisibilityPolicy,
-                attackTypeOverride: attackTypeOverride);
+                attackTypeOverride: attackTypeOverride,
+                combatProfileUidOverride: combatProfileUidOverride);
             
             GameObject monster = _characterManager.CreateMonster(monsterData.Uid, characterRegenData, monsterPrefab);
             if (!monster)
@@ -116,6 +119,10 @@ namespace GGemCo2DCoreEditor
                     _defaultMap.GetChapterNumber(),
                     attackTypeOverride,
                     monsterData.AttackType);
+                MonsterPlacementEditorUtility.ApplyCombatProfileUidOverride(
+                    monsterScript,
+                    _defaultMap.GetChapterNumber(),
+                    combatProfileUidOverride);
             }
             
             // 몬스터 정보 보여줄 canvas 추가
@@ -166,6 +173,10 @@ namespace GGemCo2DCoreEditor
                     MonsterPlacementEditorUtility.GetMapVisibilityPolicy(monster, mapUid);
                 CharacterConstants.AttackType? attackTypeOverride =
                     MonsterPlacementEditorUtility.GetAttackTypeOverride(monster, mapUid);
+                int? combatProfileUidOverride =
+                    MonsterPlacementEditorUtility.GetCombatProfileUidOverride(
+                        monster,
+                        mapUid);
                 saveMonsterList.CharacterRegenDatas.Add(new CharacterRegenData(
                     monster.uid,
                     child.position,
@@ -176,7 +187,8 @@ namespace GGemCo2DCoreEditor
                     canMoveY: monster.canMoveY,
                     patrolData: patrolData,
                     mapVisibilityPolicy: mapVisibilityPolicy,
-                    attackTypeOverride: attackTypeOverride));
+                    attackTypeOverride: attackTypeOverride,
+                    combatProfileUidOverride: combatProfileUidOverride));
                 
                 // map 라벨 붙여주기 
                 // AddressableSettings 가져오기
@@ -269,6 +281,12 @@ namespace GGemCo2DCoreEditor
                             ? monsterData.AttackTypeOverride
                             : (CharacterConstants.AttackType?)null,
                         info.AttackType);
+                    MonsterPlacementEditorUtility.ApplyCombatProfileUidOverride(
+                        myMonsterScript,
+                        _defaultMap.GetChapterNumber(),
+                        monsterData.HasCombatProfileUidOverride
+                            ? monsterData.CombatProfileUidOverride
+                            : (int?)null);
                 }
                 // 몬스터 정보 보여줄 canvas 추가
                 CreateInfoCanvas(myMonsterScript);

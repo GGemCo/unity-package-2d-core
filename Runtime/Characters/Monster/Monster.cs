@@ -485,10 +485,11 @@ namespace GGemCo2DCore
             SetAttackType(info.AttackType);
 
             StruckTableMonsterCombatProfile combatProfileData = null;
-            if (info.CombatProfileUid > 0)
+            int combatProfileUid = ResolveCombatProfileUid(info);
+            if (combatProfileUid > 0)
             {
                 tableLoaderManager.TryGetMonsterCombatProfileData(
-                    info.CombatProfileUid,
+                    combatProfileUid,
                     out combatProfileData,
                     logIfMissing: true);
             }
@@ -503,6 +504,21 @@ namespace GGemCo2DCore
             _encounterMember?.Configure(CharacterRegenData?.patrolData, _encounterProfile);
             _attackSlotController?.Configure(_attackSlotProfile);
             _deathSkillController?.SetDeathSkillMonsterUid(info.DeathSkillMonsterUid);
+        }
+
+        /// <summary>
+        /// 맵 배치 Override가 있으면 해당 Combat Profile UID를 사용하고, 없으면 monster 테이블 기본값을 사용합니다.
+        /// </summary>
+        /// <param name="info">현재 몬스터 테이블 데이터입니다.</param>
+        /// <returns>이번 몬스터 인스턴스에 적용할 Combat Profile UID입니다.</returns>
+        private int ResolveCombatProfileUid(StruckTableMonster info)
+        {
+            if (CharacterRegenData?.HasCombatProfileUidOverride == true)
+            {
+                return Mathf.Max(0, CharacterRegenData.CombatProfileUidOverride);
+            }
+
+            return Mathf.Max(0, info?.CombatProfileUid ?? 0);
         }
 
 
