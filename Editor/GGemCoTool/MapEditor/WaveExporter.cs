@@ -567,6 +567,15 @@ namespace GGemCo2DCoreEditor
                 {
                     monsterSpawn.SpawnIntervalSeconds = 0f;
                 }
+
+                if (!monsterSpawn.HasCombatProfileUidOverride)
+                {
+                    monsterSpawn.CombatProfileUidOverride = 0;
+                }
+                else if (monsterSpawn.CombatProfileUidOverride < 0)
+                {
+                    monsterSpawn.CombatProfileUidOverride = 0;
+                }
             }
         }
 

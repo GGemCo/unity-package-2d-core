@@ -451,6 +451,7 @@ namespace GGemCo2DCore
             }
 
             Vector3 spawnPosition = ResolveSpawnPosition(spawnPoint, spawnData);
+            int? combatProfileUidOverride = ResolveCombatProfileUidOverride(spawnData);
             return new CharacterRegenData(
                 spawnData.MonsterUid,
                 spawnPosition,
@@ -462,7 +463,9 @@ namespace GGemCo2DCore
                 spawnData.CanMoveX,
                 spawnData.CanMoveY,
                 null,
-                ResolveVisibilityPolicy(spawnPoint, spawnData));
+                ResolveVisibilityPolicy(spawnPoint, spawnData),
+                null,
+                combatProfileUidOverride);
         }
 
         /// <summary>
@@ -522,6 +525,21 @@ namespace GGemCo2DCore
             return spawnData.MapVisibilityPolicy != MapCharacterVisibilityPolicy.DefaultCulling
                 ? spawnData.MapVisibilityPolicy
                 : spawnPoint.MapVisibilityPolicy;
+        }
+
+        /// <summary>
+        /// 웨이브 몬스터 배치별 CombatProfileUid Override 값을 리젠 데이터용 nullable 값으로 변환합니다.
+        /// </summary>
+        /// <param name="spawnData">웨이브 몬스터 스폰 데이터입니다.</param>
+        /// <returns>Override를 사용할 경우 0 이상 값이며, 테이블 기본값을 사용할 경우 null입니다.</returns>
+        private static int? ResolveCombatProfileUidOverride(MapWaveMonsterSpawnData spawnData)
+        {
+            if (spawnData?.HasCombatProfileUidOverride != true)
+            {
+                return null;
+            }
+
+            return Mathf.Max(0, spawnData.CombatProfileUidOverride);
         }
 
         /// <summary>

@@ -72,8 +72,38 @@ namespace GGemCo2DCore
         public bool CanMoveY = true;
 
         /// <summary>
+        /// monster 테이블의 CombatProfileUid 대신 웨이브 배치별 값을 사용할지 여부입니다.
+        /// </summary>
+        public bool HasCombatProfileUidOverride;
+
+        /// <summary>
+        /// 웨이브 배치별로 사용할 CombatProfileUid Override 값입니다.
+        /// 0이면 전투 프로필을 명시적으로 사용하지 않습니다.
+        /// <see cref="HasCombatProfileUidOverride"/>가 false이면 monster 테이블의 기본값을 사용합니다.
+        /// </summary>
+        public int CombatProfileUidOverride;
+
+        /// <summary>
         /// 웨이브 몬스터에 적용할 맵 표시 정책입니다.
         /// </summary>
         public MapCharacterVisibilityPolicy MapVisibilityPolicy = MapCharacterVisibilityPolicy.DefaultCulling;
+
+        /// <summary>
+        /// JSON 저장 시 CombatProfileUid Override 사용 여부를 기록할지 결정합니다.
+        /// </summary>
+        /// <returns>웨이브 배치별 CombatProfileUid Override가 설정되어 있으면 <see langword="true"/>를 반환합니다.</returns>
+        public bool ShouldSerializeHasCombatProfileUidOverride()
+        {
+            return HasCombatProfileUidOverride;
+        }
+
+        /// <summary>
+        /// JSON 저장 시 CombatProfileUid Override 값을 기록할지 결정합니다.
+        /// </summary>
+        /// <returns>웨이브 배치별 CombatProfileUid Override가 설정되어 있으면 <see langword="true"/>를 반환합니다.</returns>
+        public bool ShouldSerializeCombatProfileUidOverride()
+        {
+            return HasCombatProfileUidOverride;
+        }
     }
 }

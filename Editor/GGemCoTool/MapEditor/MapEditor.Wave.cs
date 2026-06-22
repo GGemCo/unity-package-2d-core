@@ -478,6 +478,21 @@ namespace GGemCo2DCoreEditor
                 (_, option) => monsterSpawn.MonsterUid = option.Data,
                 noneText: "(몬스터 선택)");
 
+            int tableCombatProfileUid = GetMonsterTableCombatProfileUid(monsterSpawn.MonsterUid);
+            int? combatProfileUidOverride = monsterSpawn.HasCombatProfileUidOverride
+                ? Mathf.Max(0, monsterSpawn.CombatProfileUidOverride)
+                : (int?)null;
+            combatProfileUidOverride = DrawCombatProfileUidOverrideField(
+                combatProfileUidOverride,
+                tableCombatProfileUid,
+                selectedUid =>
+                {
+                    monsterSpawn.HasCombatProfileUidOverride = true;
+                    monsterSpawn.CombatProfileUidOverride = Mathf.Max(0, selectedUid);
+                });
+            monsterSpawn.HasCombatProfileUidOverride = combatProfileUidOverride.HasValue;
+            monsterSpawn.CombatProfileUidOverride = Mathf.Max(0, combatProfileUidOverride.GetValueOrDefault());
+
             monsterSpawn.SpawnPointId = DrawSpawnPointIdPopup("스폰 포인트", scenario, monsterSpawn.SpawnPointId);
             monsterSpawn.Count = Mathf.Max(1, EditorGUILayout.IntField("생성 수", monsterSpawn.Count));
             monsterSpawn.SpawnIntervalSeconds = Mathf.Max(0f, EditorGUILayout.FloatField("스폰 간격", monsterSpawn.SpawnIntervalSeconds));
