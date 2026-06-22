@@ -154,6 +154,13 @@ namespace GGemCo2DCore
                 return;
             }
 
+            // 마지막 몬스터의 사망 스킬로 플레이어가 함께 사망한 경우에는
+            // 몬스터 전멸보다 플레이어 사망 처리를 우선하여 맵 종료 연출을 시작하지 않습니다.
+            if (!IsPlayerAliveForMapClear())
+            {
+                return;
+            }
+
             if (CountAliveMonsters() > 0)
             {
                 return;
@@ -261,7 +268,7 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 맵 종료 정책 실행 중 맵이 바뀌거나 새 몬스터가 생기지 않았는지 확인합니다.
+        /// 맵 종료 정책 실행 중 플레이어가 사망하거나 맵이 바뀌거나 새 몬스터가 생기지 않았는지 확인합니다.
         /// </summary>
         /// <param name="mapUid">실행 시작 시점의 맵 UID입니다.</param>
         /// <param name="policy">현재 맵 종료 정책 설정입니다.</param>
@@ -278,7 +285,26 @@ namespace GGemCo2DCore
                 return false;
             }
 
-            return CountAliveMonsters() <= 0;
+            return IsPlayerAliveForMapClear() && CountAliveMonsters() <= 0;
+        }
+
+        /// <summary>
+        /// 현재 플레이어가 맵 클리어 종료 연출을 진행할 수 있는 생존 상태인지 확인합니다.
+        /// </summary>
+        /// <returns>
+        /// 플레이어 오브젝트가 활성 상태이고 사망 또는 사망 보류 상태가 아니면
+        /// <see langword="true"/>입니다.
+        /// </returns>
+        private bool IsPlayerAliveForMapClear()
+        {
+            GameObject playerObject = _sceneGame != null ? _sceneGame.player : null;
+            if (playerObject == null || !playerObject.activeInHierarchy)
+            {
+                return false;
+            }
+
+            Player player = playerObject.GetComponent<Player>();
+            return player != null && !player.IsStatusDead() && !player.IsDeathPending;
         }
 
         /// <summary>
