@@ -215,11 +215,24 @@ namespace GGemCo2DCore
 
             ApplyAvailabilityVisual();
 
-            if (buttonBuy)
+            RefreshPurchaseButton();
+        }
+
+        /// <summary>
+        /// 현재 상품의 구매 제한 상태와 플레이어 재화 보유 여부를 구매 버튼에 반영합니다.
+        /// </summary>
+        public void RefreshPurchaseButton()
+        {
+            if (!buttonBuy)
             {
-                buttonBuy.gameObject.SetActive(true);
-                buttonBuy.interactable = _shopDisplayItem.IsBuyable;
+                return;
             }
+
+            buttonBuy.gameObject.SetActive(true);
+            buttonBuy.interactable = _shopDisplayItem != null &&
+                                     _shopDisplayItem.IsBuyable &&
+                                     _uiWindowShop != null &&
+                                     _uiWindowShop.CanAfford(_shopDisplayItem);
         }
 
         /// <summary>

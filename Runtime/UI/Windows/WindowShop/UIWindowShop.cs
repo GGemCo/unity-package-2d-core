@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using R3;
 using TMPro;
@@ -112,7 +112,7 @@ namespace GGemCo2DCore
 
             playerData.OnCurrentGoldChanged()
                 .CombineLatest(playerData.OnCurrentSilverChanged(), (_, _) => Unit.Default)
-                .Subscribe(_ => UpdatePriceText())
+                .Subscribe(_ => RefreshCurrencyDependentUi())
                 .AddTo(this);
         }
 
@@ -348,8 +348,7 @@ namespace GGemCo2DCore
             }
             _selectedElementShop = uiElementShop;
             
-            UpdatePriceText();
-            UpdateButtonBuy();
+            RefreshSelectedPurchaseUi();
             
             if (_coRefreshSelectedVfx != null)
             {
@@ -441,6 +440,32 @@ namespace GGemCo2DCore
             _coRefreshSelectedVfx = null;
         }
 
+        /// <summary>
+        /// 현재 선택된 상품의 가격 표시와 상단 구매 버튼 상태를 함께 갱신합니다.
+        /// </summary>
+        private void RefreshSelectedPurchaseUi()
+        {
+            UpdatePriceText();
+            UpdateButtonBuy();
+        }
+
+        /// <summary>
+        /// 플레이어 재화 변경에 따라 가격 표시와 모든 구매 버튼 상태를 갱신합니다.
+        /// 재고 및 외부 구매 제한 상태는 변경하지 않고 재화 보유 여부만 다시 반영합니다.
+        /// </summary>
+        private void RefreshCurrencyDependentUi()
+        {
+            RefreshSelectedPurchaseUi();
+
+            foreach (var pair in _uiElementShops)
+            {
+                pair.Value?.RefreshPurchaseButton();
+            }
+        }
+
+        /// <summary>
+        /// 현재 선택된 상품의 구매 가능 여부와 재화 보유 여부를 상단 구매 버튼에 반영합니다.
+        /// </summary>
         private void UpdateButtonBuy()
         {
             if (_selectedElementShop == null)
@@ -455,7 +480,9 @@ namespace GGemCo2DCore
             var displayItem = _selectedElementShop.GetDisplayItem();
             if (buttonBuy)
             {
-                buttonBuy.interactable = displayItem != null && displayItem.IsBuyable;
+                buttonBuy.interactable = displayItem != null &&
+                                         displayItem.IsBuyable &&
+                                         CanAfford(displayItem);
             }
         }
 
@@ -509,6 +536,11 @@ namespace GGemCo2DCore
             }
         }
 
+        /// <summary>
+        /// 플레이어가 현재 보유한 지정 재화의 수량을 반환합니다.
+        /// </summary>
+        /// <param name="currencyType">조회할 재화 종류입니다.</param>
+        /// <returns>현재 보유 수량이며, 지원하지 않는 재화이거나 플레이어 데이터가 없으면 0입니다.</returns>
         private long GetPlayerCurrencyValue(CurrencyConstants.Type currencyType)
         {
             var player = SceneGame?.saveDataManager?.Player;
@@ -520,6 +552,27 @@ namespace GGemCo2DCore
                 CurrencyConstants.Type.Silver => player.CurrentSilver,
                 _ => 0
             };
+        }
+
+        /// <summary>
+        /// 플레이어가 지정 상품 한 개를 구매할 수 있는 재화를 보유하고 있는지 확인합니다.
+        /// </summary>
+        /// <param name="item">재화 보유 여부를 확인할 상점 상품입니다.</param>
+        /// <returns>상품 가격 이상의 재화를 보유하고 있으면 true입니다.</returns>
+        public bool CanAfford(ShopDisplayItem item)
+        {
+            if (item == null || item.IsEmpty)
+            {
+                return false;
+            }
+
+            // 가격이 0 이하인 무료 상품은 재화 종류와 관계없이 구매 가능한 것으로 처리합니다.
+            if (item.CurrencyValue <= 0)
+            {
+                return true;
+            }
+
+            return GetPlayerCurrencyValue(item.CurrencyType) >= item.CurrencyValue;
         }
 
         private void OnClickBuy()
@@ -578,7 +631,7 @@ namespace GGemCo2DCore
                 pair.Value?.RefreshAvailability();
             }
 
-            UpdatePriceText();
+            RefreshSelectedPurchaseUi();
         }
 
         private void ClearShopElements()
@@ -618,6 +671,7 @@ namespace GGemCo2DCore
             maxCountIcon = 0;
             _selectedElementShop = null;
             _uiElementShops.Clear();
+            UpdateButtonBuy();
 
             if (vfxEffectUISelected)
             {
