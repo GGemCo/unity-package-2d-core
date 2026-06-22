@@ -306,10 +306,14 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 윈도우가 show 된 후 처리
+        /// 윈도우가 표시 상태로 전환된 직후 공통 후처리를 수행합니다.
+        /// 외부 패키지가 Core를 역참조하지 않고 UI 열림/닫힘을 감지할 수 있도록 공용 생명주기 이벤트를 발행합니다.
         /// </summary>
+        /// <param name="show">true면 윈도우가 열렸고, false면 윈도우가 닫혔습니다.</param>
         public virtual void OnShow(bool show)
         {
+            UIWindowLifecycleEvents.PublishVisibilityChanged(this, show);
+
             if (!show && removeIconSelectEffectOnClose)
                 SceneGame?.uIWindowManager?.ShowSelectIconImage(false);
         }
