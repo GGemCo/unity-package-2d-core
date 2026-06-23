@@ -717,11 +717,12 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 할인율 말풍선, 텍스트 설정
+        /// 할인 또는 재고 부족 말풍선의 표시 상태와 텍스트를 설정합니다.
+        /// 표시할 때는 텍스트 레이아웃을 확정한 뒤 썸네일 위치를 다시 계산합니다.
         /// </summary>
-        /// <param name="value"></param>
-        /// <param name="text"></param>
-        /// <param name="position"></param>
+        /// <param name="value">말풍선을 표시할지 여부입니다.</param>
+        /// <param name="text">말풍선에 표시할 텍스트입니다.</param>
+        /// <param name="position">선택된 상점 요소의 월드 좌표입니다.</param>
         private void SetDiscountTalkBubble(bool value, string text, Vector3 position)
         {
             if (textDiscountTalkBubble)
@@ -732,21 +733,85 @@ namespace GGemCo2DCore
             if (panelDiscountTalkBubble)
             {
                 panelDiscountTalkBubble.SetActive(value);
+                if (!value)
+                {
+                    return;
+                }
+
                 panelDiscountTalkBubble.transform.position = position + offsetDiscountTalkBubble;
 
                 if (panelDiscountTalkBubble.TryGetComponent<RectTransform>(out var bubbleRectTransform))
                 {
+                    // 대화 말풍선과 동일하게 TMP 및 레이아웃 갱신 후 최종 패널 너비를 사용합니다.
+                    textDiscountTalkBubble?.ForceMeshUpdate();
+                    Canvas.ForceUpdateCanvases();
                     LayoutRebuilder.ForceRebuildLayoutImmediate(bubbleRectTransform);
 
                     if (imageThumbnailCharacter && imageThumbnailCharacter.TryGetComponent<RectTransform>(out var thumbnailRectTransform))
                     {
-                        var anchoredPosition = thumbnailRectTransform.anchoredPosition;
-                        anchoredPosition.x = bubbleRectTransform.rect.width + offsetImageThumbnailCharacter.x;
-                        anchoredPosition.y += offsetImageThumbnailCharacter.y;
-                        thumbnailRectTransform.anchoredPosition = anchoredPosition;
+                        RefreshDiscountThumbnailPosition(bubbleRectTransform, thumbnailRectTransform);
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// 대화 말풍선과 동일한 기준으로 할인 말풍선 오른쪽에 썸네일을 배치합니다.
+        /// 패널 반너비와 썸네일 반너비를 합산하고 Inspector 오프셋을 추가합니다.
+        /// </summary>
+        /// <param name="bubbleRectTransform">최종 텍스트 크기가 반영된 말풍선 패널입니다.</param>
+        /// <param name="thumbnailRectTransform">위치를 갱신할 썸네일 RectTransform입니다.</param>
+        private void RefreshDiscountThumbnailPosition(
+            RectTransform bubbleRectTransform,
+            RectTransform thumbnailRectTransform)
+        {
+            if (bubbleRectTransform == null || thumbnailRectTransform == null)
+            {
+                return;
+            }
+
+            float bubbleHalfWidth = bubbleRectTransform.rect.width * 0.5f;
+            float thumbnailHalfWidth = thumbnailRectTransform.rect.width * 0.5f;
+            float thumbnailCenterX =
+                bubbleHalfWidth + thumbnailHalfWidth + offsetImageThumbnailCharacter.x;
+
+            if (thumbnailRectTransform.parent != bubbleRectTransform)
+            {
+                RectTransform thumbnailParentRectTransform = thumbnailRectTransform.parent as RectTransform;
+                thumbnailCenterX = ConvertBubbleSpaceXToParentLocalX(
+                    bubbleRectTransform,
+                    thumbnailParentRectTransform,
+                    thumbnailCenterX);
+            }
+
+            // 매 갱신마다 기준값을 대입하여 오프셋이 누적되지 않도록 합니다.
+            Vector2 anchoredPosition = thumbnailRectTransform.anchoredPosition;
+            anchoredPosition.x = thumbnailCenterX;
+            anchoredPosition.y = offsetImageThumbnailCharacter.y;
+            thumbnailRectTransform.anchoredPosition = anchoredPosition;
+        }
+
+        /// <summary>
+        /// 말풍선 로컬 X 좌표를 썸네일 부모의 로컬 X 좌표로 변환합니다.
+        /// 말풍선과 썸네일이 형제 또는 서로 다른 계층에 있어도 같은 배치 기준을 유지합니다.
+        /// </summary>
+        /// <param name="bubbleRectTransform">좌표 변환의 기준이 되는 말풍선 패널입니다.</param>
+        /// <param name="thumbnailParentRectTransform">썸네일의 부모 RectTransform입니다.</param>
+        /// <param name="bubbleSpaceX">말풍선 중심 기준 로컬 X 좌표입니다.</param>
+        /// <returns>썸네일 부모 로컬 좌표계로 변환된 X 좌표입니다.</returns>
+        private static float ConvertBubbleSpaceXToParentLocalX(
+            RectTransform bubbleRectTransform,
+            RectTransform thumbnailParentRectTransform,
+            float bubbleSpaceX)
+        {
+            if (bubbleRectTransform == null || thumbnailParentRectTransform == null)
+            {
+                return bubbleSpaceX;
+            }
+
+            Vector3 worldPoint = bubbleRectTransform.TransformPoint(new Vector3(bubbleSpaceX, 0f, 0f));
+            Vector3 parentLocalPoint = thumbnailParentRectTransform.InverseTransformPoint(worldPoint);
+            return parentLocalPoint.x;
         }
     }
 }
