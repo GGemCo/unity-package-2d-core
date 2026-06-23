@@ -98,6 +98,12 @@ namespace GGemCo2DCore
         {
             if (_activeVfx != null)
             {
+                // 아이템이 풀로 반환되어 다른 드랍에 재사용되기 전에 기존 VFX의 위치 추적 연결을 끊습니다.
+                // 해제 연출이 남아 있더라도 재사용된 Item Transform을 따라 이동하지 않도록 보장합니다.
+                TransformPositionFollower positionFollower =
+                    _activeVfx.GetComponent<TransformPositionFollower>();
+                positionFollower?.Clear();
+
                 _activeVfx.DestroyForce();
                 _activeVfx = null;
             }
