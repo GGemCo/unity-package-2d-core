@@ -19,6 +19,22 @@ namespace GGemCo2DCore
     }
 
     /// <summary>
+    /// 월드 아이템을 화면에 배치하는 방식을 정의합니다.
+    /// </summary>
+    public enum WorldItemDropSpawnMode
+    {
+        /// <summary>
+        /// 시작 위치에서 기존 포물선 드랍 애니메이션을 재생합니다.
+        /// </summary>
+        Animated,
+
+        /// <summary>
+        /// 저장된 최종 위치에 애니메이션 없이 즉시 배치합니다.
+        /// </summary>
+        RestoreAtPosition,
+    }
+
+    /// <summary>
     /// 월드에 아이템을 생성할 때 필요한 수량, 수명주기와 런타임 식별 정보를 전달합니다.
     /// </summary>
     public readonly struct WorldItemDropRequest
@@ -80,6 +96,23 @@ namespace GGemCo2DCore
         public readonly WorldItemPickupPolicy PickupPolicy;
 
         /// <summary>
+        /// 저장 데이터에서 복원할 기존 드랍 식별자입니다.
+        /// 0 이하이면 Core가 새로운 식별자를 발급합니다.
+        /// </summary>
+        public readonly long ExistingDropId;
+
+        /// <summary>
+        /// 월드 아이템을 화면에 배치할 방식입니다.
+        /// </summary>
+        public readonly WorldItemDropSpawnMode SpawnMode;
+
+        /// <summary>
+        /// 복원할 자동 소멸 잔여 시간입니다.
+        /// 0 미만이면 전역 설정값을 사용합니다.
+        /// </summary>
+        public readonly float RemainingAutoDespawnSeconds;
+
+        /// <summary>
         /// 월드 아이템 드랍 요청을 생성합니다.
         /// </summary>
         /// <param name="worldPosition">아이템을 생성할 월드 좌표입니다.</param>
@@ -93,6 +126,9 @@ namespace GGemCo2DCore
         /// <param name="sourceKey">상위 시스템의 런타임 출처 키입니다.</param>
         /// <param name="runtimeToken">현재 유효한 드랍을 식별하는 런타임 토큰입니다.</param>
         /// <param name="pickupPolicy">월드 아이템의 플레이어 획득 조건입니다.</param>
+        /// <param name="existingDropId">저장 데이터에서 복원할 기존 드랍 식별자입니다.</param>
+        /// <param name="spawnMode">월드 아이템 배치 방식입니다.</param>
+        /// <param name="remainingAutoDespawnSeconds">복원할 자동 소멸 잔여 시간입니다.</param>
         public WorldItemDropRequest(
             Vector3 worldPosition,
             int itemUid,
@@ -104,7 +140,10 @@ namespace GGemCo2DCore
             bool disableAutoDespawn = false,
             string sourceKey = null,
             long runtimeToken = 0,
-            WorldItemPickupPolicy pickupPolicy = WorldItemPickupPolicy.Default)
+            WorldItemPickupPolicy pickupPolicy = WorldItemPickupPolicy.Default,
+            long existingDropId = 0,
+            WorldItemDropSpawnMode spawnMode = WorldItemDropSpawnMode.Animated,
+            float remainingAutoDespawnSeconds = -1f)
         {
             WorldPosition = worldPosition;
             ItemUid = itemUid;
@@ -117,6 +156,9 @@ namespace GGemCo2DCore
             SourceKey = sourceKey;
             RuntimeToken = runtimeToken;
             PickupPolicy = pickupPolicy;
+            ExistingDropId = existingDropId;
+            SpawnMode = spawnMode;
+            RemainingAutoDespawnSeconds = remainingAutoDespawnSeconds;
         }
     }
 }

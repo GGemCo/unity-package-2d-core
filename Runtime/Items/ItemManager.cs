@@ -26,6 +26,12 @@ namespace GGemCo2DCore
         private readonly float _poolReduceTime = 10f;
         private SceneGame _sceneGame;
         private UIWindowInventory _uiWindowInventory;
+        private WorldItemDropData _worldItemDropData;
+        private readonly List<Item> _activeWorldDrops = new List<Item>();
+        private readonly List<WorldItemDropSaveEntry> _restoreEntries =
+            new List<WorldItemDropSaveEntry>();
+        private int _activeMapUid;
+        private bool _isMapEventsSubscribed;
 
         private ItemOptionRoller _itemOptionRoller;
         private PlayerData _playerData;
@@ -70,6 +76,8 @@ namespace GGemCo2DCore
             _monsterDropDictionary = TableLoaderManager.Instance.TableMonsterDropRate.GetMonsterDropDictionary();
             _npcDropDictionary = TableLoaderManager.Instance.TableNpcDropRate.GetNpcDropDictionary();
             _sceneGame = sceneGame;
+            _worldItemDropData = sceneGame?.saveDataManager?.WorldItemDrops;
+            SubscribeMapEvents();
 
             // 인스턴스 아이템 롤러 캐시
             _itemOptionRoller = new ItemOptionRoller(TableLoaderManager.Instance);
@@ -119,6 +127,40 @@ namespace GGemCo2DCore
             _uiWindowInventory =
                 _sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowInventory>(UIWindowConstants.WindowUid.Inventory);
             _playerData = _sceneGame.saveDataManager.Player;
+        }
+
+        /// <summary>
+        /// 맵 전환 시작과 입장 완료 이벤트를 중복 없이 구독합니다.
+        /// </summary>
+        private void SubscribeMapEvents()
+        {
+            if (_isMapEventsSubscribed || _sceneGame?.mapManager == null)
+            {
+                return;
+            }
+
+            _sceneGame.mapManager.OnLoadStartMap += OnMapLoadStart;
+            GameEventManager.MapEnteredEvent += OnMapEntered;
+            _isMapEventsSubscribed = true;
+        }
+
+        /// <summary>
+        /// 맵 전환 이벤트 구독을 해제합니다.
+        /// </summary>
+        private void UnsubscribeMapEvents()
+        {
+            if (!_isMapEventsSubscribed)
+            {
+                return;
+            }
+
+            if (_sceneGame?.mapManager != null)
+            {
+                _sceneGame.mapManager.OnLoadStartMap -= OnMapLoadStart;
+            }
+
+            GameEventManager.MapEnteredEvent -= OnMapEntered;
+            _isMapEventsSubscribed = false;
         }
         
         /// <summary>
@@ -184,7 +226,11 @@ namespace GGemCo2DCore
 
             // 랜덤 옵션 인스턴스 생성(권장: Count=1일 때만 인스턴스로 취급)
             var store = _sceneGame?.saveDataManager?.ItemInstances;
-            if (instanceId <= 0 && store != null && _itemOptionRoller != null && itemCount == 1)
+            if (request.SpawnMode != WorldItemDropSpawnMode.RestoreAtPosition &&
+                instanceId <= 0 &&
+                store != null &&
+                _itemOptionRoller != null &&
+                itemCount == 1)
             {
                 int seed = Random.Range(int.MinValue, int.MaxValue);
                 var instance = _itemOptionRoller.CreateInstance(
@@ -213,6 +259,29 @@ namespace GGemCo2DCore
                 return false;
             }
 
+            long dropId = request.ExistingDropId;
+            WorldItemDropSaveEntry saveEntry = null;
+            int mapUid = GetActiveMapUid();
+            if (mapUid > 0)
+            {
+                if (dropId <= 0)
+                {
+                    dropId = EnsureWorldItemDropData().CreateDropId();
+                }
+
+                saveEntry = FindDropEntry(mapUid, dropId);
+                if (saveEntry == null)
+                {
+                    saveEntry = new WorldItemDropSaveEntry
+                    {
+                        DropId = dropId,
+                    };
+                    EnsureWorldItemDropData().GetOrCreateEntries(mapUid).Add(saveEntry);
+                }
+
+                ApplyRequestToSaveEntry(saveEntry, request, itemCount, instanceId);
+            }
+
             item.Initialize(
                 request.ItemUid,
                 itemCount,
@@ -221,9 +290,18 @@ namespace GGemCo2DCore
                 request.SourceKey,
                 request.RuntimeToken,
                 request.DisableAutoDespawn,
-                request.PickupPolicy);
+                request.PickupPolicy,
+                dropId,
+                request.SpawnMode,
+                request.RemainingAutoDespawnSeconds);
             item.StartDrop();
+            _activeWorldDrops.Add(item);
             spawnedItem = item;
+
+            if (request.ExistingDropId <= 0)
+            {
+                _sceneGame?.saveDataManager?.StartSaveData();
+            }
             
             // 풀을 일정 시간이 지나면 정리하도록 코루틴 시작
             if (_sceneGame != null)
@@ -231,6 +309,41 @@ namespace GGemCo2DCore
                 _reducePoolCoroutine ??= _sceneGame.StartCoroutine(ReducePoolSize());
             }
             return true;
+        }
+
+        /// <summary>
+        /// 현재 저장 관리자가 보유한 월드 드랍 데이터를 반환합니다.
+        /// </summary>
+        /// <returns>항상 null이 아닌 월드 드랍 저장 데이터입니다.</returns>
+        private WorldItemDropData EnsureWorldItemDropData()
+        {
+            _worldItemDropData ??= _sceneGame?.saveDataManager?.WorldItemDrops;
+            _worldItemDropData ??= new WorldItemDropData();
+            return _worldItemDropData;
+        }
+
+        /// <summary>
+        /// 드랍 생성 요청의 최종 값을 저장 레코드에 반영합니다.
+        /// </summary>
+        /// <param name="entry">갱신할 저장 레코드입니다.</param>
+        /// <param name="request">원본 생성 요청입니다.</param>
+        /// <param name="itemCount">인스턴스 정책 적용 후 최종 수량입니다.</param>
+        /// <param name="instanceId">확정된 아이템 인스턴스 ID입니다.</param>
+        private static void ApplyRequestToSaveEntry(
+            WorldItemDropSaveEntry entry,
+            in WorldItemDropRequest request,
+            long itemCount,
+            long instanceId)
+        {
+            entry.ItemUid = request.ItemUid;
+            entry.ItemCount = itemCount;
+            entry.InstanceId = instanceId;
+            entry.SetWorldPosition(request.WorldPosition);
+            entry.SourceKey = request.SourceKey;
+            entry.RuntimeToken = request.RuntimeToken;
+            entry.DisableAutoDespawn = request.DisableAutoDespawn;
+            entry.PickupPolicy = request.PickupPolicy;
+            entry.RemainingAutoDespawnSeconds = request.RemainingAutoDespawnSeconds;
         }
         /// <summary>
         /// 일정 시간이 지나면 풀 크기를 다시 poolSize 값으로 줄인다.
@@ -479,12 +592,16 @@ namespace GGemCo2DCore
                 item.GetSourceKey(),
                 item.GetRuntimeToken());
 
+            RemoveDropRecord(GetActiveMapUid(), item.GetDropId());
+            _activeWorldDrops.Remove(item);
+
             // 획득 시에는 인스턴스를 유지해야 한다.
             item.ResetInfos(removeInstanceFromDb: false);
+            _sceneGame?.saveDataManager?.StartSaveData();
         }
 
         /// <summary>
-        /// 아직 획득되지 않은 월드 드랍 아이템을 풀로 반환합니다.
+        /// 아직 획득되지 않은 월드 드랍 아이템을 저장 데이터에서도 제거하고 풀로 반환합니다.
         /// </summary>
         /// <param name="item">반환할 월드 드랍 아이템입니다.</param>
         public void ReleaseWorldDrop(Item item)
@@ -494,7 +611,311 @@ namespace GGemCo2DCore
                 return;
             }
 
+            RemoveDropRecord(GetActiveMapUid(), item.GetDropId());
+            _activeWorldDrops.Remove(item);
             item.ResetInfos(removeInstanceFromDb: false);
+            _sceneGame?.saveDataManager?.StartSaveData();
+        }
+
+        /// <summary>
+        /// 자동 소멸 시간이 끝난 월드 드랍의 저장 레코드와 인스턴스 데이터를 제거합니다.
+        /// </summary>
+        /// <param name="item">만료된 월드 드랍 아이템입니다.</param>
+        public void ExpireWorldDrop(Item item)
+        {
+            if (item == null || item.GetItemUid() <= 0)
+            {
+                return;
+            }
+
+            long instanceId = item.GetInstanceId();
+            RemoveDropRecord(GetActiveMapUid(), item.GetDropId());
+            _activeWorldDrops.Remove(item);
+            if (instanceId > 0)
+            {
+                _sceneGame?.saveDataManager?.ItemInstances?.Remove(instanceId);
+            }
+
+            item.ResetInfos(removeInstanceFromDb: false);
+            _sceneGame?.saveDataManager?.StartSaveData();
+        }
+
+        /// <summary>
+        /// 지정한 출처 키로 생성된 모든 월드 드랍을 현재 맵과 저장된 다른 맵에서 제거합니다.
+        /// </summary>
+        /// <param name="sourceKey">제거할 드랍의 출처 키입니다.</param>
+        /// <returns>제거된 저장 레코드 수입니다.</returns>
+        public int RemoveWorldDropsBySourceKey(string sourceKey)
+        {
+            if (string.IsNullOrEmpty(sourceKey))
+            {
+                return 0;
+            }
+
+            int removedCount = 0;
+            for (int i = _activeWorldDrops.Count - 1; i >= 0; i--)
+            {
+                Item item = _activeWorldDrops[i];
+                if (item == null || item.GetSourceKey() != sourceKey)
+                {
+                    continue;
+                }
+
+                long instanceId = item.GetInstanceId();
+                _activeWorldDrops.RemoveAt(i);
+                if (instanceId > 0)
+                {
+                    _sceneGame?.saveDataManager?.ItemInstances?.Remove(instanceId);
+                }
+
+                item.ResetInfos(removeInstanceFromDb: false);
+            }
+
+            WorldItemDropData data = EnsureWorldItemDropData();
+            if (data.EntriesByMap == null)
+            {
+                return removedCount;
+            }
+
+            foreach (KeyValuePair<int, List<WorldItemDropSaveEntry>> pair in data.EntriesByMap)
+            {
+                List<WorldItemDropSaveEntry> entries = pair.Value;
+                if (entries == null)
+                {
+                    continue;
+                }
+
+                for (int i = entries.Count - 1; i >= 0; i--)
+                {
+                    WorldItemDropSaveEntry entry = entries[i];
+                    if (entry == null || entry.SourceKey != sourceKey)
+                    {
+                        continue;
+                    }
+
+                    if (entry.InstanceId > 0)
+                    {
+                        _sceneGame?.saveDataManager?.ItemInstances?.Remove(entry.InstanceId);
+                    }
+
+                    entries.RemoveAt(i);
+                    removedCount++;
+                }
+            }
+
+            if (removedCount > 0)
+            {
+                _sceneGame?.saveDataManager?.StartSaveData();
+            }
+
+            return removedCount;
+        }
+
+        /// <summary>
+        /// 현재 활성 드랍의 실제 위치와 자동 소멸 잔여 시간을 저장 데이터에 반영합니다.
+        /// </summary>
+        public void SyncActiveDropsToSaveData()
+        {
+            int mapUid = GetActiveMapUid();
+            if (mapUid <= 0)
+            {
+                return;
+            }
+
+            for (int i = _activeWorldDrops.Count - 1; i >= 0; i--)
+            {
+                Item item = _activeWorldDrops[i];
+                if (item == null || item.GetItemUid() <= 0)
+                {
+                    _activeWorldDrops.RemoveAt(i);
+                    continue;
+                }
+
+                WorldItemDropSaveEntry entry = FindDropEntry(mapUid, item.GetDropId());
+                if (entry == null)
+                {
+                    continue;
+                }
+
+                entry.SetWorldPosition(item.transform.position);
+                entry.RemainingAutoDespawnSeconds = item.GetRemainingAutoDespawnSeconds();
+            }
+        }
+
+        /// <summary>
+        /// 맵 로드가 시작되면 현재 맵 드랍 상태를 저장하고 오브젝트를 풀로 반환합니다.
+        /// 저장 레코드는 해당 맵에 그대로 유지합니다.
+        /// </summary>
+        private void OnMapLoadStart()
+        {
+            SyncActiveDropsToSaveData();
+            ReleaseActiveDropsForMapUnload();
+        }
+
+        /// <summary>
+        /// 맵 입장이 완료되면 해당 맵의 저장 레코드를 월드 드랍 오브젝트로 복원합니다.
+        /// </summary>
+        /// <param name="eventData">입장한 맵 정보입니다.</param>
+        private void OnMapEntered(MapEnteredEventData eventData)
+        {
+            ReleaseActiveDropsForMapUnload();
+            _activeMapUid = eventData.MapUid;
+            RestoreDropsForMap(eventData.MapUid);
+        }
+
+        /// <summary>
+        /// 현재 생성된 드랍 오브젝트를 저장 레코드를 유지한 채 풀로 반환합니다.
+        /// </summary>
+        private void ReleaseActiveDropsForMapUnload()
+        {
+            for (int i = _activeWorldDrops.Count - 1; i >= 0; i--)
+            {
+                Item item = _activeWorldDrops[i];
+                if (item != null && item.GetItemUid() > 0)
+                {
+                    item.ResetInfos(removeInstanceFromDb: false);
+                }
+            }
+
+            _activeWorldDrops.Clear();
+        }
+
+        /// <summary>
+        /// 지정한 맵에 저장된 유효한 월드 드랍을 최종 위치에 즉시 복원합니다.
+        /// </summary>
+        /// <param name="mapUid">복원할 맵 UID입니다.</param>
+        private void RestoreDropsForMap(int mapUid)
+        {
+            if (mapUid <= 0 ||
+                !EnsureWorldItemDropData().TryGetEntries(
+                    mapUid,
+                    out List<WorldItemDropSaveEntry> entries))
+            {
+                return;
+            }
+
+            _restoreEntries.Clear();
+            bool removedInvalidEntry = false;
+            for (int i = 0; i < entries.Count; i++)
+            {
+                WorldItemDropSaveEntry entry = entries[i];
+                if (entry != null)
+                {
+                    _restoreEntries.Add(entry);
+                }
+            }
+
+            for (int i = 0; i < _restoreEntries.Count; i++)
+            {
+                WorldItemDropSaveEntry entry = _restoreEntries[i];
+                if (entry.ItemUid <= 0 ||
+                    entry.ItemCount <= 0 ||
+                    (!entry.DisableAutoDespawn &&
+                     entry.RemainingAutoDespawnSeconds == 0f))
+                {
+                    if (entry.InstanceId > 0)
+                    {
+                        _sceneGame?.saveDataManager?.ItemInstances?.Remove(entry.InstanceId);
+                    }
+
+                    RemoveDropRecord(mapUid, entry.DropId);
+                    removedInvalidEntry = true;
+                    continue;
+                }
+
+                var request = new WorldItemDropRequest(
+                    entry.GetWorldPosition(),
+                    entry.ItemUid,
+                    entry.ItemCount,
+                    existingInstanceId: entry.InstanceId,
+                    forceWorldDrop: true,
+                    disableAutoDespawn: entry.DisableAutoDespawn,
+                    sourceKey: entry.SourceKey,
+                    runtimeToken: entry.RuntimeToken,
+                    pickupPolicy: entry.PickupPolicy,
+                    existingDropId: entry.DropId,
+                    spawnMode: WorldItemDropSpawnMode.RestoreAtPosition,
+                    remainingAutoDespawnSeconds: entry.RemainingAutoDespawnSeconds);
+
+                if (!TryMakeDropItem(request, out _))
+                {
+                    GcLogger.LogWarning(
+                        $"[ItemManager] 월드 드랍 복원에 실패했습니다. mapUid: {mapUid}, " +
+                        $"dropId: {entry.DropId}, itemUid: {entry.ItemUid}");
+                }
+            }
+
+            _restoreEntries.Clear();
+            if (removedInvalidEntry)
+            {
+                _sceneGame?.saveDataManager?.StartSaveData();
+            }
+        }
+
+        /// <summary>
+        /// 지정한 맵과 드랍 식별자에 해당하는 저장 레코드를 조회합니다.
+        /// </summary>
+        private WorldItemDropSaveEntry FindDropEntry(int mapUid, long dropId)
+        {
+            if (mapUid <= 0 ||
+                dropId <= 0 ||
+                !EnsureWorldItemDropData().TryGetEntries(
+                    mapUid,
+                    out List<WorldItemDropSaveEntry> entries))
+            {
+                return null;
+            }
+
+            for (int i = 0; i < entries.Count; i++)
+            {
+                WorldItemDropSaveEntry entry = entries[i];
+                if (entry != null && entry.DropId == dropId)
+                {
+                    return entry;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// 현재 활성 맵 UID를 반환하며, 입장 이벤트 전에는 MapManager 값을 폴백으로 사용합니다.
+        /// </summary>
+        /// <returns>유효한 활성 맵 UID이며 확인할 수 없으면 0입니다.</returns>
+        private int GetActiveMapUid()
+        {
+            return _activeMapUid > 0
+                ? _activeMapUid
+                : _sceneGame?.mapManager?.GetCurrentMapUid() ?? 0;
+        }
+
+        /// <summary>
+        /// 지정한 맵의 드랍 저장 레코드를 제거합니다.
+        /// </summary>
+        private bool RemoveDropRecord(int mapUid, long dropId)
+        {
+            if (mapUid <= 0 ||
+                dropId <= 0 ||
+                !EnsureWorldItemDropData().TryGetEntries(
+                    mapUid,
+                    out List<WorldItemDropSaveEntry> entries))
+            {
+                return false;
+            }
+
+            for (int i = entries.Count - 1; i >= 0; i--)
+            {
+                WorldItemDropSaveEntry entry = entries[i];
+                if (entry == null || entry.DropId != dropId)
+                {
+                    continue;
+                }
+
+                entries.RemoveAt(i);
+                return true;
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -653,6 +1074,8 @@ namespace GGemCo2DCore
 #endif
         public void OnDestroy()
         {
+            UnsubscribeMapEvents();
+            ReleaseActiveDropsForMapUnload();
         }
     }
 }

@@ -48,8 +48,12 @@ namespace GGemCo2DCore
         private long _instanceId;
         private string _sourceKey;
         private long _runtimeToken;
+        private long _dropId;
         private bool _disableAutoDespawn;
         private WorldItemPickupPolicy _pickupPolicy;
+        private WorldItemDropSpawnMode _spawnMode;
+        private float _remainingAutoDespawnSeconds;
+        private float _autoDespawnEndTime;
         private GameObject _containerItemName;
         private GameObject _objectTagNameItem;
         private Vector2 _startPos;
@@ -125,6 +129,19 @@ namespace GGemCo2DCore
 
             _visualHost?.Bind(_itemUid, info.FileName);
 
+            Vector2 size = SceneGame.Instance.mapManager.GetCurrentMapSize();
+            _mapSizeHeight = size.y;
+
+            if (_spawnMode == WorldItemDropSpawnMode.RestoreAtPosition)
+            {
+                _targetPos = _startPos;
+                transform.position = _targetPos;
+                DroppedItemPositions.Add(_targetPos);
+                CreateTagName();
+                OnEnd();
+                return;
+            }
+
             // 특정 반경 내에서 랜덤한 위치 선택 (X, Y 축 모두 분산)
             int maxAttempts = 10; // 겹치지 않도록 최대 시도 횟수
             bool positionValid = false;
@@ -170,9 +187,6 @@ namespace GGemCo2DCore
             // 랜덤한 회전 방향 설정
             _rotationDirection = Random.Range(-1f, 1f);
 
-            Vector2 size = SceneGame.Instance.mapManager.GetCurrentMapSize();
-            _mapSizeHeight = size.y;
-            
             _isStart = true;
 
             CreateTagName();
@@ -183,14 +197,20 @@ namespace GGemCo2DCore
         private void CreateTagName()
         {
             if (!useNameTag) return;
-            GameObject prefabTagNameItem = ConfigResources.TextDropItemNameTag.Load();
-            if (prefabTagNameItem == null) return;
             if (_containerItemName == null)
             {
                 _containerItemName = SceneGame.Instance.containerDropItemName;
             }
-            _objectTagNameItem = Instantiate(prefabTagNameItem, _containerItemName.transform);
+
+            if (_objectTagNameItem == null)
+            {
+                GameObject prefabTagNameItem = ConfigResources.TextDropItemNameTag.Load();
+                if (prefabTagNameItem == null) return;
+                _objectTagNameItem = Instantiate(prefabTagNameItem, _containerItemName.transform);
+            }
+
             if (_objectTagNameItem == null) return;
+            _objectTagNameItem.SetActive(true);
             TagNameItem tagNameItem = _objectTagNameItem.GetComponent<TagNameItem>();
             if (tagNameItem == null) return;
             tagNameItem.Initialize(gameObject, _itemCount);
@@ -270,8 +290,14 @@ namespace GGemCo2DCore
             _circleCollider2D.enabled = true;
             _circleCollider2D.isTrigger = true;
 
-            if (!_disableAutoDespawn && _dropItemDestroyTimeSec > 0)
-                _coroutineDropItemDestroy = StartCoroutine(CheckDestroyTime());
+            float autoDespawnSeconds = _remainingAutoDespawnSeconds >= 0f
+                ? _remainingAutoDespawnSeconds
+                : _dropItemDestroyTimeSec;
+            if (!_disableAutoDespawn && autoDespawnSeconds > 0f)
+            {
+                _autoDespawnEndTime = Time.time + autoDespawnSeconds;
+                _coroutineDropItemDestroy = StartCoroutine(CheckDestroyTime(autoDespawnSeconds));
+            }
         }
         /// <summary>
         /// 플레이어가 아이템을 먹거나 맵에서 없어졌을때 
@@ -286,8 +312,9 @@ namespace GGemCo2DCore
             }
         }
         /// <summary>
-        /// 플레이어가 아이템을 먹 후, 사라지는 시간이 다 되었을때 처리
+        /// 월드 드랍 아이템의 런타임 상태를 초기화하고 오브젝트 풀로 반환합니다.
         /// </summary>
+        /// <param name="removeInstanceFromDb">미획득 소멸로 판단하여 아이템 인스턴스 데이터도 제거할지 여부입니다.</param>
         public void ResetInfos(bool removeInstanceFromDb)
         {
             if (removeInstanceFromDb && _instanceId > 0)
@@ -305,17 +332,34 @@ namespace GGemCo2DCore
             _instanceId = 0;
             _sourceKey = null;
             _runtimeToken = 0;
+            _dropId = 0;
             _disableAutoDespawn = false;
             _pickupPolicy = WorldItemPickupPolicy.Default;
+            _spawnMode = WorldItemDropSpawnMode.Animated;
+            _remainingAutoDespawnSeconds = -1f;
+            _autoDespawnEndTime = 0f;
+            DroppedItemPositions.Remove(_targetPos);
             gameObject.SetActive(false);
             (_itemManager ?? SceneGame.Instance?.ItemManager)?.AddPoolDropItem(this);
         }
 
-        IEnumerator CheckDestroyTime()
+        /// <summary>
+        /// 지정한 시간이 지나면 ItemManager를 통해 저장 레코드와 월드 오브젝트를 함께 만료 처리합니다.
+        /// </summary>
+        /// <param name="durationSeconds">자동 소멸까지 남은 시간입니다.</param>
+        private IEnumerator CheckDestroyTime(float durationSeconds)
         {
-            yield return new WaitForSeconds(_dropItemDestroyTimeSec);
-            // 바닥에서 사라질 때는 인스턴스도 함께 제거(미획득 처리)
-            ResetInfos(true);
+            yield return new WaitForSeconds(durationSeconds);
+
+            ItemManager itemManager = _itemManager ?? SceneGame.Instance?.ItemManager;
+            if (itemManager != null)
+            {
+                itemManager.ExpireWorldDrop(this);
+                yield break;
+            }
+
+            // 매니저가 이미 정리된 종료 상황에서는 오브젝트 자체만 안전하게 초기화합니다.
+            ResetInfos(removeInstanceFromDb: true);
         }
         /// <summary>
         /// 시간 되면 자동으로 파괴되는 코루틴 정지 
@@ -324,6 +368,7 @@ namespace GGemCo2DCore
         {
             if (_coroutineDropItemDestroy == null) return;
             StopCoroutine(_coroutineDropItemDestroy);
+            _coroutineDropItemDestroy = null;
         }
         /// <summary>
         /// 기존 int 수량 기반 드랍 아이템 정보를 초기화합니다.
@@ -344,6 +389,9 @@ namespace GGemCo2DCore
         /// <param name="runtimeToken">현재 유효한 드랍을 식별하는 런타임 토큰입니다.</param>
         /// <param name="disableAutoDespawn">자동 제거 시간을 적용하지 않을지 여부입니다.</param>
         /// <param name="pickupPolicy">플레이어가 월드 아이템을 획득할 수 있는 조건입니다.</param>
+        /// <param name="dropId">Core 저장 레코드와 연결할 영속 드랍 식별자입니다.</param>
+        /// <param name="spawnMode">드랍 애니메이션 또는 저장 위치 복원 방식입니다.</param>
+        /// <param name="remainingAutoDespawnSeconds">복원할 자동 소멸 잔여 시간입니다.</param>
         public void Initialize(
             int itemUid,
             long itemCount,
@@ -352,7 +400,10 @@ namespace GGemCo2DCore
             string sourceKey = null,
             long runtimeToken = 0,
             bool disableAutoDespawn = false,
-            WorldItemPickupPolicy pickupPolicy = WorldItemPickupPolicy.Default)
+            WorldItemPickupPolicy pickupPolicy = WorldItemPickupPolicy.Default,
+            long dropId = 0,
+            WorldItemDropSpawnMode spawnMode = WorldItemDropSpawnMode.Animated,
+            float remainingAutoDespawnSeconds = -1f)
         {
             _itemUid = itemUid;
             _itemCount = itemCount;
@@ -360,8 +411,11 @@ namespace GGemCo2DCore
             _instanceId = instanceId;
             _sourceKey = sourceKey;
             _runtimeToken = runtimeToken;
+            _dropId = dropId;
             _disableAutoDespawn = disableAutoDespawn;
             _pickupPolicy = pickupPolicy;
+            _spawnMode = spawnMode;
+            _remainingAutoDespawnSeconds = remainingAutoDespawnSeconds;
         }
 
         /// <summary>
@@ -422,6 +476,29 @@ namespace GGemCo2DCore
         public long GetRuntimeToken()
         {
             return _runtimeToken;
+        }
+
+        /// <summary>
+        /// 현재 월드 드랍의 Core 영속 식별자를 반환합니다.
+        /// </summary>
+        /// <returns>저장 레코드와 연결된 드랍 식별자입니다.</returns>
+        public long GetDropId()
+        {
+            return _dropId;
+        }
+
+        /// <summary>
+        /// 저장 시점 기준 자동 소멸 잔여 시간을 반환합니다.
+        /// </summary>
+        /// <returns>자동 소멸을 사용하지 않으면 -1, 사용하면 남은 초입니다.</returns>
+        public float GetRemainingAutoDespawnSeconds()
+        {
+            if (_disableAutoDespawn || _autoDespawnEndTime <= 0f)
+            {
+                return -1f;
+            }
+
+            return Mathf.Max(0f, _autoDespawnEndTime - Time.time);
         }
     }
 }

@@ -34,6 +34,11 @@ namespace GGemCo2DCore
         /// 인스턴스 아이템(랜덤 옵션 등) 저장 데이터.
         /// </summary>
         public ItemInstanceStoreData ItemInstanceStoreData;
+
+        /// <summary>
+        /// 맵별로 남아 있는 월드 드랍 아이템 저장 데이터입니다.
+        /// </summary>
+        public WorldItemDropData WorldItemDropData;
         
         public Dictionary<string, JToken> Extensions;
     }
@@ -80,6 +85,11 @@ namespace GGemCo2DCore
         public ItemInstanceStore ItemInstances { get; private set; }
 
         /// <summary>
+        /// 맵별 월드 드랍 아이템 저장 데이터입니다.
+        /// </summary>
+        public WorldItemDropData WorldItemDrops { get; private set; }
+
+        /// <summary>
         /// 슬롯 관리, 파일 관리, 썸네일 관리 매니저 초기화
         /// </summary>
         protected override void InitializeData()
@@ -105,6 +115,7 @@ namespace GGemCo2DCore
 
             // 인스턴스 아이템 저장소 초기화(테이블 로드 이후면 언제든 사용 가능)
             ItemInstances = new ItemInstanceStore();
+            WorldItemDrops = saveDataContainer?.WorldItemDropData ?? new WorldItemDropData();
 
             // 초기화 실행
             Player.Initialize(this, tableLoaderManager, saveDataContainer);
@@ -154,6 +165,9 @@ namespace GGemCo2DCore
         public override bool SaveData()
         {
             if (!base.SaveData()) return false;
+
+            // 저장 직전 활성 드랍의 실제 위치와 남은 수명을 반영합니다.
+            SceneGame.Instance?.ItemManager?.SyncActiveDropsToSaveData();
             
             string filePath = saveFileController.GetSaveFilePath(currentSaveSlot);
             string thumbnailPath = thumbnailController.GetThumbnailPath(currentSaveSlot);
@@ -179,6 +193,7 @@ namespace GGemCo2DCore
                 MapProgressData = MapProgress,
                 LicenseData = License,
                 ItemInstanceStoreData = ItemInstances?.Capture(),
+                WorldItemDropData = WorldItemDrops,
                 // 확장 섹션 함께 저장
                 Extensions = env?.Sections,
             };
