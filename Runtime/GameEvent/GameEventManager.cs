@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using UnityEngine;
 
 namespace GGemCo2DCore
@@ -14,6 +14,7 @@ namespace GGemCo2DCore
         public static event Action<DialogEventData> DialogStartEvent;
         public static event Action<DialogEventData> DialogEndEvent;
         public static event Action<MapEnteredEventData> MapEnteredEvent;
+        public static event Action<CharacterDiedEventData> CharacterDiedEvent;
 
         // 신규 API (권장)
         public static void MonsterKilled(in MonsterKilledEventData data)
@@ -34,6 +35,13 @@ namespace GGemCo2DCore
         /// <param name="data">입장한 맵 정보를 담은 이벤트 데이터입니다.</param>
         public static void MapEntered(in MapEnteredEventData data)
             => MapEnteredEvent?.Invoke(data);
+
+        /// <summary>
+        /// 캐릭터 사망 상태 전환 완료 이벤트를 발행합니다.
+        /// </summary>
+        /// <param name="data">사망한 캐릭터와 사망 원인을 담은 이벤트 데이터입니다.</param>
+        public static void CharacterDied(in CharacterDiedEventData data)
+            => CharacterDiedEvent?.Invoke(data);
 
         // ⚠️ 주의: static 이벤트를 명시적으로 null로 지우는 것은 권장하지 않습니다.
         // - 수명주기/조립 루트에서 +=/−= 균형을 유지하세요.

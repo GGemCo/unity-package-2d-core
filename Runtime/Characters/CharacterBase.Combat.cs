@@ -137,6 +137,7 @@ namespace GGemCo2DCore
 
             AffectRuntimeBridge.RemoveAll(gameObject);
             OnDead(dieReasonType, attacker);
+            GameEventManager.CharacterDied(new CharacterDiedEventData(this, dieReasonType, attacker));
         }
 
         /// <summary>

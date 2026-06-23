@@ -922,6 +922,22 @@ namespace GGemCo2DCore
         /// <returns></returns>
         public ResultCommon AddCurrency(CurrencyConstants.Type currencyType, int value)
         {
+            return AddCurrency(currencyType, (long)value);
+        }
+
+        /// <summary>
+        /// 지정한 종류의 재화를 long 범위의 수량만큼 추가합니다.
+        /// </summary>
+        /// <param name="currencyType">추가할 재화 종류입니다.</param>
+        /// <param name="value">추가할 재화 수량입니다.</param>
+        /// <returns>재화 추가 처리 결과입니다.</returns>
+        public ResultCommon AddCurrency(CurrencyConstants.Type currencyType, long value)
+        {
+            if (value < 0)
+            {
+                return ResultCommon.Fail("Currency_InvalidValue", $"value: {value}");
+            }
+
             switch (currencyType)
             {
                 case CurrencyConstants.Type.Gold:
