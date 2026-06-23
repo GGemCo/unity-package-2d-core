@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 namespace GGemCo2DCore
 {
@@ -7,7 +7,22 @@ namespace GGemCo2DCore
         private Item item;
         private StruckTableItem struckTableItem;
 
+        /// <summary>
+        /// 기존 int 수량 기반 호출부와 호환되도록 이름 태그를 초기화합니다.
+        /// </summary>
+        /// <param name="itemObject">이름 태그가 추적할 드랍 아이템 오브젝트입니다.</param>
+        /// <param name="itemCount">표시할 아이템 수량입니다.</param>
         public void Initialize(GameObject itemObject, int itemCount)
+        {
+            Initialize(itemObject, (long)itemCount);
+        }
+
+        /// <summary>
+        /// 드랍 아이템과 표시 수량을 사용해 이름 태그를 초기화합니다.
+        /// </summary>
+        /// <param name="itemObject">이름 태그가 추적할 드랍 아이템 오브젝트입니다.</param>
+        /// <param name="itemCount">표시할 아이템 수량입니다.</param>
+        public void Initialize(GameObject itemObject, long itemCount)
         {
             if (itemObject == null || TableLoaderManager.Instance == null) return;
             item = itemObject.GetComponent<Item>();

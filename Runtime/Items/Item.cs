@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Random = UnityEngine.Random;
@@ -44,8 +44,11 @@ namespace GGemCo2DCore
         private static readonly List<Vector2> DroppedItemPositions = new List<Vector2>(); // 드랍된 아이템 위치 저장
         
         private int _itemUid;
-        private int _itemCount;
+        private long _itemCount;
         private long _instanceId;
+        private string _sourceKey;
+        private long _runtimeToken;
+        private bool _disableAutoDespawn;
         private GameObject _containerItemName;
         private GameObject _objectTagNameItem;
         private Vector2 _startPos;
@@ -266,7 +269,7 @@ namespace GGemCo2DCore
             _circleCollider2D.enabled = true;
             _circleCollider2D.isTrigger = true;
 
-            if (_dropItemDestroyTimeSec > 0)
+            if (!_disableAutoDespawn && _dropItemDestroyTimeSec > 0)
                 _coroutineDropItemDestroy = StartCoroutine(CheckDestroyTime());
         }
         /// <summary>
@@ -299,9 +302,13 @@ namespace GGemCo2DCore
                 _visualHost?.ReleaseVisual();
 
             _itemUid = 0;
+            _itemCount = 0;
             _instanceId = 0;
+            _sourceKey = null;
+            _runtimeToken = 0;
+            _disableAutoDespawn = false;
             gameObject.SetActive(false);
-            _itemManager.AddPoolDropItem(this);
+            (_itemManager ?? SceneGame.Instance?.ItemManager)?.AddPoolDropItem(this);
         }
 
         IEnumerator CheckDestroyTime()
@@ -318,27 +325,88 @@ namespace GGemCo2DCore
             if (_coroutineDropItemDestroy == null) return;
             StopCoroutine(_coroutineDropItemDestroy);
         }
+        /// <summary>
+        /// 기존 int 수량 기반 드랍 아이템 정보를 초기화합니다.
+        /// </summary>
         public void Initialize(int itemUid, int itemCount, Vector2 startPos, long instanceId = 0)
+        {
+            Initialize(itemUid, (long)itemCount, startPos, instanceId);
+        }
+
+        /// <summary>
+        /// 드랍 아이템의 수량, 위치와 런타임 식별 정보를 초기화합니다.
+        /// </summary>
+        /// <param name="itemUid">아이템 UID입니다.</param>
+        /// <param name="itemCount">아이템 수량입니다.</param>
+        /// <param name="startPos">드랍 애니메이션 시작 좌표입니다.</param>
+        /// <param name="instanceId">아이템 인스턴스 ID입니다.</param>
+        /// <param name="sourceKey">드랍을 생성한 상위 시스템의 출처 키입니다.</param>
+        /// <param name="runtimeToken">현재 유효한 드랍을 식별하는 런타임 토큰입니다.</param>
+        /// <param name="disableAutoDespawn">자동 제거 시간을 적용하지 않을지 여부입니다.</param>
+        public void Initialize(
+            int itemUid,
+            long itemCount,
+            Vector2 startPos,
+            long instanceId = 0,
+            string sourceKey = null,
+            long runtimeToken = 0,
+            bool disableAutoDespawn = false)
         {
             _itemUid = itemUid;
             _itemCount = itemCount;
             _startPos = startPos;
             _instanceId = instanceId;
+            _sourceKey = sourceKey;
+            _runtimeToken = runtimeToken;
+            _disableAutoDespawn = disableAutoDespawn;
         }
 
+        /// <summary>
+        /// 현재 드랍 아이템 UID를 반환합니다.
+        /// </summary>
         public int GetItemUid()
         {
             return _itemUid;
         }
 
+        /// <summary>
+        /// 기존 int 기반 호출부와의 호환을 위한 아이템 수량을 반환합니다.
+        /// </summary>
         public int GetItemCount()
+        {
+            return _itemCount >= int.MaxValue ? int.MaxValue : (int)_itemCount;
+        }
+
+        /// <summary>
+        /// 현재 드랍 아이템의 실제 long 수량을 반환합니다.
+        /// </summary>
+        public long GetItemCountLong()
         {
             return _itemCount;
         }
 
+        /// <summary>
+        /// 현재 드랍 아이템 인스턴스 ID를 반환합니다.
+        /// </summary>
         public long GetInstanceId()
         {
             return _instanceId;
+        }
+
+        /// <summary>
+        /// 현재 드랍 아이템의 런타임 출처 키를 반환합니다.
+        /// </summary>
+        public string GetSourceKey()
+        {
+            return _sourceKey;
+        }
+
+        /// <summary>
+        /// 현재 드랍 아이템의 런타임 토큰을 반환합니다.
+        /// </summary>
+        public long GetRuntimeToken()
+        {
+            return _runtimeToken;
         }
     }
 }

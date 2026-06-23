@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -94,7 +94,8 @@ namespace GGemCo2DCore
             {
                 ExpandPool(_poolSize); // 풀 사이즈만큼 추가 생성
             }
-            return _poolDropItem.Dequeue();
+
+            return _poolDropItem.Count > 0 ? _poolDropItem.Dequeue() : null;
         }
 
         /// <summary>
@@ -135,43 +136,100 @@ namespace GGemCo2DCore
         public void MakeDropItem(Vector3 worldPosition, int itemUid, int itemCount,
             ItemConstants.Class rarity = ItemConstants.Class.Normal, int dropLevel = 0, long existingInstanceId = 0)
         {
-            var info = _tableItem.GetDataByUid(itemUid);
-            if (info == null) return;
+            TryMakeDropItem(
+                new WorldItemDropRequest(
+                    worldPosition,
+                    itemUid,
+                    itemCount,
+                    rarity,
+                    dropLevel,
+                    existingInstanceId),
+                out _);
+        }
 
-            long instanceId = existingInstanceId;
+        /// <summary>
+        /// 요청 정책에 따라 아이템을 직접 획득하거나 월드 드랍 오브젝트로 생성합니다.
+        /// </summary>
+        /// <param name="request">아이템 수량, 위치, 수명주기와 런타임 식별 정보입니다.</param>
+        /// <param name="spawnedItem">월드에 생성된 아이템입니다. 직접 획득 처리된 경우 null입니다.</param>
+        /// <returns>직접 획득 또는 월드 아이템 생성에 성공하면 <see langword="true"/>입니다.</returns>
+        public bool TryMakeDropItem(in WorldItemDropRequest request, out Item spawnedItem)
+        {
+            spawnedItem = null;
+            if (_tableItem == null || request.ItemUid <= 0 || request.ItemCount <= 0)
+            {
+                return false;
+            }
+
+            var info = _tableItem.GetDataByUid(request.ItemUid);
+            if (info == null)
+            {
+                return false;
+            }
+
+            // 인벤토리 아이템 저장 구조는 int 수량을 사용하므로 재화 외 아이템은 범위를 제한합니다.
+            if (info.Type != ItemConstants.Type.Currency && request.ItemCount > int.MaxValue)
+            {
+                return false;
+            }
+
+            long itemCount = request.ItemCount;
+            long instanceId = request.ExistingInstanceId;
 
             // 인스턴스 아이템은 반드시 단일 개수로만 취급한다.
-            if (instanceId > 0 && itemCount > 1)
+            if (instanceId > 0 && itemCount != 1)
             {
                 itemCount = 1;
             }
 
             // 랜덤 옵션 인스턴스 생성(권장: Count=1일 때만 인스턴스로 취급)
-            var store = _sceneGame.saveDataManager.ItemInstances;
+            var store = _sceneGame?.saveDataManager?.ItemInstances;
             if (instanceId <= 0 && store != null && _itemOptionRoller != null && itemCount == 1)
             {
                 int seed = Random.Range(int.MinValue, int.MaxValue);
-                var instance = _itemOptionRoller.CreateInstance(itemUid, rarity, dropLevel, seed);
+                var instance = _itemOptionRoller.CreateInstance(
+                    request.ItemUid,
+                    request.Rarity,
+                    request.DropLevel,
+                    seed);
 
                 // Normal 등급이라도 룰에 의해 롤이 발생할 수 있으므로, 롤 결과가 있으면 인스턴스로 등록한다.
-                if (instance != null && (rarity != ItemConstants.Class.Normal || (instance.RolledAffixes != null && instance.RolledAffixes.Count > 0)))
+                if (instance != null &&
+                    (request.Rarity != ItemConstants.Class.Normal ||
+                     (instance.RolledAffixes != null && instance.RolledAffixes.Count > 0)))
                 {
                     instanceId = store.RegisterNew(instance);
                 }
             }
 
-            if (ShouldAcquireDirectly(info))
+            if (!request.ForceWorldDrop && ShouldAcquireDirectly(info))
             {
-                AcquireDirectly(itemUid, itemCount, instanceId);
-                return;
+                return AcquireDirectly(request.ItemUid, itemCount, instanceId);
             }
 
             Item item = GetOrCreateItem();
-            item.Initialize(itemUid, itemCount, worldPosition, instanceId);
+            if (item == null)
+            {
+                return false;
+            }
+
+            item.Initialize(
+                request.ItemUid,
+                itemCount,
+                request.WorldPosition,
+                instanceId,
+                request.SourceKey,
+                request.RuntimeToken,
+                request.DisableAutoDespawn);
             item.StartDrop();
+            spawnedItem = item;
             
             // 풀을 일정 시간이 지나면 정리하도록 코루틴 시작
-            _reducePoolCoroutine ??= _sceneGame.StartCoroutine(ReducePoolSize());
+            if (_sceneGame != null)
+            {
+                _reducePoolCoroutine ??= _sceneGame.StartCoroutine(ReducePoolSize());
+            }
+            return true;
         }
         /// <summary>
         /// 일정 시간이 지나면 풀 크기를 다시 poolSize 값으로 줄인다.
@@ -202,29 +260,72 @@ namespace GGemCo2DCore
                 : settings.acquireItemsDirectly;
         }
 
-        private ResultCommon CollectItemCore(int itemUid, int itemCount, long instanceId)
+        private ResultCommon CollectItemCore(int itemUid, long itemCount, long instanceId)
         {
-            return _sceneGame.saveDataManager.Inventory.AddItem(new IconPayload(itemUid, itemCount, instanceId));
+            StruckTableItem info = _tableItem?.GetDataByUid(itemUid);
+            if (info == null || itemCount <= 0)
+            {
+                return ResultCommon.Fail("Slot_InvalidItemCount", $"itemUid: {itemUid}, itemCount: {itemCount}");
+            }
+
+            if (info.Type == ItemConstants.Type.Currency)
+            {
+                PlayerData playerData = _sceneGame?.saveDataManager?.Player;
+                if (playerData == null)
+                {
+                    return ResultCommon.Fail("Currency_PlayerDataMissing");
+                }
+
+                CurrencyConstants.Type currencyType = info.Category switch
+                {
+                    ItemConstants.Category.Gold => CurrencyConstants.Type.Gold,
+                    ItemConstants.Category.Silver => CurrencyConstants.Type.Silver,
+                    _ => CurrencyConstants.Type.None,
+                };
+
+                return playerData.AddCurrency(currencyType, itemCount);
+            }
+
+            InventoryData inventoryData = _sceneGame?.saveDataManager?.Inventory;
+            if (inventoryData == null || itemCount > int.MaxValue)
+            {
+                return ResultCommon.Fail("Slot_InvalidItemCount", $"itemUid: {itemUid}, itemCount: {itemCount}");
+            }
+
+            return inventoryData.AddItem(
+                new IconPayload(itemUid, (int)itemCount, instanceId));
         }
 
-        private void NotifyItemCollected(int itemUid, int itemCount, ResultCommon result)
+        private void NotifyItemCollected(
+            int itemUid,
+            long itemCount,
+            ResultCommon result,
+            string sourceKey = null,
+            long runtimeToken = 0)
         {
+            if (result == null || result.Result == ResultCommon.ResultType.Fail)
+            {
+                return;
+            }
+
             if (_uiWindowInventory != null)
             {
                 _uiWindowInventory.SetIcons(result);
-
-                var data = new ItemCollectedEventData(
-                    itemUid: itemUid,
-                    count: itemCount
-                );
-                GameEventManager.ItemCollected(data);
             }
+
+            var data = new ItemCollectedEventData(
+                itemUid,
+                itemCount,
+                sourceKey: sourceKey,
+                runtimeToken: runtimeToken);
+            GameEventManager.ItemCollected(data);
         }
 
-        private void AcquireDirectly(int itemUid, int itemCount, long instanceId)
+        private bool AcquireDirectly(int itemUid, long itemCount, long instanceId)
         {
             var result = CollectItemCore(itemUid, itemCount, instanceId);
             NotifyItemCollected(itemUid, itemCount, result);
+            return result != null && result.Result != ResultCommon.ResultType.Fail;
         }
         /// <summary>
         /// 드랍되는 아이템 확률 계산하기 
@@ -345,16 +446,46 @@ namespace GGemCo2DCore
             if (item ==null || item.GetItemUid() <= 0) return;
 
             long instanceId = item.GetInstanceId();
-            var result = CollectItemCore(item.GetItemUid(), item.GetItemCount(), instanceId);
-            NotifyItemCollected(item.GetItemUid(), item.GetItemCount(), result);
+            var result = CollectItemCore(item.GetItemUid(), item.GetItemCountLong(), instanceId);
+            if (result == null || result.Result == ResultCommon.ResultType.Fail)
+            {
+                return;
+            }
+
+            NotifyItemCollected(
+                item.GetItemUid(),
+                item.GetItemCountLong(),
+                result,
+                item.GetSourceKey(),
+                item.GetRuntimeToken());
 
             // 획득 시에는 인스턴스를 유지해야 한다.
             item.ResetInfos(removeInstanceFromDb: false);
         }
 
+        /// <summary>
+        /// 아직 획득되지 않은 월드 드랍 아이템을 풀로 반환합니다.
+        /// </summary>
+        /// <param name="item">반환할 월드 드랍 아이템입니다.</param>
+        public void ReleaseWorldDrop(Item item)
+        {
+            if (item == null || item.GetItemUid() <= 0)
+            {
+                return;
+            }
+
+            item.ResetInfos(removeInstanceFromDb: false);
+        }
+
+        /// <summary>
+        /// 비활성화된 드랍 아이템을 풀에 다시 등록합니다.
+        /// </summary>
         public void AddPoolDropItem(Item item)
         {
-            _poolDropItem.Enqueue(item);
+            if (item != null)
+            {
+                _poolDropItem.Enqueue(item);
+            }
         }
 
         /// <summary>
