@@ -220,7 +220,8 @@ namespace GGemCo2DCore
                 instanceId,
                 request.SourceKey,
                 request.RuntimeToken,
-                request.DisableAutoDespawn);
+                request.DisableAutoDespawn,
+                request.PickupPolicy);
             item.StartDrop();
             spawnedItem = item;
             
@@ -439,11 +440,30 @@ namespace GGemCo2DCore
             }
         }
         /// <summary>
-        /// 플레이어가 드랍 아이템을 먹었을때 처리 
+        /// 현재 씬의 플레이어를 기준으로 드랍 아이템 획득을 처리합니다.
         /// </summary>
+        /// <param name="item">획득을 시도한 월드 아이템입니다.</param>
         public void PlayerTaken(Item item)
         {
-            if (item ==null || item.GetItemUid() <= 0) return;
+            Player player = _sceneGame?.player != null
+                ? _sceneGame.player.GetComponent<Player>()
+                : null;
+            PlayerTaken(player, item);
+        }
+
+        /// <summary>
+        /// 플레이어 상태와 월드 아이템의 획득 정책을 확인한 뒤 아이템을 지급합니다.
+        /// </summary>
+        /// <param name="player">아이템 획득을 시도한 플레이어입니다.</param>
+        /// <param name="item">획득을 시도한 월드 아이템입니다.</param>
+        public void PlayerTaken(Player player, Item item)
+        {
+            if (item == null ||
+                item.GetItemUid() <= 0 ||
+                !item.CanBeCollectedBy(player))
+            {
+                return;
+            }
 
             long instanceId = item.GetInstanceId();
             var result = CollectItemCore(item.GetItemUid(), item.GetItemCountLong(), instanceId);

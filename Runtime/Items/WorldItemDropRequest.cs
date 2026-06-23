@@ -3,6 +3,22 @@ using UnityEngine;
 namespace GGemCo2DCore
 {
     /// <summary>
+    /// 월드에 생성된 아이템을 플레이어가 획득할 수 있는 조건을 정의합니다.
+    /// </summary>
+    public enum WorldItemPickupPolicy
+    {
+        /// <summary>
+        /// 플레이어 상태와 관계없이 기존 획득 규칙을 사용합니다.
+        /// </summary>
+        Default,
+
+        /// <summary>
+        /// 플레이어가 생존한 상태에서만 아이템을 획득할 수 있습니다.
+        /// </summary>
+        RequirePlayerAlive,
+    }
+
+    /// <summary>
     /// 월드에 아이템을 생성할 때 필요한 수량, 수명주기와 런타임 식별 정보를 전달합니다.
     /// </summary>
     public readonly struct WorldItemDropRequest
@@ -59,6 +75,11 @@ namespace GGemCo2DCore
         public readonly long RuntimeToken;
 
         /// <summary>
+        /// 월드에 생성된 아이템의 플레이어 획득 조건입니다.
+        /// </summary>
+        public readonly WorldItemPickupPolicy PickupPolicy;
+
+        /// <summary>
         /// 월드 아이템 드랍 요청을 생성합니다.
         /// </summary>
         /// <param name="worldPosition">아이템을 생성할 월드 좌표입니다.</param>
@@ -71,6 +92,7 @@ namespace GGemCo2DCore
         /// <param name="disableAutoDespawn">전역 자동 제거 시간을 적용하지 않을지 여부입니다.</param>
         /// <param name="sourceKey">상위 시스템의 런타임 출처 키입니다.</param>
         /// <param name="runtimeToken">현재 유효한 드랍을 식별하는 런타임 토큰입니다.</param>
+        /// <param name="pickupPolicy">월드 아이템의 플레이어 획득 조건입니다.</param>
         public WorldItemDropRequest(
             Vector3 worldPosition,
             int itemUid,
@@ -81,7 +103,8 @@ namespace GGemCo2DCore
             bool forceWorldDrop = false,
             bool disableAutoDespawn = false,
             string sourceKey = null,
-            long runtimeToken = 0)
+            long runtimeToken = 0,
+            WorldItemPickupPolicy pickupPolicy = WorldItemPickupPolicy.Default)
         {
             WorldPosition = worldPosition;
             ItemUid = itemUid;
@@ -93,6 +116,7 @@ namespace GGemCo2DCore
             DisableAutoDespawn = disableAutoDespawn;
             SourceKey = sourceKey;
             RuntimeToken = runtimeToken;
+            PickupPolicy = pickupPolicy;
         }
     }
 }

@@ -49,6 +49,7 @@ namespace GGemCo2DCore
         private string _sourceKey;
         private long _runtimeToken;
         private bool _disableAutoDespawn;
+        private WorldItemPickupPolicy _pickupPolicy;
         private GameObject _containerItemName;
         private GameObject _objectTagNameItem;
         private Vector2 _startPos;
@@ -307,6 +308,7 @@ namespace GGemCo2DCore
             _sourceKey = null;
             _runtimeToken = 0;
             _disableAutoDespawn = false;
+            _pickupPolicy = WorldItemPickupPolicy.Default;
             gameObject.SetActive(false);
             (_itemManager ?? SceneGame.Instance?.ItemManager)?.AddPoolDropItem(this);
         }
@@ -343,6 +345,7 @@ namespace GGemCo2DCore
         /// <param name="sourceKey">드랍을 생성한 상위 시스템의 출처 키입니다.</param>
         /// <param name="runtimeToken">현재 유효한 드랍을 식별하는 런타임 토큰입니다.</param>
         /// <param name="disableAutoDespawn">자동 제거 시간을 적용하지 않을지 여부입니다.</param>
+        /// <param name="pickupPolicy">플레이어가 월드 아이템을 획득할 수 있는 조건입니다.</param>
         public void Initialize(
             int itemUid,
             long itemCount,
@@ -350,7 +353,8 @@ namespace GGemCo2DCore
             long instanceId = 0,
             string sourceKey = null,
             long runtimeToken = 0,
-            bool disableAutoDespawn = false)
+            bool disableAutoDespawn = false,
+            WorldItemPickupPolicy pickupPolicy = WorldItemPickupPolicy.Default)
         {
             _itemUid = itemUid;
             _itemCount = itemCount;
@@ -359,6 +363,19 @@ namespace GGemCo2DCore
             _sourceKey = sourceKey;
             _runtimeToken = runtimeToken;
             _disableAutoDespawn = disableAutoDespawn;
+            _pickupPolicy = pickupPolicy;
+        }
+
+        /// <summary>
+        /// 지정한 플레이어가 현재 월드 아이템을 획득할 수 있는지 확인합니다.
+        /// </summary>
+        /// <param name="player">아이템 획득을 시도한 플레이어입니다.</param>
+        /// <returns>현재 획득 정책을 만족하면 <see langword="true"/>입니다.</returns>
+        public bool CanBeCollectedBy(Player player)
+        {
+            // 기본 정책은 기존 동작과 하위 호환성을 유지하며, 생존 조건이 명시된 드랍만 상태를 검사합니다.
+            return _pickupPolicy != WorldItemPickupPolicy.RequirePlayerAlive ||
+                   (player != null && !player.IsStatusDead());
         }
 
         /// <summary>
