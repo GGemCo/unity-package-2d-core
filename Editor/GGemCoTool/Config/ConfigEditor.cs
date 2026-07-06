@@ -7,9 +7,15 @@ namespace GGemCo2DCoreEditor
     /// </summary>
     public static class ConfigEditor
     {
+        /// <summary>
+        /// Core 패키지 Unity 메뉴 항목의 정렬 순서(order) 값을 정의합니다.
+        /// </summary>
+        /// <remarks>
+        /// 공통 메뉴 우선순위 기준값에 Core 내부 로컬 순서를 더해 메뉴 배치 순서를 결정합니다.
+        /// </remarks>
         public enum ToolOrdering
         {
-            AutoSetting = 1,
+            AutoSetting = GGemCoToolMenuPriority.CoreSettings + 1,
             DefaultSetting,
             SettingAddressable,
             SettingScenePreIntro,
@@ -18,24 +24,24 @@ namespace GGemCo2DCoreEditor
             SettingSceneGame,
             SettingWindow,
             CreateUserSettings,
-            BuildProfile = 99,
-            Development = 100,
-            MapExporter = 101,
+            Development = GGemCoToolMenuPriority.CoreDevelopment,
+            BuildProfile,
+            MapExporter,
             TableEditor,
-            WorldMapGraph = 109,
+            WorldMapGraph,
             CreateDialogue,
-            Cutscene = 120,
+            Cutscene,
             CreateVfxEffectPrefab,
             CreateUIEffectPreset,
             UIEffectTimeline,
-            LocalizationUpdate =  130,
+            LocalizationUpdate,
             LocalizationFind,
             LocalizationCsvSync,
-            SoundUIButton = 140,
+            SoundUIButton,
             SoundUsageManifest,
             SoundAudioImportPolicy,
             CreateHubWindow,
-            Test = 200,
+            Test = GGemCoToolMenuPriority.CoreTest,
             CreateItem,
             DropItemRate,
             MoveMap,
@@ -52,7 +58,7 @@ namespace GGemCo2DCoreEditor
             UseItem,
             OpenWindow,
             UseCameraShake,
-            Debug = 300,
+            Debug = GGemCoToolMenuPriority.CoreDebug,
             DebugTilemapDrawCall,
             DebugFps,
             DebugPhysics2D,
@@ -63,7 +69,7 @@ namespace GGemCo2DCoreEditor
             ListReleaseBuildDebugOptions,
             DisableReleaseBuildDebugOptions,
             ValidateDevelopmentSettingsBuildInclusion,
-            Etc = 900,
+            Etc = GGemCoToolMenuPriority.CoreEtc,
             PlayerPrefs,
             OpenSaveDataFolder,
             LoadAddressable,

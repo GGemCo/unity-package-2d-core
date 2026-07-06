@@ -16,9 +16,18 @@ namespace GGemCo2DCoreEditor
         public const string Projectile = Root + "Projectile/";
         public const string Effect = Root + "Effect/";
 
-        // 우선순위(작을수록 위)
-        public const int PriorityTop = 10;
-        public const int PriorityNormal = 100;
+        /// <summary>
+        /// Creator 하위 메뉴에서 가장 위에 배치할 항목의 우선순위입니다.
+        /// </summary>
+        /// <remarks>
+        /// Core 개발툴 메뉴 기준값에 로컬 순서를 더해 Creator 하위 메뉴 순서를 고정합니다.
+        /// </remarks>
+        public const int PriorityTop = GGemCoToolMenuPriority.CoreDevelopment + 80;
+
+        /// <summary>
+        /// Creator 하위 메뉴에서 일반 항목에 적용할 기본 우선순위입니다.
+        /// </summary>
+        public const int PriorityNormal = GGemCoToolMenuPriority.CoreDevelopment + 100;
 
         /// <summary>
         /// 오브젝트 생성 허브 창을 엽니다.
