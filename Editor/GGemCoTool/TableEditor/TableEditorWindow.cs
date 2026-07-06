@@ -1,4 +1,4 @@
-﻿using UnityEditor;
+using UnityEditor;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -13,6 +13,7 @@ namespace GGemCo2DCoreEditor
     public sealed class TableEditorWindow : EditorWindow
     {
         private const string Title = "데이터 테이블 에디터";
+        private const string EditorPrefsKeyAutoPackOnSave = "GGemCo.TableEditor.AutoPackOnSave";
 
         private sealed class PendingOpenRequest
         {
@@ -39,6 +40,7 @@ namespace GGemCo2DCoreEditor
         private bool _showOnlyValidationRows;
         private bool _showOnlySelectedValidation;
         private bool _isValidationStale;
+        private bool _autoPackOnSave;
 
         private ToolbarSearchField _tableSearchField;
         private PopupField<string> _packagePopup;
@@ -50,6 +52,7 @@ namespace GGemCo2DCoreEditor
         private Label _pathLabel;
         private Label _statusLabel;
         private Button _shopProbabilityButton;
+        private ToolbarToggle _autoPackToggle;
         private Toggle _showOnlyValidationToggle;
         private Toggle _showOnlySelectedValidationToggle;
 
@@ -90,6 +93,7 @@ namespace GGemCo2DCoreEditor
         {
             _tables = TableEditorRegistry.GetAll();
             BuildPackageChoices();
+            _autoPackOnSave = EditorPrefs.GetBool(EditorPrefsKeyAutoPackOnSave, false);
             _undoController ??= new TableEditorUndoController(HandleUndoRedoRestore);
         }
 
@@ -123,6 +127,8 @@ namespace GGemCo2DCoreEditor
 
             toolbar.Add(CreateToolbarButton("Reload", ReloadCurrentTable));
             toolbar.Add(CreateToolbarButton("Save", SaveCurrentTable));
+            _autoPackToggle = CreateAutoPackToggle();
+            toolbar.Add(_autoPackToggle);
             toolbar.Add(CreateToolbarButton("Validate", ValidateCurrentTable));
             toolbar.Add(CreateToolbarButton("Add Row", AddRow));
             toolbar.Add(CreateToolbarButton("Duplicate", DuplicateRow));
@@ -137,6 +143,28 @@ namespace GGemCo2DCoreEditor
             toolbar.Add(_statusLabel);
 
             rootVisualElement.Add(toolbar);
+        }
+
+        /// <summary>
+        /// 저장 성공 후 런타임 테이블 pack을 자동 재생성할지 결정하는 툴바 토글을 생성합니다.
+        /// </summary>
+        /// <returns>자동 pack 사용 여부를 표시하는 툴바 토글입니다.</returns>
+        private ToolbarToggle CreateAutoPackToggle()
+        {
+            ToolbarToggle toggle = new ToolbarToggle
+            {
+                text = "Auto Pack",
+                tooltip = "체크하면 실제 변경사항이 저장된 뒤 해당 패키지의 런타임 테이블 pack을 자동으로 재생성합니다.",
+                value = _autoPackOnSave,
+            };
+
+            toggle.RegisterValueChangedCallback(evt =>
+            {
+                _autoPackOnSave = evt.newValue;
+                EditorPrefs.SetBool(EditorPrefsKeyAutoPackOnSave, _autoPackOnSave);
+            });
+
+            return toggle;
         }
 
         private void BuildBody()
@@ -469,12 +497,32 @@ namespace GGemCo2DCoreEditor
                 ValidateCurrentTable();
                 _undoController?.CommitSnapshot(_selectedTable.TableKey, _document);
                 RefreshStatus();
+                TryAutoPackAfterSave(context);
             }
             catch (Exception ex)
             {
                 Debug.LogException(ex);
                 EditorUtility.DisplayDialog("Table Editor", BuildSafeDialogMessage(ex), "OK");
             }
+        }
+
+        /// <summary>
+        /// 자동 pack 옵션이 켜져 있고 실제 문서 변경이 저장된 경우, 대상 패키지의 런타임 테이블 pack을 재생성합니다.
+        /// </summary>
+        /// <param name="context">현재 저장 작업 컨텍스트입니다.</param>
+        private void TryAutoPackAfterSave(TableEditorSaveContext context)
+        {
+            if (!_autoPackOnSave || context == null || !context.HasDocumentChanges)
+                return;
+
+            bool built = TableEditorAutoPackService.TryBuildForTable(context.TableDefinition, out string message);
+            if (_statusLabel != null)
+                _statusLabel.text = built ? "Packed" : "Pack Failed";
+
+            if (built)
+                Debug.Log($"[TableEditor] {message}");
+            else
+                Debug.LogWarning($"[TableEditor] {message}");
         }
 
         /// <summary>
