@@ -1,4 +1,4 @@
-﻿#if UNITY_EDITOR
+#if UNITY_EDITOR
 using UnityEditor;
 
 namespace GGemCo2DCoreEditor
@@ -8,8 +8,8 @@ namespace GGemCo2DCoreEditor
     /// </summary>
     internal static class MenuPath
     {
-        // Hierarchy 우클릭/상단 메뉴(GameObject)에 모두 노출됩니다.
-        public const string Root = "GameObject/GGemCo/Creator/";
+        // GGemCoTool 상단 메뉴의 Core 생성 도구 아래에 노출됩니다.
+        public const string Root = GGemCoToolMenu.Core + GGemCoToolMenu.Development + "오브젝트 생성툴/";
 
         // 도메인별 경로
         public const string Trap = Root + "Trap/";
@@ -20,7 +20,9 @@ namespace GGemCo2DCoreEditor
         public const int PriorityTop = 10;
         public const int PriorityNormal = 100;
 
-        // 공용 유틸
+        /// <summary>
+        /// 오브젝트 생성 허브 창을 엽니다.
+        /// </summary>
         [MenuItem(Root + "Open Creator Hub", false, PriorityTop)]
         private static void OpenHub() => CreatorHubWindow.Open();
     }

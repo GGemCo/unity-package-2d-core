@@ -2,6 +2,9 @@ using GGemCo2DCore;
 
 namespace GGemCo2DCoreEditor
 {
+    /// <summary>
+    /// Core 패키지 에디터 툴 메뉴 경로와 정렬 순서를 정의합니다.
+    /// </summary>
     public static class ConfigEditor
     {
         public enum ToolOrdering
@@ -14,6 +17,7 @@ namespace GGemCo2DCoreEditor
             SettingSceneLoading,
             SettingSceneGame,
             SettingWindow,
+            CreateUserSettings,
             BuildProfile = 99,
             Development = 100,
             MapExporter = 101,
@@ -69,10 +73,10 @@ namespace GGemCo2DCoreEditor
             AnimationEventNameChanger,
             CreateSpriteComposer
         }
-        private const string NameToolGGemCo = ConfigDefine.NameSDK+"Tool/";
+        private const string NameToolGGemCo = GGemCoToolMenu.Core;
 
         // 기본 셋팅하기
-        private const string NameToolSettings = NameToolGGemCo + "설정하기/";
+        private const string NameToolSettings = NameToolGGemCo + GGemCoToolMenu.Settings;
         public const string NameToolSettingAuto = NameToolSettings + "자동 셋팅하기";
         public const string NameToolSettingDefault = NameToolSettings + "기본 셋팅하기";
         public const string NameToolSettingAddressable = NameToolSettings + "Addressable 셋팅하기";
@@ -81,9 +85,10 @@ namespace GGemCo2DCoreEditor
         public const string NameToolSettingSceneLoading = NameToolSettings + "로딩 씬 셋팅하기";
         public const string NameToolSettingSceneGame = NameToolSettings + "게임 씬 셋팅하기";
         public const string NameToolSettingWindow = NameToolSettings + "UI 윈도우 셋팅하기";
+        public const string NameToolCreateUserSettings = NameToolSettings + "유저 Settings 스크립터블 오브젝트 생성하기";
 
         // 개발툴
-        private const string NameToolDevelopment = NameToolGGemCo + "개발툴/";
+        private const string NameToolDevelopment = NameToolGGemCo + GGemCoToolMenu.Development;
         public const string NameToolBuildProfile = NameToolDevelopment + "Build 프로파일";
         public const string NameToolMapExporter = NameToolDevelopment + "맵배치툴";
 
@@ -107,7 +112,7 @@ namespace GGemCo2DCoreEditor
         public const string NameToolWorldMapGraph = NameToolDevelopment + "월드맵 그래프 에디터";
 
         // 테스트
-        private const string NameToolTest = NameToolGGemCo + "테스트툴/";
+        private const string NameToolTest = NameToolGGemCo + GGemCoToolMenu.Test;
         public const string NameToolDropItemRate = NameToolTest + "아이템 드랍 확률";
         public const string NameToolCreateItem = NameToolTest + "아이템 생성툴";
         public const string NameToolMoveMap = NameToolTest + "맵 이동툴";
@@ -126,7 +131,7 @@ namespace GGemCo2DCoreEditor
         public const string NameToolUseCameraShake = NameToolTest + "카메라 Shake 사용툴";
 
         // 디버그
-        private const string NameToolDebug = NameToolGGemCo + "디버그툴/";
+        private const string NameToolDebug = NameToolGGemCo + GGemCoToolMenu.Debug;
         public const string NameToolTilemapDrawCall = NameToolDebug + "타일맵 드로우콜 HUD";
         public const string NameToolFps = NameToolDebug + "FPS HUD";
         public const string NameToolPhysics2D = NameToolDebug + "Physics2D HUD";
@@ -139,7 +144,7 @@ namespace GGemCo2DCoreEditor
         public const string NameToolValidateDevelopmentSettingsBuildInclusion = NameToolDebug + "Development Settings 빌드 포함 위험 검사";
 
         // etc
-        private const string NameToolEtc = NameToolGGemCo + "기타/";
+        private const string NameToolEtc = NameToolGGemCo + GGemCoToolMenu.Etc;
         public const string NameToolPlayerPrefs = NameToolEtc + "PlayerPrefs 데이터 관리";
         public const string NameToolOpenSaveDataFolder = NameToolEtc + "게임 데이터 관리";
         public const string NameToolLoadAddressable = NameToolEtc + "Addressable 로더 툴";

@@ -21,7 +21,7 @@ namespace GGemCo2DCoreEditor
         /// <summary>
         /// Settings 프로파일 관리 창을 엽니다.
         /// </summary>
-        [MenuItem("GGemCoTool/개발툴/Settings 프로파일", priority = (int)ConfigEditor.ToolOrdering.Development)]
+        [MenuItem(ConfigEditor.NameToolCreateUserSettings, false, (int)ConfigEditor.ToolOrdering.CreateUserSettings)]
         public static void Open()
         {
             LocalSettingsProfileWindow window = GetWindow<LocalSettingsProfileWindow>(WindowTitle);
