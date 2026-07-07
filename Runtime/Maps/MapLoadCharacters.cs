@@ -56,7 +56,6 @@ namespace GGemCo2DCore
                 scriptPlayer.ApplyMapBoundaryOverrides(currentMapTableData);
                 scriptPlayer.SetEndTilemapYDeathSuppressed(false);
                 scriptPlayer.Stop(true);
-                SceneGame.Instance.cameraManager?.SetFollowTarget(SceneGame.Instance.player?.transform);
             }
             catch (Exception e)
             {

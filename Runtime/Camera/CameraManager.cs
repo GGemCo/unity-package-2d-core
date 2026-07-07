@@ -4,7 +4,7 @@ using UnityEngine;
 namespace GGemCo2DCore
 {
     /// <summary>
-    /// 게임 메인 카메라의 추적, 경계, 연출 효과를 조율하는 매니저입니다.
+    /// 게임 메인 카메라의 대상 추적, 맵 경계, 연출 효과를 조율하는 매니저입니다.
     /// 실제 계산은 Follow, Bounds, Effects 컨트롤러에 위임합니다.
     /// </summary>
     public class CameraManager : MonoBehaviour
@@ -20,6 +20,10 @@ namespace GGemCo2DCore
         public bool useLimitBottom = true;
 
         [Header("Follow")]
+        [Tooltip("대상 추적 기능을 사용할지 여부입니다.")]
+        [SerializeField] private bool useTargetFollow = true;
+        [Tooltip("맵 로딩 후 플레이어 위치에 카메라를 즉시 맞춘 뒤 추적을 재개할지 여부입니다.")]
+        [SerializeField] private bool snapToFollowTargetOnMapLoadComplete = true;
         [Tooltip("대상을 따라가는 속도입니다.")]
         [SerializeField] private float cameraMoveSpeed = 10f;
         [Tooltip("점프/낙하 상태에서 대상의 Y 이동을 카메라에 반영하는 비율입니다.")]
@@ -61,6 +65,7 @@ namespace GGemCo2DCore
         private bool _defaultUseLimitBottom;
         private bool _pendingAutoBottomOffsetApply;
         private bool _isMapCameraProfileResolved;
+        private bool _isFollowPausedByMapLoading;
         private Vector2 _runtimeOverridePreviousFollowOffset;
         private bool _hasRuntimeOverridePreviousFollowOffset;
 
@@ -78,6 +83,16 @@ namespace GGemCo2DCore
         /// 컷신 카메라 독점 제어가 활성화되어 있는지 반환합니다.
         /// </summary>
         public bool IsCutsceneCameraOverrideActive => _effectController.IsOverrideActive;
+
+        /// <summary>
+        /// 대상 추적 기능이 켜져 있는지 반환합니다.
+        /// </summary>
+        public bool IsTargetFollowEnabled => useTargetFollow;
+
+        /// <summary>
+        /// 맵 로딩에 의해 대상 추적이 일시 정지되어 있는지 반환합니다.
+        /// </summary>
+        public bool IsTargetFollowPausedByMapLoading => _isFollowPausedByMapLoading;
 
         /// <summary>
         /// 게임 기본 Orthographic Size를 반환합니다.
@@ -122,6 +137,7 @@ namespace GGemCo2DCore
             _effectController.Initialize(_currentCamera, transform);
             _pendingAutoBottomOffsetApply = false;
             _isMapCameraProfileResolved = false;
+            _isFollowPausedByMapLoading = false;
             _runtimeOverridePreviousFollowOffset = followOffset;
             _hasRuntimeOverridePreviousFollowOffset = false;
         }
@@ -129,11 +145,13 @@ namespace GGemCo2DCore
         private void OnEnable()
         {
             MapManager.OnLoadTilemapCompleteMap += OnLoadTilemapCompleteMap;
+            MapManager.OnLoadCompletePlayer += OnLoadCompletePlayer;
         }
 
         private void OnDisable()
         {
             MapManager.OnLoadTilemapCompleteMap -= OnLoadTilemapCompleteMap;
+            MapManager.OnLoadCompletePlayer -= OnLoadCompletePlayer;
         }
 
         private void Update()
@@ -148,7 +166,7 @@ namespace GGemCo2DCore
             }
 
             Vector3 nextBasePosition = _basePosition;
-            if (_followController.HasFollowTarget && _boundsController.HasMapSize)
+            if (CanEvaluateTargetFollow())
             {
                 nextBasePosition = _followController.EvaluateBasePosition(_basePosition, Time.deltaTime);
                 nextBasePosition = _boundsController.Clamp(nextBasePosition, _currentCamera);
@@ -188,6 +206,18 @@ namespace GGemCo2DCore
                 jumpVerticalFollowInfluence);
 
             _boundsController.ConfigureLimits(useLimitLeft, useLimitRight, useLimitTop, useLimitBottom);
+        }
+
+        /// <summary>
+        /// 현재 프레임에 대상 추적 계산을 실행할 수 있는지 확인합니다.
+        /// </summary>
+        /// <returns>대상 추적을 실행할 수 있으면 true를 반환합니다.</returns>
+        private bool CanEvaluateTargetFollow()
+        {
+            return useTargetFollow
+                   && !_isFollowPausedByMapLoading
+                   && _followController.HasFollowTarget
+                   && _boundsController.HasMapSize;
         }
 
         /// <summary>
@@ -262,6 +292,94 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 대상 추적 기능의 사용 여부를 변경합니다.
+        /// 기능을 끄면 현재 FollowTarget은 유지하지만 추적 계산은 멈춥니다.
+        /// </summary>
+        /// <param name="enabled">대상 추적 기능 사용 여부입니다.</param>
+        public void SetTargetFollowEnabled(bool enabled)
+        {
+            useTargetFollow = enabled;
+            if (!useTargetFollow)
+            {
+                _isFollowPausedByMapLoading = false;
+            }
+        }
+
+        /// <summary>
+        /// 맵 로딩 시작 시 호출되어 카메라 연출 효과를 중단하고 대상 추적을 일시 정지합니다.
+        /// </summary>
+        public void HandleMapLoadStarted()
+        {
+            StopAllCameraEffectsForMapLoading();
+            PauseTargetFollowForMapLoading();
+        }
+
+        /// <summary>
+        /// 맵 로딩 중 남아 있으면 안 되는 카메라 효과를 모두 정리합니다.
+        /// </summary>
+        public void StopAllCameraEffectsForMapLoading()
+        {
+            _effectController.StopAllShakes();
+            _effectController.StopZoom();
+            _effectController.ClearOverride();
+            _pendingAutoBottomOffsetApply = false;
+            transform.position = _basePosition;
+        }
+
+        /// <summary>
+        /// 대상 추적 기능이 켜져 있으면 맵 로딩 동안 추적 계산을 일시 정지합니다.
+        /// </summary>
+        public void PauseTargetFollowForMapLoading()
+        {
+            _isFollowPausedByMapLoading = useTargetFollow;
+        }
+
+        /// <summary>
+        /// 플레이어가 시작 위치로 이동된 뒤 대상 추적을 재개합니다.
+        /// </summary>
+        public void HandlePlayerLoadedForMap()
+        {
+            ResumeTargetFollowAfterMapLoading();
+        }
+
+        /// <summary>
+        /// 맵 로딩으로 일시 정지한 대상 추적을 플레이어 기준으로 재개합니다.
+        /// </summary>
+        public void ResumeTargetFollowAfterMapLoading()
+        {
+            if (!useTargetFollow)
+            {
+                _isFollowPausedByMapLoading = false;
+                return;
+            }
+
+            SetFollowPlayer();
+            _isFollowPausedByMapLoading = false;
+
+            if (snapToFollowTargetOnMapLoadComplete)
+            {
+                SnapToFollowTarget();
+            }
+        }
+
+        /// <summary>
+        /// 현재 추적 대상과 Follow Offset을 기준으로 카메라 기본 위치를 즉시 맞춥니다.
+        /// </summary>
+        private void SnapToFollowTarget()
+        {
+            if (_followController.FollowTarget == null)
+            {
+                return;
+            }
+
+            Vector3 targetPosition = _followController.FollowTarget.position
+                                     + new Vector3(_followController.Offset.x, _followController.Offset.y, 0f);
+            targetPosition.z = transform.position.z;
+            _basePosition = _boundsController.Clamp(targetPosition, _currentCamera);
+            transform.position = _basePosition;
+        }
+
+        /// <summary>
         /// 컷신 카메라 독점 제어를 시작하고 일반 추적/경계/효과 계산을 차단합니다.
         /// </summary>
         /// <param name="owner">독점 제어를 요청한 소유자입니다.</param>
@@ -319,7 +437,7 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// Follow Offset 값을 런타임에서 변경합니다.
+        /// Follow Offset 값을 런타임에서 임시 변경합니다.
         /// </summary>
         public void ChangeCameraPositionValue(float x, float y)
         {
@@ -329,7 +447,7 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// Follow Offset 값을 현재 맵 프로필의 기본값으로 되돌립니다.
+        /// 임시 변경 전 Follow Offset 값으로 되돌립니다.
         /// </summary>
         public void ResetCameraPositionValue()
         {
@@ -352,6 +470,7 @@ namespace GGemCo2DCore
 
         /// <summary>
         /// 카메라 추적 대상을 변경합니다.
+        /// 추적 기능이 꺼져 있어도 대상 참조는 저장해 두며, 실제 추적 계산만 중단됩니다.
         /// </summary>
         /// <param name="target">추적할 대상입니다. null이면 플레이어를 기본 대상으로 시도합니다.</param>
         public void SetFollowTarget(Transform target)
@@ -372,6 +491,11 @@ namespace GGemCo2DCore
         public bool CanGameplayFollowTarget(Transform target)
         {
             if (!isActiveAndEnabled || target == null || !target.gameObject.activeInHierarchy)
+            {
+                return false;
+            }
+
+            if (!useTargetFollow || _isFollowPausedByMapLoading)
             {
                 return false;
             }
@@ -412,6 +536,13 @@ namespace GGemCo2DCore
             _ = mapTileCommon;
             _ = grid;
             RequestBottomOffsetApplyIfNeeded();
+        }
+
+        private void OnLoadCompletePlayer(MapTileCommon mapTileCommon, GameObject grid)
+        {
+            _ = mapTileCommon;
+            _ = grid;
+            HandlePlayerLoadedForMap();
         }
 
         /// <summary>

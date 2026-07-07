@@ -237,6 +237,7 @@ namespace GGemCo2DCore
 
             mapUid = ResolveMapEntryTargetMapUid(mapUid);
             CancelCutsceneBeforeMapLoad();
+            _sceneGame.cameraManager?.HandleMapLoadStarted();
             // GcLogger.Log("LoadMap start");
             Reset();
             _currentState = MapConstants.State.FadeIn;
