@@ -3,17 +3,17 @@ using UnityEngine;
 namespace GGemCo2DCore
 {
     /// <summary>
-    /// 방향성 카메라 Shake에서 방향을 어디서 계산할지 결정하는 정책입니다.
+    /// 방향성 카메라 흔들림에서 방향 벡터를 계산할 기준입니다.
     /// </summary>
     public enum CameraShakeDirectionSource
     {
         /// <summary>
-        /// 프리셋에 정의된 기본 Shake 요청을 그대로 사용합니다.
+        /// 프리셋에 정의된 기본 흔들림 요청을 그대로 사용합니다.
         /// </summary>
         Preset = 0,
 
         /// <summary>
-        /// 요청에 직접 지정된 고정 방향을 사용합니다.
+        /// 요청자가 직접 지정한 고정 방향을 사용합니다.
         /// </summary>
         FixedDirection = 1,
 
@@ -29,21 +29,21 @@ namespace GGemCo2DCore
     }
 
     /// <summary>
-    /// 시전자와 대상 정보를 카메라 Shake 재생 요청으로 변환하는 유틸리티입니다.
+    /// 시전자와 대상 정보를 카메라 흔들림 재생 요청으로 변환하는 유틸리티입니다.
     /// </summary>
     public static class DirectionalCameraShakeUtility
     {
         /// <summary>
-        /// 프리셋과 방향 정책을 조합하여 카메라 Shake 요청을 생성합니다.
+        /// 프리셋과 방향 정책을 조합해 카메라 흔들림 요청을 생성합니다.
         /// </summary>
-        /// <param name="preset">재생할 카메라 Shake 프리셋입니다.</param>
-        /// <param name="caster">스킬 또는 공격을 실행한 시전자 Transform입니다.</param>
+        /// <param name="preset">재생할 카메라 흔들림 프리셋입니다.</param>
+        /// <param name="caster">시전자 또는 공격을 실행한 Transform입니다.</param>
         /// <param name="target">실제 데미지를 받은 대상 Transform입니다.</param>
-        /// <param name="directionSource">Shake 방향을 계산할 기준입니다.</param>
+        /// <param name="directionSource">흔들림 방향 계산 기준입니다.</param>
         /// <param name="fixedDirection">고정 방향 정책에서 사용할 방향입니다.</param>
         /// <param name="horizontalOnly">계산된 방향에서 Y축을 제거하고 좌우 방향만 사용할지 여부입니다.</param>
-        /// <param name="channel">Shake를 식별하고 중단할 때 사용할 채널입니다.</param>
-        /// <returns>카메라 매니저가 재생할 수 있는 Shake 요청 데이터입니다.</returns>
+        /// <param name="channel">흔들림을 분류하고 중단할 때 사용할 채널입니다.</param>
+        /// <returns>카메라 매니저가 재생할 수 있는 흔들림 요청 데이터입니다.</returns>
         public static CameraShakeRequest CreateRequest(
             CameraShakePreset preset,
             Transform caster,
@@ -72,15 +72,15 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 방향 정책에 따라 실제 Shake 방향 벡터를 계산합니다.
+        /// 방향 정책에 따라 실제 흔들림 방향 벡터를 계산합니다.
         /// </summary>
-        /// <param name="caster">스킬 또는 공격을 실행한 시전자 Transform입니다.</param>
+        /// <param name="caster">시전자 또는 공격을 실행한 Transform입니다.</param>
         /// <param name="target">실제 데미지를 받은 대상 Transform입니다.</param>
-        /// <param name="directionSource">Shake 방향을 계산할 기준입니다.</param>
+        /// <param name="directionSource">흔들림 방향 계산 기준입니다.</param>
         /// <param name="fixedDirection">고정 방향 정책에서 사용할 방향입니다.</param>
         /// <param name="horizontalOnly">계산된 방향에서 Y축을 제거하고 좌우 방향만 사용할지 여부입니다.</param>
         /// <param name="direction">정규화된 방향 벡터입니다.</param>
-        /// <returns>유효한 방향 계산에 성공했으면 true입니다.</returns>
+        /// <returns>유효한 방향 계산에 성공하면 true를 반환합니다.</returns>
         private static bool TryResolveDirection(
             Transform caster,
             Transform target,
@@ -121,6 +121,7 @@ namespace GGemCo2DCore
                 direction.y = 0f;
             }
 
+            // 같은 위치에서 피격된 경우에는 좌우 방향만이라도 복구해 흔들림을 생략하지 않도록 합니다.
             if (direction.sqrMagnitude <= 0.0001f && caster != null && target != null)
             {
                 direction = new Vector2(Mathf.Sign(target.position.x - caster.position.x), 0f);

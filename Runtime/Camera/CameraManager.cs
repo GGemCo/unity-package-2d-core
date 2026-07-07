@@ -1,183 +1,56 @@
 using System;
-using System.Collections.Generic;
 using UnityEngine;
-using Random = UnityEngine.Random;
 
 namespace GGemCo2DCore
 {
-    public enum CameraShakeChannel
-    {
-        Default = 0,
-        AnimationEvent = 1,
-        Cutscene = 2,
-        SkillDamage = 3,
-        BasicAttack = 4,
-    }
-
     /// <summary>
-    /// 맵 로드 시점에 카메라의 Y 오프셋을 자동 보정할지 결정하는 정책입니다.
+    /// 게임 메인 카메라의 추적, 경계, 연출 효과를 조율하는 매니저입니다.
+    /// 실제 계산은 Follow, Bounds, Effects 컨트롤러에 위임합니다.
     /// </summary>
-    public enum CameraBottomFollowOffsetPolicy
-    {
-        /// <summary>
-        /// 인스펙터 또는 코드에서 설정한 값을 그대로 사용합니다.
-        /// </summary>
-        Manual = 0,
-
-        /// <summary>
-        /// 맵 하단 경계에 카메라 하단이 맞도록 followOffset.y를 자동 계산합니다.
-        /// </summary>
-        AutoAlignToMapBottomOnMapLoad = 1,
-    }
-
-    /// <summary>
-    /// 카메라 Shake 재생에 필요한 런타임 요청 데이터입니다.
-    /// </summary>
-    public struct CameraShakeRequest
-    {
-        public CameraShakeType ShakeType;
-        public float Duration;
-        public float Strength;
-        public Vector2 AxisStrength;
-        public Vector2 Direction;
-        public float LeftStrength;
-        public float RightStrength;
-        public float DownStrength;
-        public float UpStrength;
-        public int RepeatCount;
-        public bool RandomStartPhase;
-        public CameraShakeChannel Channel;
-        public bool UseUnscaledTime;
-        public AnimationCurve ImpulseCurve;
-        public CameraShakeDecayMode DecayMode;
-
-        public bool IsValid
-        {
-            get
-            {
-                if (Duration <= 0f)
-                {
-                    return false;
-                }
-
-                if (Strength > 0f)
-                {
-                    return true;
-                }
-
-                return LeftStrength > 0f || RightStrength > 0f || DownStrength > 0f || UpStrength > 0f;
-            }
-        }
-
-        /// <summary>
-        /// 모든 방향의 세기가 같은 일반 카메라 Shake 요청을 생성합니다.
-        /// </summary>
-        /// <param name="duration">Shake 재생 시간입니다.</param>
-        /// <param name="magnitude">좌우/상하 공통 세기입니다.</param>
-        /// <param name="repeatCount">반복 횟수입니다.</param>
-        /// <param name="channel">Shake 채널입니다.</param>
-        /// <param name="useUnscaledTime">Time.timeScale 영향을 무시할지 여부입니다.</param>
-        /// <returns>일반 Shake 요청 데이터입니다.</returns>
-        public static CameraShakeRequest CreateSymmetric(
-            float duration,
-            float magnitude,
-            int repeatCount,
-            CameraShakeChannel channel,
-            bool useUnscaledTime = false)
-        {
-            float safeMagnitude = Mathf.Max(0f, magnitude);
-            return new CameraShakeRequest
-            {
-                ShakeType = CameraShakeType.Common,
-                Duration = duration,
-                Strength = safeMagnitude,
-                AxisStrength = Vector2.one,
-                LeftStrength = safeMagnitude,
-                RightStrength = safeMagnitude,
-                DownStrength = safeMagnitude,
-                UpStrength = safeMagnitude,
-                RepeatCount = Mathf.Max(1, repeatCount),
-                RandomStartPhase = true,
-                Direction = Vector2.right,
-                Channel = channel,
-                UseUnscaledTime = useUnscaledTime,
-                DecayMode = CameraShakeDecayMode.Linear,
-            };
-        }
-    }
-
     public class CameraManager : MonoBehaviour
     {
-        private sealed class ActiveCameraShake
-        {
-            public CameraShakeRequest Request;
-            public float Elapsed;
-            public float PhaseOffset;
-        }
-
-        [Tooltip("왼쪽 경계 제한 여부")]
+        [Header("Map Bounds")]
+        [Tooltip("왼쪽 경계를 제한할지 여부입니다.")]
         public bool useLimitLeft = true;
-        [Tooltip("오른쪽 경계 제한 여부")]
+        [Tooltip("오른쪽 경계를 제한할지 여부입니다.")]
         public bool useLimitRight = true;
-        [Tooltip("위쪽 경계 제한 여부")]
+        [Tooltip("위쪽 경계를 제한할지 여부입니다.")]
         public bool useLimitTop = true;
-        [Tooltip("아래쪽 경계 제한 여부")]
+        [Tooltip("아래쪽 경계를 제한할지 여부입니다.")]
         public bool useLimitBottom = true;
-        [Tooltip("타겟을 따라다니는 속도")]
-        [SerializeField] private float cameraMoveSpeed;
 
-        [Header("Vertical Follow")]
-        [Tooltip("점프 상태일 때 카메라가 타겟의 Y 이동량을 얼마나 따라갈지 결정합니다. 1이면 기존과 동일하고, 0.5면 절반만 따라갑니다.")]
+        [Header("Follow")]
+        [Tooltip("대상을 따라가는 속도입니다.")]
+        [SerializeField] private float cameraMoveSpeed = 10f;
+        [Tooltip("점프/낙하 상태에서 대상의 Y 이동을 카메라에 반영하는 비율입니다.")]
         [Range(0f, 1f)]
         [SerializeField] private float jumpVerticalFollowInfluence = 1f;
-
-        [Header("Camera Offset")]
-        [Tooltip("타겟(플레이어) 기준 카메라 기본 오프셋(월드 단위). 예) x>0이면 캐릭터 오른쪽을 더 보여줍니다.")]
-        [SerializeField]
-        private Vector2 followOffset = Vector2.zero;
+        [Tooltip("대상 기준 카메라 기본 오프셋입니다. x가 양수이면 대상의 오른쪽을 더 보여줍니다.")]
+        [SerializeField] private Vector2 followOffset = Vector2.zero;
 
         [Header("Follow Dead Zone")]
-        [Tooltip("타겟이 데드존 안에 있을 때 카메라가 움직이지 않도록 할지 여부입니다.")]
-        [SerializeField]
-        private bool useFollowDeadZone = false;
-
-        [Tooltip("카메라 기준 위치에서 X축으로 허용할 데드존 반경입니다. 0이면 X축 데드존을 사용하지 않습니다.")]
+        [Tooltip("대상이 Dead Zone 안에 있을 때 카메라가 움직이지 않도록 합니다.")]
+        [SerializeField] private bool useFollowDeadZone;
+        [Tooltip("카메라 기준 X축 Dead Zone 반경입니다.")]
         [Min(0f)]
-        [SerializeField]
-        private float followDeadZoneX = 0f;
-
-        [Tooltip("카메라 기준 위치에서 Y축으로 허용할 데드존 반경입니다. 0이면 Y축 데드존을 사용하지 않습니다.")]
+        [SerializeField] private float followDeadZoneX;
+        [Tooltip("카메라 기준 Y축 Dead Zone 반경입니다.")]
         [Min(0f)]
-        [SerializeField]
-        private float followDeadZoneY = 0f;
+        [SerializeField] private float followDeadZoneY;
 
         [Header("Bottom Follow Offset Policy")]
-        [Tooltip("아래 경계 제한(useLimitBottom)이 꺼진 경우, 맵 로드 시 followOffset.y 자동 보정 정책을 적용합니다.")]
-        [SerializeField]
-        private CameraBottomFollowOffsetPolicy bottomFollowOffsetPolicy = CameraBottomFollowOffsetPolicy.Manual;
-
-        [Tooltip("자동 보정 시 맵 하단 경계와 카메라 하단 사이의 추가 여백(월드 단위)입니다.")]
+        [Tooltip("아래 경계 제한을 끈 맵에서 Follow Offset Y를 자동 보정할지 결정합니다.")]
+        [SerializeField] private CameraBottomFollowOffsetPolicy bottomFollowOffsetPolicy = CameraBottomFollowOffsetPolicy.Manual;
+        [Tooltip("자동 보정 시 카메라 하단과 맵 하단 사이에 둘 추가 여백입니다.")]
         [Min(0f)]
-        [SerializeField]
-        private float autoBottomEdgePadding = 0f;
+        [SerializeField] private float autoBottomEdgePadding;
 
-        private readonly List<ActiveCameraShake> _activeShakes = new();
+        private readonly CameraFollowController _followController = new();
+        private readonly CameraBoundsController _boundsController = new();
+        private readonly CameraEffectController _effectController = new();
 
-        private float _originalOrthographicSize;
-        private Vector3 _originCameraPosition;
         private Camera _currentCamera;
-
-        private Vector3 _cameraPosition; // (legacy) runtime override
         private Vector3 _basePosition;
-        private Vector3 _shakeOffset;
-        private Vector2 _center;
-        private Vector2 _mapSize;
-        private Vector2 _monsterSpawnPositionBoxSize;
-        private Transform _followTarget;
-        private ICameraVerticalFollowStateSource _verticalFollowStateSource;
-        private bool _hasVerticalFollowAnchor;
-        private float _verticalFollowAnchorTargetY;
-        private bool _pendingAutoBottomOffsetApply;
         private Vector2 _defaultFollowOffset;
         private bool _defaultUseFollowDeadZone;
         private Vector2 _defaultFollowDeadZone;
@@ -186,53 +59,112 @@ namespace GGemCo2DCore
         private bool _defaultUseLimitRight;
         private bool _defaultUseLimitTop;
         private bool _defaultUseLimitBottom;
-
-        private float _width;
-        private float _height;
-
-        // 줌 관련 처리
-        private bool _isZooming;
-        private float _zoomTimer;
-        private float _zoomDuration;
-        private float _zoomStartSize;
-        private float _zoomEndSize;
-        private Easing.EaseType _zoomEasing;
-        private bool _zoomUseUnscaledTime;
+        private bool _pendingAutoBottomOffsetApply;
         private bool _isMapCameraProfileResolved;
-        private object _cutsceneCameraOverrideOwner;
-        private bool _isCutsceneCameraOverrideActive;
-        private Vector3 _cutsceneCameraOverridePosition;
+        private Vector2 _runtimeOverridePreviousFollowOffset;
+        private bool _hasRuntimeOverridePreviousFollowOffset;
 
         /// <summary>
-        /// 현재 맵 카메라 프로필(점프 추적 영향도/Follow Offset/하단 오프셋 정책)의
-        /// 런타임 적용이 완료되었을 때 발생합니다.
+        /// 현재 맵 카메라 프로필 적용이 완료되었을 때 발생합니다.
         /// </summary>
         public event Action<CameraManager> MapCameraProfileResolved;
 
         /// <summary>
-        /// 현재 맵 카메라 프로필의 런타임 적용 완료 여부를 반환합니다.
+        /// 현재 맵 카메라 프로필 적용이 완료되었는지 반환합니다.
         /// </summary>
         public bool IsMapCameraProfileResolved => _isMapCameraProfileResolved;
 
         /// <summary>
-        /// 컷신 카메라 독점 제어 모드가 활성화되어 있는지 반환합니다.
+        /// 컷신 카메라 독점 제어가 활성화되어 있는지 반환합니다.
         /// </summary>
-        public bool IsCutsceneCameraOverrideActive => _isCutsceneCameraOverrideActive;
+        public bool IsCutsceneCameraOverrideActive => _effectController.IsOverrideActive;
 
         /// <summary>
-        /// 게임 기본 카메라 orthographicSize(원본 값)를 반환합니다.
+        /// 게임 기본 Orthographic Size를 반환합니다.
         /// </summary>
-        public float OriginalOrthographicSize => _originalOrthographicSize;
+        public float OriginalOrthographicSize => _effectController.OriginalOrthographicSize;
+
+        /// <summary>
+        /// 대상 기준 카메라 Follow Offset입니다.
+        /// </summary>
+        public Vector2 FollowOffset
+        {
+            get => _followController.Offset;
+            set
+            {
+                followOffset = value;
+                _followController.Offset = value;
+                RequestBottomOffsetApplyIfNeeded();
+            }
+        }
+
+        /// <summary>
+        /// 카메라 Follow Dead Zone 반경입니다.
+        /// </summary>
+        public Vector2 FollowDeadZone
+        {
+            get => _followController.DeadZone;
+            set
+            {
+                followDeadZoneX = Mathf.Max(0f, value.x);
+                followDeadZoneY = Mathf.Max(0f, value.y);
+                useFollowDeadZone = followDeadZoneX > 0f || followDeadZoneY > 0f;
+                _followController.DeadZone = new Vector2(followDeadZoneX, followDeadZoneY);
+            }
+        }
 
         private void Awake()
         {
-            _isZooming = false;
-            _zoomTimer = 0;
-            _zoomDuration = 0;
-            _zoomStartSize = 0;
-            _zoomEndSize = 0;
-            _zoomEasing = Easing.EaseType.Linear;
-            _zoomUseUnscaledTime = false;
+            _currentCamera = GetComponent<Camera>();
+            _basePosition = transform.position;
+            CaptureDefaults();
+            ConfigureControllers();
+            _effectController.Initialize(_currentCamera, transform);
+            _pendingAutoBottomOffsetApply = false;
+            _isMapCameraProfileResolved = false;
+            _runtimeOverridePreviousFollowOffset = followOffset;
+            _hasRuntimeOverridePreviousFollowOffset = false;
+        }
+
+        private void OnEnable()
+        {
+            MapManager.OnLoadTilemapCompleteMap += OnLoadTilemapCompleteMap;
+        }
+
+        private void OnDisable()
+        {
+            MapManager.OnLoadTilemapCompleteMap -= OnLoadTilemapCompleteMap;
+        }
+
+        private void Update()
+        {
+            _effectController.TickZoom();
+
+            if (_effectController.IsOverrideActive)
+            {
+                _basePosition = _effectController.OverridePosition;
+                transform.position = _basePosition;
+                return;
+            }
+
+            Vector3 nextBasePosition = _basePosition;
+            if (_followController.HasFollowTarget && _boundsController.HasMapSize)
+            {
+                nextBasePosition = _followController.EvaluateBasePosition(_basePosition, Time.deltaTime);
+                nextBasePosition = _boundsController.Clamp(nextBasePosition, _currentCamera);
+            }
+
+            _basePosition = nextBasePosition;
+            _effectController.TickShake();
+            transform.position = _basePosition + _effectController.ShakeOffset;
+        }
+
+        /// <summary>
+        /// 인스펙터 기본 설정값을 저장합니다.
+        /// 맵별 카메라 프로필을 해제할 때 이 값으로 복원합니다.
+        /// </summary>
+        private void CaptureDefaults()
+        {
             _defaultFollowOffset = followOffset;
             _defaultUseFollowDeadZone = useFollowDeadZone;
             _defaultFollowDeadZone = new Vector2(followDeadZoneX, followDeadZoneY);
@@ -241,577 +173,43 @@ namespace GGemCo2DCore
             _defaultUseLimitRight = useLimitRight;
             _defaultUseLimitTop = useLimitTop;
             _defaultUseLimitBottom = useLimitBottom;
-            _originCameraPosition = Vector3.zero;
-            _cameraPosition = new Vector3(followOffset.x, followOffset.y, 0f);
-            _basePosition = transform.position;
-            _shakeOffset = Vector3.zero;
-
-            _currentCamera = GetComponent<Camera>();
-            _originalOrthographicSize = _currentCamera.orthographicSize;
-            _height = _originalOrthographicSize;
-            _width = _height * Screen.width / Screen.height;
-            _pendingAutoBottomOffsetApply = false;
-            _isMapCameraProfileResolved = false;
-            _cutsceneCameraOverrideOwner = null;
-            _isCutsceneCameraOverrideActive = false;
-            _cutsceneCameraOverridePosition = transform.position;
         }
 
         /// <summary>
-        /// 맵 로드 완료 이벤트를 구독합니다.
+        /// 현재 직렬화 필드 값을 하위 컨트롤러에 반영합니다.
         /// </summary>
-        private void OnEnable()
+        private void ConfigureControllers()
         {
-            MapManager.OnLoadTilemapCompleteMap += OnLoadTilemapCompleteMap;
+            _followController.Configure(
+                cameraMoveSpeed,
+                followOffset,
+                useFollowDeadZone,
+                new Vector2(followDeadZoneX, followDeadZoneY),
+                jumpVerticalFollowInfluence);
+
+            _boundsController.ConfigureLimits(useLimitLeft, useLimitRight, useLimitTop, useLimitBottom);
         }
 
         /// <summary>
-        /// 맵 로드 완료 이벤트 구독을 해제합니다.
+        /// 맵 경계 크기를 변경합니다.
         /// </summary>
-        private void OnDisable()
-        {
-            MapManager.OnLoadTilemapCompleteMap -= OnLoadTilemapCompleteMap;
-        }
-
-        private void Update()
-        {
-            if (_isCutsceneCameraOverrideActive)
-            {
-                ApplyCutsceneCameraOverridePosition();
-                return;
-            }
-
-            LimitCameraArea();
-            UpdateZoom();
-        }
-
-        /// <summary>
-        /// 컷신 카메라 독점 제어 모드에서 지정된 위치를 카메라에 즉시 적용합니다.
-        /// 일반 추적, 경계 제한, Dead Zone, Shake, Zoom 계산은 이 모드에서 실행하지 않습니다.
-        /// </summary>
-        private void ApplyCutsceneCameraOverridePosition()
-        {
-            _basePosition = _cutsceneCameraOverridePosition;
-            _shakeOffset = Vector3.zero;
-            transform.position = _basePosition;
-        }
-
-        /// <summary>
-        /// 카메라의 타겟 추적 위치를 계산하고 데드존, 맵 경계 제한, 흔들림 오프셋을 순서대로 적용합니다.
-        /// </summary>
-        private void LimitCameraArea()
-        {
-            UpdateShakeOffset();
-
-            if (_followTarget == null || _mapSize.x == 0f)
-            {
-                transform.position = _basePosition + _shakeOffset;
-                return;
-            }
-
-            // 플레이어를 따라가는 카메라 위치 계산
-            Vector3 targetPos = _followTarget.position + _cameraPosition;
-            targetPos.y = EvaluateVerticalFollowTargetY(targetPos.y);
-            targetPos = ApplyFollowDeadZone(_basePosition, targetPos);
-            targetPos = Vector3.Lerp(_basePosition, targetPos, Time.deltaTime * cameraMoveSpeed);
-
-            float clampX = targetPos.x;
-            float clampY = targetPos.y;
-
-            // 카메라 half extents (Orthographic)
-            float halfH = _currentCamera.orthographicSize;
-            float halfW = halfH * _currentCamera.aspect;
-
-            // --- 좌우 제한 ---
-            if (useLimitLeft || useLimitRight)
-            {
-                float minX = halfW;
-                float maxX = _mapSize.x - halfW;
-
-                // 맵이 화면보다 작아 clamp 구간이 뒤집히는 경우 -> 중앙 고정
-                if (maxX < minX)
-                {
-                    clampX = _mapSize.x * 0.5f;
-                }
-                else
-                {
-                    if (useLimitLeft) clampX = Mathf.Max(clampX, minX);
-                    if (useLimitRight) clampX = Mathf.Min(clampX, maxX);
-                }
-            }
-
-            // --- 상하 제한 ---
-            if (useLimitBottom || useLimitTop)
-            {
-                float minY = halfH;
-                float maxY = _mapSize.y - halfH;
-
-                if (maxY < minY)
-                {
-                    clampY = _mapSize.y * 0.5f;
-                }
-                else
-                {
-                    if (useLimitBottom) clampY = Mathf.Max(clampY, minY);
-                    if (useLimitTop) clampY = Mathf.Min(clampY, maxY);
-                }
-            }
-
-            // 최종 위치 적용 (Shake는 "기본 위치"를 기준으로 오프셋으로만 적용)
-            _basePosition = new Vector3(clampX, clampY, -10f);
-            transform.position = _basePosition + _shakeOffset;
-        }
-
-        /// <summary>
-        /// 현재 타겟의 상태에 따라 세로 추적 목표 Y를 계산합니다.
-        /// 점프 상태가 아닐 때는 원본 목표 Y를 그대로 사용합니다.
-        /// </summary>
-        /// <param name="targetY">타겟과 카메라 오프셋을 더한 원본 목표 Y입니다.</param>
-        /// <returns>점프 세로 추적 영향도가 반영된 목표 Y입니다.</returns>
-        private float EvaluateVerticalFollowTargetY(float targetY)
-        {
-            if (_verticalFollowStateSource == null || !_verticalFollowStateSource.IsVerticalFollowInfluenceActive)
-            {
-                _hasVerticalFollowAnchor = false;
-                return targetY;
-            }
-
-            if (Mathf.Approximately(jumpVerticalFollowInfluence, 1f))
-            {
-                if (!_hasVerticalFollowAnchor)
-                {
-                    _verticalFollowAnchorTargetY = targetY;
-                    _hasVerticalFollowAnchor = true;
-                }
-
-                return targetY;
-            }
-
-            if (!_hasVerticalFollowAnchor)
-            {
-                _verticalFollowAnchorTargetY = targetY;
-                _hasVerticalFollowAnchor = true;
-            }
-
-            float deltaY = targetY - _verticalFollowAnchorTargetY;
-            return _verticalFollowAnchorTargetY + (deltaY * jumpVerticalFollowInfluence);
-        }
-
-        /// <summary>
-        /// 타겟 목표 위치가 카메라 데드존 안에 있으면 현재 기준 위치를 유지하고,
-        /// 데드존을 벗어난 축만 초과분만큼 보정합니다.
-        /// </summary>
-        /// <param name="currentBasePosition">흔들림이 적용되기 전의 현재 카메라 기준 위치입니다.</param>
-        /// <param name="targetPosition">타겟 위치, Follow Offset, 세로 추적 정책이 반영된 목표 위치입니다.</param>
-        /// <returns>데드존 정책이 반영된 카메라 목표 위치입니다.</returns>
-        private Vector3 ApplyFollowDeadZone(Vector3 currentBasePosition, Vector3 targetPosition)
-        {
-            if (!useFollowDeadZone)
-            {
-                return targetPosition;
-            }
-
-            float deadZoneX = Mathf.Max(0f, followDeadZoneX);
-            float deadZoneY = Mathf.Max(0f, followDeadZoneY);
-
-            if (deadZoneX <= 0f && deadZoneY <= 0f)
-            {
-                return targetPosition;
-            }
-
-            Vector3 resolvedPosition = currentBasePosition;
-
-            if (deadZoneX <= 0f)
-            {
-                resolvedPosition.x = targetPosition.x;
-            }
-            else
-            {
-                float deltaX = targetPosition.x - currentBasePosition.x;
-                if (deltaX > deadZoneX)
-                {
-                    resolvedPosition.x = targetPosition.x - deadZoneX;
-                }
-                else if (deltaX < -deadZoneX)
-                {
-                    resolvedPosition.x = targetPosition.x + deadZoneX;
-                }
-            }
-
-            if (deadZoneY <= 0f)
-            {
-                resolvedPosition.y = targetPosition.y;
-            }
-            else
-            {
-                float deltaY = targetPosition.y - currentBasePosition.y;
-                if (deltaY > deadZoneY)
-                {
-                    resolvedPosition.y = targetPosition.y - deadZoneY;
-                }
-                else if (deltaY < -deadZoneY)
-                {
-                    resolvedPosition.y = targetPosition.y + deadZoneY;
-                }
-            }
-
-            resolvedPosition.z = targetPosition.z;
-            return resolvedPosition;
-        }
-
-        /// <summary>
-        /// 현재 따라가는 타겟에서 세로 추적 상태 제공자를 다시 찾고,
-        /// 점프 세로 추적 기준점을 초기화합니다.
-        /// </summary>
-        private void RefreshVerticalFollowStateSource()
-        {
-            _verticalFollowStateSource = null;
-            _hasVerticalFollowAnchor = false;
-            _verticalFollowAnchorTargetY = 0f;
-
-            if (_followTarget == null)
-            {
-                return;
-            }
-
-            MonoBehaviour[] behaviours = _followTarget.GetComponents<MonoBehaviour>();
-            for (int i = 0; i < behaviours.Length; i++)
-            {
-                if (behaviours[i] is ICameraVerticalFollowStateSource stateSource)
-                {
-                    _verticalFollowStateSource = stateSource;
-                    return;
-                }
-            }
-        }
-
-        private void UpdateZoom()
-        {
-            if (!_isZooming)
-            {
-                return;
-            }
-
-            float deltaTime = _zoomUseUnscaledTime ? Time.unscaledDeltaTime : Time.deltaTime;
-            _zoomTimer += deltaTime;
-
-            float duration = Mathf.Max(_zoomDuration, 0.0001f);
-            float t = Mathf.Clamp01(_zoomTimer / duration);
-            float easedT = Easing.Apply(t, _zoomEasing);
-            float zoom = Mathf.Lerp(_zoomStartSize, _zoomEndSize, easedT);
-            _currentCamera.orthographicSize = zoom;
-
-            _height = zoom;
-            _width = _height * Screen.width / Screen.height;
-            if (t >= 1f)
-            {
-                _isZooming = false;
-            }
-        }
-
-        private void UpdateShakeOffset()
-        {
-            if (_activeShakes.Count == 0)
-            {
-                _shakeOffset = Vector3.zero;
-                return;
-            }
-
-            Vector3 totalOffset = Vector3.zero;
-
-            for (int i = _activeShakes.Count - 1; i >= 0; i--)
-            {
-                ActiveCameraShake shake = _activeShakes[i];
-                float deltaTime = shake.Request.UseUnscaledTime ? Time.unscaledDeltaTime : Time.deltaTime;
-                shake.Elapsed += deltaTime;
-
-                if (shake.Elapsed >= shake.Request.Duration)
-                {
-                    _activeShakes.RemoveAt(i);
-                    continue;
-                }
-
-                totalOffset += EvaluateShakeOffset(shake);
-            }
-
-            _shakeOffset = totalOffset;
-        }
-
-        /// <summary>
-        /// 요청 타입에 맞는 카메라 Shake 위치 오프셋을 계산합니다.
-        /// </summary>
-        /// <param name="shake">현재 재생 중인 Shake 상태입니다.</param>
-        /// <returns>카메라에 더할 월드 위치 오프셋입니다.</returns>
-        private static Vector3 EvaluateShakeOffset(ActiveCameraShake shake)
-        {
-            switch (shake.Request.ShakeType)
-            {
-                case CameraShakeType.DirectionalImpulse:
-                    return EvaluateDirectionalImpulseOffset(shake);
-                case CameraShakeType.DirectionalOscillation:
-                    return EvaluateDirectionalOscillationOffset(shake);
-                case CameraShakeType.Common:
-                default:
-                    return EvaluateCommonShakeOffset(shake);
-            }
-        }
-
-        /// <summary>
-        /// 일반적인 좌우/상하 진동형 카메라 Shake 오프셋을 계산합니다.
-        /// </summary>
-        /// <param name="shake">현재 재생 중인 Shake 상태입니다.</param>
-        /// <returns>카메라에 더할 월드 위치 오프셋입니다.</returns>
-        private static Vector3 EvaluateCommonShakeOffset(ActiveCameraShake shake)
-        {
-            float normalized = Mathf.Clamp01(shake.Elapsed / shake.Request.Duration);
-            float attenuation = EvaluateShakeAttenuation(shake.Request, normalized);
-
-            float phase = shake.PhaseOffset + (normalized * Mathf.Max(1, shake.Request.RepeatCount) * Mathf.PI * 2f);
-            float signedX = Mathf.Sin(phase);
-            float signedY = Mathf.Cos(phase + (Mathf.PI * 0.5f));
-
-            float rightStrength = ResolveDirectionalStrength(shake.Request.RightStrength, shake.Request.Strength, shake.Request.AxisStrength.x);
-            float leftStrength = ResolveDirectionalStrength(shake.Request.LeftStrength, shake.Request.Strength, shake.Request.AxisStrength.x);
-            float upStrength = ResolveDirectionalStrength(shake.Request.UpStrength, shake.Request.Strength, shake.Request.AxisStrength.y);
-            float downStrength = ResolveDirectionalStrength(shake.Request.DownStrength, shake.Request.Strength, shake.Request.AxisStrength.y);
-
-            float amplitudeX = signedX >= 0f ? rightStrength : leftStrength;
-            float amplitudeY = signedY >= 0f ? upStrength : downStrength;
-
-            return new Vector3(
-                signedX * amplitudeX * attenuation,
-                signedY * amplitudeY * attenuation,
-                0f);
-        }
-
-        /// <summary>
-        /// 지정된 방향으로 한 번 밀렸다가 복귀하는 카메라 Shake 오프셋을 계산합니다.
-        /// </summary>
-        /// <param name="shake">현재 재생 중인 Shake 상태입니다.</param>
-        /// <returns>카메라에 더할 월드 위치 오프셋입니다.</returns>
-        private static Vector3 EvaluateDirectionalImpulseOffset(ActiveCameraShake shake)
-        {
-            float normalized = Mathf.Clamp01(shake.Elapsed / shake.Request.Duration);
-            Vector2 direction = ResolveShakeDirection(shake.Request.Direction);
-            float weight = EvaluateImpulseWeight(shake.Request, normalized);
-            Vector2 offset = direction * Mathf.Max(0f, shake.Request.Strength) * weight;
-            return new Vector3(offset.x, offset.y, 0f);
-        }
-
-        /// <summary>
-        /// 지정된 방향 축을 기준으로 여러 번 진동하는 카메라 Shake 오프셋을 계산합니다.
-        /// </summary>
-        /// <param name="shake">현재 재생 중인 Shake 상태입니다.</param>
-        /// <returns>카메라에 더할 월드 위치 오프셋입니다.</returns>
-        private static Vector3 EvaluateDirectionalOscillationOffset(ActiveCameraShake shake)
-        {
-            float normalized = Mathf.Clamp01(shake.Elapsed / shake.Request.Duration);
-            float attenuation = EvaluateShakeAttenuation(shake.Request, normalized);
-            float phase = shake.PhaseOffset + (normalized * Mathf.Max(1, shake.Request.RepeatCount) * Mathf.PI * 2f);
-            float signed = Mathf.Sin(phase);
-            Vector2 direction = ResolveShakeDirection(shake.Request.Direction);
-            Vector2 offset = direction * signed * Mathf.Max(0f, shake.Request.Strength) * attenuation;
-            return new Vector3(offset.x, offset.y, 0f);
-        }
-
-        /// <summary>
-        /// 방향별 세기 값이 없을 때 기본 세기와 축 비율로 대체합니다.
-        /// </summary>
-        /// <param name="directionalStrength">방향별로 직접 지정된 세기입니다.</param>
-        /// <param name="baseStrength">프리셋의 기본 세기입니다.</param>
-        /// <param name="axisWeight">축별 세기 비율입니다.</param>
-        /// <returns>최종 세기 값입니다.</returns>
-        private static float ResolveDirectionalStrength(float directionalStrength, float baseStrength, float axisWeight)
-        {
-            if (directionalStrength > 0f)
-            {
-                return directionalStrength;
-            }
-
-            return Mathf.Max(0f, baseStrength) * Mathf.Max(0f, axisWeight);
-        }
-
-        /// <summary>
-        /// 진행도에 따른 진동형 Shake 감쇠 값을 계산합니다.
-        /// </summary>
-        /// <param name="request">Shake 요청 데이터입니다.</param>
-        /// <param name="normalized">0~1 사이의 진행도입니다.</param>
-        /// <returns>감쇠 가중치입니다.</returns>
-        private static float EvaluateShakeAttenuation(CameraShakeRequest request, float normalized)
-        {
-            float linear = 1f - normalized;
-            if (request.DecayMode == CameraShakeDecayMode.Smooth)
-            {
-                return Mathf.SmoothStep(1f, 0f, normalized);
-            }
-
-            return linear;
-        }
-
-        /// <summary>
-        /// DirectionalImpulse 타입에서 사용할 시간별 세기 가중치를 계산합니다.
-        /// </summary>
-        /// <param name="request">Shake 요청 데이터입니다.</param>
-        /// <param name="normalized">0~1 사이의 진행도입니다.</param>
-        /// <returns>곡선 평가 결과입니다.</returns>
-        private static float EvaluateImpulseWeight(CameraShakeRequest request, float normalized)
-        {
-            if (request.ImpulseCurve != null && request.ImpulseCurve.length > 0)
-            {
-                return Mathf.Max(0f, request.ImpulseCurve.Evaluate(normalized));
-            }
-
-            return Mathf.SmoothStep(1f, 0f, normalized);
-        }
-
-        /// <summary>
-        /// Shake 방향 벡터를 안전하게 정규화합니다.
-        /// </summary>
-        /// <param name="direction">외부에서 전달된 방향 벡터입니다.</param>
-        /// <returns>정규화된 방향 벡터입니다.</returns>
-        private static Vector2 ResolveShakeDirection(Vector2 direction)
-        {
-            if (direction.sqrMagnitude <= 0.0001f)
-            {
-                return Vector2.right;
-            }
-
-            return direction.normalized;
-        }
-
-        /// <summary>
-        /// 카메라 흔들림 효과 주기
-        /// </summary>
-        public void StartShake(float shakeDuration, float shakeMagnitude)
-        {
-            if (shakeDuration <= 0f || shakeMagnitude <= 0f)
-            {
-                return;
-            }
-
-            PlayShake(CameraShakeRequest.CreateSymmetric(
-                shakeDuration,
-                shakeMagnitude,
-                3,
-                CameraShakeChannel.Default));
-        }
-
-        /// <summary>
-        /// 방향별 카메라 흔들림 효과를 재생합니다.
-        /// </summary>
-        public void StartShake(
-            float duration,
-            float leftStrength,
-            float rightStrength,
-            float downStrength,
-            float upStrength,
-            int repeatCount,
-            CameraShakeChannel channel = CameraShakeChannel.Default,
-            bool useUnscaledTime = false)
-        {
-            PlayShake(new CameraShakeRequest
-            {
-                ShakeType = CameraShakeType.Common,
-                Duration = duration,
-                Strength = Mathf.Max(Mathf.Max(leftStrength, rightStrength), Mathf.Max(downStrength, upStrength)),
-                AxisStrength = Vector2.one,
-                LeftStrength = Mathf.Max(0f, leftStrength),
-                RightStrength = Mathf.Max(0f, rightStrength),
-                DownStrength = Mathf.Max(0f, downStrength),
-                UpStrength = Mathf.Max(0f, upStrength),
-                RepeatCount = Mathf.Max(1, repeatCount),
-                RandomStartPhase = true,
-                Direction = Vector2.right,
-                Channel = channel,
-                UseUnscaledTime = useUnscaledTime,
-                DecayMode = CameraShakeDecayMode.Linear,
-            });
-        }
-
-        /// <summary>
-        /// 카메라 Shake 요청을 현재 카메라에 재생합니다.
-        /// </summary>
-        /// <param name="request">재생할 Shake 요청 데이터입니다.</param>
-        public void PlayShake(CameraShakeRequest request)
-        {
-            if (_isCutsceneCameraOverrideActive)
-            {
-                return;
-            }
-
-            if (!request.IsValid)
-            {
-                return;
-            }
-
-            _activeShakes.Add(new ActiveCameraShake
-            {
-                Request = request,
-                Elapsed = 0f,
-                PhaseOffset = ResolveShakePhaseOffset(request),
-            });
-        }
-
-        /// <summary>
-        /// Shake 요청의 시작 위치를 계산합니다.
-        /// </summary>
-        /// <param name="request">재생할 Shake 요청 데이터입니다.</param>
-        /// <returns>사인 파형 계산에 사용할 라디안 단위 시작 위치입니다.</returns>
-        private static float ResolveShakePhaseOffset(CameraShakeRequest request)
-        {
-            return request.RandomStartPhase ? Random.Range(0f, Mathf.PI * 2f) : 0f;
-        }
-
-        public void PlayShake(CameraShakePreset preset, CameraShakeChannel channel = CameraShakeChannel.Default)
-        {
-            if (preset == null)
-            {
-                return;
-            }
-
-            PlayShake(preset.ToRequest(channel));
-        }
-
-        public void StopShake(CameraShakeChannel channel)
-        {
-            for (int i = _activeShakes.Count - 1; i >= 0; i--)
-            {
-                if (_activeShakes[i].Request.Channel == channel)
-                {
-                    _activeShakes.RemoveAt(i);
-                }
-            }
-
-            if (_activeShakes.Count == 0)
-            {
-                _shakeOffset = Vector3.zero;
-            }
-        }
-
-        public void StopAllShakes()
-        {
-            _activeShakes.Clear();
-            _shakeOffset = Vector3.zero;
-        }
-
-        /// <summary>
-        /// 맵 경계선 사이즈 변경하기
-        /// </summary>
+        /// <param name="pWidth">맵 월드 폭입니다.</param>
+        /// <param name="pHeight">맵 월드 높이입니다.</param>
         public void ChangeMapSize(float pWidth, float pHeight)
         {
-            _mapSize.x = pWidth;
-            _mapSize.y = pHeight;
+            _boundsController.ChangeMapSize(pWidth, pHeight);
             RequestBottomOffsetApplyIfNeeded();
         }
 
         /// <summary>
         /// 현재 맵 테이블의 카메라 오버라이드 값을 적용합니다.
-        /// 오버라이드가 지정되지 않은 항목은 인스펙터 기본값으로 복원합니다.
+        /// 지정되지 않은 항목은 인스펙터 기본값으로 복원합니다.
         /// </summary>
         /// <param name="mapData">현재 로드 중인 맵 테이블 데이터입니다.</param>
         public void ApplyMapCameraOverrides(StruckTableMap mapData)
         {
             MarkMapCameraProfileUnresolved();
+
             Vector2 resolvedFollowOffset = _defaultFollowOffset;
             bool resolvedUseFollowDeadZone = _defaultUseFollowDeadZone;
             Vector2 resolvedFollowDeadZone = _defaultFollowDeadZone;
@@ -841,7 +239,7 @@ namespace GGemCo2DCore
 
                 if (mapData.UseParallax)
                 {
-                    // Parallax 맵은 배경 이동 범위를 열어 두기 위해 카메라 경계 제한을 모두 해제합니다.
+                    // Parallax 맵은 배경 이동 여백을 확보해야 하므로 카메라 경계 제한을 해제합니다.
                     resolvedUseLimitLeft = false;
                     resolvedUseLimitRight = false;
                     resolvedUseLimitTop = false;
@@ -858,187 +256,157 @@ namespace GGemCo2DCore
             useLimitRight = resolvedUseLimitRight;
             useLimitTop = resolvedUseLimitTop;
             useLimitBottom = resolvedUseLimitBottom;
-            _cameraPosition.x = resolvedFollowOffset.x;
-            _cameraPosition.y = resolvedFollowOffset.y;
-            _hasVerticalFollowAnchor = false;
+            ConfigureControllers();
             _pendingAutoBottomOffsetApply = false;
             RequestBottomOffsetApplyIfNeeded();
         }
 
         /// <summary>
-        /// 컷신 카메라 독점 제어 모드를 시작하고 일반 카메라 계산과 다른 카메라 효과를 차단합니다.
-        /// 기존 독점 소유자가 있더라도 새 소유자가 호출하면 제어권을 넘겨받습니다.
+        /// 컷신 카메라 독점 제어를 시작하고 일반 추적/경계/효과 계산을 차단합니다.
         /// </summary>
-        /// <param name="owner">독점 제어를 요청한 컷신 컨트롤러입니다.</param>
-        /// <param name="position">독점 모드 시작 시 적용할 월드 좌표입니다.</param>
-        /// <returns>유효한 소유자로 독점 모드가 시작되었으면 <see langword="true"/>를 반환합니다.</returns>
+        /// <param name="owner">독점 제어를 요청한 소유자입니다.</param>
+        /// <param name="position">시작 위치입니다.</param>
+        /// <returns>독점 제어가 시작되면 true를 반환합니다.</returns>
         public bool BeginCutsceneCameraOverride(object owner, Vector2 position)
         {
-            if (owner == null)
+            bool started = _effectController.BeginOverride(owner, position);
+            if (started)
             {
-                return false;
+                _pendingAutoBottomOffsetApply = false;
+                _basePosition = _effectController.OverridePosition;
+                transform.position = _basePosition;
             }
 
-            _cutsceneCameraOverrideOwner = owner;
-            _isCutsceneCameraOverrideActive = true;
-            StopAllShakes();
-            StopZoom();
-            _hasVerticalFollowAnchor = false;
-            _pendingAutoBottomOffsetApply = false;
-            SetCutsceneCameraOverridePosition(owner, position);
-            return true;
+            return started;
         }
 
         /// <summary>
-        /// 컷신 카메라 독점 제어 모드에서 사용할 카메라 위치를 갱신합니다.
-        /// 현재 소유자가 아닌 요청은 무시합니다.
+        /// 컷신 카메라 독점 제어 중 사용할 위치를 갱신합니다.
         /// </summary>
-        /// <param name="owner">독점 제어를 보유한 컷신 컨트롤러입니다.</param>
-        /// <param name="position">적용할 월드 좌표입니다.</param>
-        /// <returns>위치가 갱신되었으면 <see langword="true"/>를 반환합니다.</returns>
         public bool SetCutsceneCameraOverridePosition(object owner, Vector2 position)
         {
-            if (!_isCutsceneCameraOverrideActive || !ReferenceEquals(_cutsceneCameraOverrideOwner, owner))
+            bool updated = _effectController.SetOverridePosition(owner, position);
+            if (updated)
             {
-                return false;
+                _basePosition = _effectController.OverridePosition;
+                transform.position = _basePosition;
             }
 
-            float z = transform.position.z;
-            _cutsceneCameraOverridePosition = new Vector3(position.x, position.y, z);
-            ApplyCutsceneCameraOverridePosition();
-            return true;
+            return updated;
         }
 
         /// <summary>
-        /// 컷신 카메라 독점 제어 모드를 종료합니다.
-        /// 현재 소유자가 아닌 요청은 무시하여 겹친 CameraMove 이벤트의 상태 훼손을 방지합니다.
+        /// 컷신 카메라 독점 제어를 종료합니다.
         /// </summary>
-        /// <param name="owner">독점 제어를 해제하려는 컷신 컨트롤러입니다.</param>
-        /// <returns>독점 모드가 해제되었으면 <see langword="true"/>를 반환합니다.</returns>
         public bool EndCutsceneCameraOverride(object owner)
         {
-            if (!_isCutsceneCameraOverrideActive || !ReferenceEquals(_cutsceneCameraOverrideOwner, owner))
+            bool ended = _effectController.EndOverride(owner);
+            if (ended)
             {
-                return false;
+                _basePosition = transform.position;
             }
 
-            _isCutsceneCameraOverrideActive = false;
-            _cutsceneCameraOverrideOwner = null;
-            _basePosition = transform.position;
-            _cutsceneCameraOverridePosition = _basePosition;
-            _shakeOffset = Vector3.zero;
-            _hasVerticalFollowAnchor = false;
-            return true;
+            return ended;
         }
 
         /// <summary>
         /// 카메라를 지정한 월드 좌표로 즉시 이동합니다.
         /// </summary>
-        /// <param name="x">이동할 월드 X 좌표입니다.</param>
-        /// <param name="y">이동할 월드 Y 좌표입니다.</param>
         public void MoveCameraPosition(float x, float y)
         {
-            transform.position = new Vector3(x, y, -10f) + _cameraPosition;
-            _basePosition = transform.position;
+            _basePosition = new Vector3(x + _followController.Offset.x, y + _followController.Offset.y, -10f);
+            transform.position = _basePosition;
         }
 
         /// <summary>
-        /// 플레이어 기준에서의 카메라 위치 값 바꾸기
+        /// Follow Offset 값을 런타임에서 변경합니다.
         /// </summary>
         public void ChangeCameraPositionValue(float x, float y)
         {
-            _originCameraPosition.x = _cameraPosition.x;
-            _originCameraPosition.y = _cameraPosition.y;
-            _cameraPosition.x = x;
-            _cameraPosition.y = y;
-        }
-
-        public void ResetCameraPositionValue()
-        {
-            _cameraPosition.x = _originCameraPosition.x;
-            _cameraPosition.y = _originCameraPosition.y;
+            _runtimeOverridePreviousFollowOffset = _followController.Offset;
+            _hasRuntimeOverridePreviousFollowOffset = true;
+            _followController.Offset = new Vector2(x, y);
         }
 
         /// <summary>
-        /// 카메라가 따라가는 캐릭터 지우기
+        /// Follow Offset 값을 현재 맵 프로필의 기본값으로 되돌립니다.
+        /// </summary>
+        public void ResetCameraPositionValue()
+        {
+            if (!_hasRuntimeOverridePreviousFollowOffset)
+            {
+                return;
+            }
+
+            _followController.Offset = _runtimeOverridePreviousFollowOffset;
+            _hasRuntimeOverridePreviousFollowOffset = false;
+        }
+
+        /// <summary>
+        /// 카메라 추적 대상을 제거합니다.
         /// </summary>
         public void RemoveFollowTarget()
         {
-            _followTarget = null;
-            RefreshVerticalFollowStateSource();
+            _followController.RemoveTarget();
         }
 
         /// <summary>
-        /// 따라가는 캐릭터 변경
+        /// 카메라 추적 대상을 변경합니다.
         /// </summary>
+        /// <param name="target">추적할 대상입니다. null이면 플레이어를 기본 대상으로 시도합니다.</param>
         public void SetFollowTarget(Transform target)
         {
-            _followTarget = target == null ? SceneGame.Instance.player.transform : target;
-            RefreshVerticalFollowStateSource();
+            Transform resolvedTarget = target;
+            if (resolvedTarget == null && SceneGame.Instance != null && SceneGame.Instance.player != null)
+            {
+                resolvedTarget = SceneGame.Instance.player.transform;
+            }
+
+            _followController.SetTarget(resolvedTarget);
             RequestBottomOffsetApplyIfNeeded();
         }
 
         /// <summary>
-        /// 지정한 타겟을 게임 플레이 카메라가 정상적으로 추적할 수 있는지 확인합니다.
+        /// 지정한 대상이 현재 게임 카메라의 정상 추적 대상인지 확인합니다.
         /// </summary>
-        /// <param name="target">카메라 추적 가능 여부를 확인할 대상 Transform입니다.</param>
-        /// <returns>
-        /// 카메라와 맵 프로필이 준비되어 있고, 컷신 독점 상태가 아니며,
-        /// 현재 Follow 타겟이 지정한 대상과 일치하면 <see langword="true"/>를 반환합니다.
-        /// </returns>
         public bool CanGameplayFollowTarget(Transform target)
         {
             if (!isActiveAndEnabled || target == null || !target.gameObject.activeInHierarchy)
+            {
                 return false;
+            }
 
-            if (_isCutsceneCameraOverrideActive || !_isMapCameraProfileResolved)
+            if (_effectController.IsOverrideActive || !_isMapCameraProfileResolved)
+            {
                 return false;
+            }
 
-            if (_followTarget != target)
+            if (!_followController.IsFollowing(target))
+            {
                 return false;
+            }
 
             if (_currentCamera == null || !_currentCamera.isActiveAndEnabled || !_currentCamera.orthographic)
+            {
                 return false;
+            }
 
-            if (_mapSize.x <= 0f || _mapSize.y <= 0f)
+            if (!_boundsController.HasMapSize)
+            {
                 return false;
+            }
 
             return cameraMoveSpeed > 0.0001f;
         }
 
         /// <summary>
-        /// 카메라 Shake가 적용되기 전 기본 위치를 기준으로 Orthographic 화면의 월드 Rect를 계산합니다.
+        /// 흔들림이 적용되기 전 기본 위치를 기준으로 Orthographic 화면의 월드 Rect를 계산합니다.
         /// </summary>
-        /// <param name="worldRect">계산된 카메라 화면 월드 Rect입니다.</param>
-        /// <returns>활성 Orthographic 카메라에서 유효한 Rect를 계산했으면 <see langword="true"/>를 반환합니다.</returns>
         public bool TryGetBaseViewportWorldRect(out Rect worldRect)
         {
-            worldRect = default;
-
-            if (_currentCamera == null || !_currentCamera.isActiveAndEnabled || !_currentCamera.orthographic)
-                return false;
-
-            float halfHeight = _currentCamera.orthographicSize;
-            float aspect = _currentCamera.aspect;
-            if (halfHeight <= 0f || aspect <= 0f || float.IsNaN(aspect) || float.IsInfinity(aspect))
-                return false;
-
-            float halfWidth = halfHeight * aspect;
-            Vector3 center = GetBaseWorldPosition();
-            worldRect = Rect.MinMaxRect(
-                center.x - halfWidth,
-                center.y - halfHeight,
-                center.x + halfWidth,
-                center.y + halfHeight);
-            return worldRect.width > 0f && worldRect.height > 0f;
+            return _boundsController.TryGetViewportWorldRect(_currentCamera, _basePosition, out worldRect);
         }
 
-        /// <summary>
-        /// 타일맵 로드 완료 이벤트를 수신하면 자동 바텀 정렬 적용을 재시도합니다.
-        /// 실제 맵 하단 경계값은 MapManager에서 계산한 월드 경계를 사용합니다.
-        /// </summary>
-        /// <param name="mapTileCommon">현재 로드된 맵 루트 컴포넌트입니다.</param>
-        /// <param name="grid">맵이 배치된 Grid 오브젝트입니다.</param>
         private void OnLoadTilemapCompleteMap(MapTileCommon mapTileCommon, GameObject grid)
         {
             _ = mapTileCommon;
@@ -1047,8 +415,7 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 자동 바텀 정렬 정책이 적용 가능한 상태인지 확인하고,
-        /// 적용 대상이면 followOffset.y 보정을 요청합니다.
+        /// 자동 하단 정렬 정책이 적용 가능한지 확인하고 필요하면 보정을 예약합니다.
         /// </summary>
         private void RequestBottomOffsetApplyIfNeeded()
         {
@@ -1071,8 +438,7 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 대기 중인 자동 바텀 정렬 보정을 실제로 적용합니다.
-        /// 맵 하단이 화면 하단과 맞도록 타겟 기준 Y 오프셋을 계산합니다.
+        /// 예약된 하단 자동 정렬 보정을 실제 Follow Offset에 적용합니다.
         /// </summary>
         private void TryApplyBottomOffsetIfPending()
         {
@@ -1081,12 +447,7 @@ namespace GGemCo2DCore
                 return;
             }
 
-            if (_followTarget == null || _currentCamera == null)
-            {
-                return;
-            }
-
-            if (_mapSize.x <= 0f || _mapSize.y <= 0f)
+            if (_followController.FollowTarget == null || _currentCamera == null || !_boundsController.HasMapSize)
             {
                 return;
             }
@@ -1098,26 +459,28 @@ namespace GGemCo2DCore
             }
 
             float desiredCameraCenterY = mapBottomY + _currentCamera.orthographicSize + autoBottomEdgePadding;
-            float newFollowOffsetY = desiredCameraCenterY - _followTarget.position.y;
-
+            float newFollowOffsetY = desiredCameraCenterY - _followController.FollowTarget.position.y;
             followOffset.y = newFollowOffsetY;
-            _cameraPosition.y = newFollowOffsetY;
-            _hasVerticalFollowAnchor = false;
+            _followController.SetOffsetY(newFollowOffsetY);
             _pendingAutoBottomOffsetApply = false;
             MarkMapCameraProfileResolved();
         }
 
         /// <summary>
-        /// player 따라가도록 설정
+        /// 플레이어를 추적 대상으로 설정합니다.
         /// </summary>
         public void SetFollowPlayer()
         {
-            if (SceneGame.Instance == null || SceneGame.Instance.player == null) return;
+            if (SceneGame.Instance == null || SceneGame.Instance.player == null)
+            {
+                return;
+            }
+
             SetFollowTarget(SceneGame.Instance.player.transform);
         }
 
         /// <summary>
-        /// orthographicSize 변경하기
+        /// Orthographic Size 보간을 시작합니다.
         /// </summary>
         public void StartZoom(
             float endSize,
@@ -1126,149 +489,112 @@ namespace GGemCo2DCore
             bool useUnscaledTime = false,
             bool changeOriginalSize = false)
         {
-            if (_isCutsceneCameraOverrideActive)
-            {
-                return;
-            }
-
-            if (_currentCamera == null || !_currentCamera.orthographic)
-            {
-                return;
-            }
-
-            _zoomTimer = 0f;
-            _zoomStartSize = _currentCamera.orthographicSize;
-            _zoomEndSize = endSize;
-            _zoomDuration = Mathf.Max(duration, 0.0001f);
-            _zoomEasing = easeType;
-            _zoomUseUnscaledTime = useUnscaledTime;
-            _isZooming = true;
-            if (changeOriginalSize)
-            {
-                ChangeOriginalOrthographicSize(endSize);
-            }
-
-            if (duration <= 0f)
-            {
-                UpdateZoom();
-            }
+            _effectController.StartZoom(endSize, duration, easeType, useUnscaledTime, changeOriginalSize);
         }
 
         /// <summary>
-        /// orthographicSize 초기화
-        /// </summary>
-        private void ReSetZoom()
-        {
-            _zoomTimer = 0;
-            _zoomStartSize = _currentCamera.orthographicSize;
-            _zoomEndSize = _originalOrthographicSize;
-            _zoomDuration = 1f;
-            _zoomEasing = Easing.EaseType.EaseOutQuad;
-            _zoomUseUnscaledTime = false;
-            _isZooming = true;
-        }
-
-        /// <summary>
-        /// 연출 종료시 호출
+        /// 컷신 종료 시 카메라를 일반 게임플레이 상태로 복구합니다.
         /// </summary>
         public void ReSetByCutscene()
         {
-            ClearCutsceneCameraOverride();
+            _effectController.ClearOverride();
             SetFollowPlayer();
-            StopShake(CameraShakeChannel.Cutscene);
-            ReSetZoom();
+            _effectController.StopShake(CameraShakeChannel.Cutscene);
+            _effectController.ResetZoom();
+            _basePosition = transform.position;
         }
 
         /// <summary>
-        /// 컷신 종료 정리 과정에서 소유자와 관계없이 카메라 독점 제어 모드를 강제로 해제합니다.
-        /// 비정상 종료나 컷신 강제 종료 후에도 일반 카메라 계산이 다시 동작하도록 보장합니다.
+        /// 진행 중인 줌을 중단합니다.
         /// </summary>
-        private void ClearCutsceneCameraOverride()
-        {
-            _isCutsceneCameraOverrideActive = false;
-            _cutsceneCameraOverrideOwner = null;
-            _basePosition = transform.position;
-            _cutsceneCameraOverridePosition = _basePosition;
-            _shakeOffset = Vector3.zero;
-            _hasVerticalFollowAnchor = false;
-        }
-
         public void StopZoom(bool snapToTarget = false)
         {
-            if (!_isZooming)
-            {
-                return;
-            }
-
-            if (snapToTarget && _currentCamera != null)
-            {
-                _currentCamera.orthographicSize = _zoomEndSize;
-                _height = _zoomEndSize;
-                _width = _height * Screen.width / Screen.height;
-            }
-
-            _isZooming = false;
+            _effectController.StopZoom(snapToTarget);
         }
 
         /// <summary>
-        /// 카메라의 orthographicSize를 즉시 적용합니다.
-        /// Intro 시작 연출처럼 "프레임 보간 없이 즉시 스냅"이 필요한 경우 사용합니다.
+        /// Orthographic Size를 즉시 적용합니다.
         /// </summary>
-        /// <param name="size">즉시 적용할 orthographicSize 값입니다.</param>
-        /// <param name="changeOriginalSize">
-        /// true이면 기본(원본) 카메라 사이즈도 함께 갱신합니다.
-        /// false이면 현재 프레임의 표시 사이즈만 변경하고 원본 값은 유지합니다.
-        /// </param>
         public void SetOrthographicSizeImmediate(float size, bool changeOriginalSize = false)
         {
-            if (_currentCamera == null || !_currentCamera.orthographic)
-            {
-                return;
-            }
-
-            float safeSize = Mathf.Max(size, 0.0001f);
-            _currentCamera.orthographicSize = safeSize;
-            _height = safeSize;
-            _width = _height * Screen.width / Screen.height;
-
-            if (changeOriginalSize)
-            {
-                _originalOrthographicSize = safeSize;
-            }
+            _effectController.SetOrthographicSizeImmediate(size, changeOriginalSize);
         }
 
         /// <summary>
-        /// 타겟(플레이어) 기준 카메라 기본 오프셋(월드 단위).
-        /// Inspector에서 설정한 값은 시작 시 기본값으로 사용되며, 흔들림(Shake)은 이 기본 위치를 기준으로 적용됩니다.
+        /// 카메라 흔들림을 시작합니다.
         /// </summary>
-        public Vector2 FollowOffset
+        public void StartShake(float shakeDuration, float shakeMagnitude)
         {
-            get => new Vector2(_cameraPosition.x, _cameraPosition.y);
-            set => _cameraPosition = new Vector3(value.x, value.y, 0f);
+            _effectController.StartShake(shakeDuration, shakeMagnitude);
         }
 
         /// <summary>
-        /// 카메라 Follow Dead Zone 반경을 반환하거나 설정합니다.
-        /// 두 축이 모두 0 이하이면 데드존 추적을 비활성화합니다.
+        /// 방향별 세기를 지정한 카메라 흔들림을 시작합니다.
         /// </summary>
-        public Vector2 FollowDeadZone
+        public void StartShake(
+            float duration,
+            float leftStrength,
+            float rightStrength,
+            float downStrength,
+            float upStrength,
+            int repeatCount,
+            CameraShakeChannel channel = CameraShakeChannel.Default,
+            bool useUnscaledTime = false)
         {
-            get => new Vector2(followDeadZoneX, followDeadZoneY);
-            set
-            {
-                followDeadZoneX = Mathf.Max(0f, value.x);
-                followDeadZoneY = Mathf.Max(0f, value.y);
-                useFollowDeadZone = followDeadZoneX > 0f || followDeadZoneY > 0f;
-            }
+            _effectController.StartShake(
+                duration,
+                leftStrength,
+                rightStrength,
+                downStrength,
+                upStrength,
+                repeatCount,
+                channel,
+                useUnscaledTime);
         }
 
+        /// <summary>
+        /// 카메라 흔들림 요청을 재생합니다.
+        /// </summary>
+        public void PlayShake(CameraShakeRequest request)
+        {
+            _effectController.PlayShake(request);
+        }
+
+        /// <summary>
+        /// 프리셋 기반 카메라 흔들림을 재생합니다.
+        /// </summary>
+        public void PlayShake(CameraShakePreset preset, CameraShakeChannel channel = CameraShakeChannel.Default)
+        {
+            _effectController.PlayShake(preset, channel);
+        }
+
+        /// <summary>
+        /// 지정 채널의 카메라 흔들림을 중단합니다.
+        /// </summary>
+        public void StopShake(CameraShakeChannel channel)
+        {
+            _effectController.StopShake(channel);
+        }
+
+        /// <summary>
+        /// 모든 카메라 흔들림을 중단합니다.
+        /// </summary>
+        public void StopAllShakes()
+        {
+            _effectController.StopAllShakes();
+        }
+
+        /// <summary>
+        /// 카메라 추적 속도를 변경합니다.
+        /// </summary>
         public void SetCameraMoveSpeed(float speed)
         {
-            cameraMoveSpeed = speed;
+            cameraMoveSpeed = Mathf.Max(0f, speed);
+            _followController.MoveSpeed = cameraMoveSpeed;
         }
 
         /// <summary>
-        /// 카메라 위치 가져오기 (Z 값은 제외)
+        /// 현재 카메라 위치를 반환합니다.
         /// </summary>
         public Vector2 GetPositionCenter()
         {
@@ -1276,7 +602,7 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 흔들림이 적용되기 전의 카메라 기본 월드 위치를 반환합니다.
+        /// 흔들림이 적용되기 전 카메라 기본 월드 위치를 반환합니다.
         /// </summary>
         public Vector3 GetBaseWorldPosition()
         {
@@ -1284,30 +610,26 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 현재 카메라에 적용 중인 흔들림 오프셋을 반환합니다.
+        /// 현재 적용 중인 흔들림 오프셋을 반환합니다.
         /// </summary>
         public Vector3 GetShakeOffset()
         {
-            return _shakeOffset;
-        }
-
-        public void ChangeOriginalOrthographicSize(float size)
-        {
-            _originalOrthographicSize = size;
+            return _effectController.ShakeOffset;
         }
 
         /// <summary>
-        /// 맵 카메라 프로필 적용 상태를 "미완료"로 전환합니다.
-        /// 새 맵 로드/오버라이드 반영 시점에 호출됩니다.
+        /// 게임 기본 Orthographic Size를 변경합니다.
         /// </summary>
+        public void ChangeOriginalOrthographicSize(float size)
+        {
+            _effectController.ChangeOriginalOrthographicSize(size);
+        }
+
         private void MarkMapCameraProfileUnresolved()
         {
             _isMapCameraProfileResolved = false;
         }
 
-        /// <summary>
-        /// 맵 카메라 프로필 적용 상태를 "완료"로 전환하고 완료 이벤트를 발행합니다.
-        /// </summary>
         private void MarkMapCameraProfileResolved()
         {
             if (_isMapCameraProfileResolved)
@@ -1318,16 +640,5 @@ namespace GGemCo2DCore
             _isMapCameraProfileResolved = true;
             MapCameraProfileResolved?.Invoke(this);
         }
-
-#if UNITY_EDITOR
-        private void OnDrawGizmos()
-        {
-            // Gizmos.color = Color.red;
-            // Gizmos.DrawWireCube(center, mapSize * 2);
-            //
-            // Gizmos.color = Color.blue;
-            // Gizmos.DrawWireCube(center, monsterSpawnPositionBoxSize * 2);
-        }
-#endif
     }
 }
