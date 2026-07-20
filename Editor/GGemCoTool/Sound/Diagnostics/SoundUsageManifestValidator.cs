@@ -330,6 +330,7 @@ namespace GGemCo2DCoreEditor
                 {
                     SoundUsageManifestScopeType.Map => tableMap.TryGetDataByUid(row.ScopeUid, out StruckTableMap map) && map != null,
                     SoundUsageManifestScopeType.UiWindow => tableWindow.TryGetDataByUid(row.ScopeUid, out StruckTableWindow window) && window != null,
+                    SoundUsageManifestScopeType.Global => row.ScopeUid == SoundUsageManifestScopeIds.Global,
                     _ => false,
                 };
                 if (!validScope)

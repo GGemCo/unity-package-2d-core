@@ -13,6 +13,18 @@ namespace GGemCo2DCore
 
         /// <summary>특정 UI 윈도우가 활성화된 동안 유지하는 사운드입니다.</summary>
         UiWindow = 2,
+
+        /// <summary>게임 실행 동안 전역으로 유지하는 사운드입니다.</summary>
+        Global = 3,
+    }
+
+    /// <summary>
+    /// 사운드 사용 매니페스트에서 예약한 공용 범위 UID를 제공합니다.
+    /// </summary>
+    public static class SoundUsageManifestScopeIds
+    {
+        /// <summary>게임 실행 동안 유지하는 단일 전역 범위 UID입니다.</summary>
+        public const int Global = 1;
     }
 
     /// <summary>
@@ -56,5 +68,8 @@ namespace GGemCo2DCore
 
         /// <summary>map 테이블의 AmbientSoundUids 컬럼에 등록된 환경음입니다.</summary>
         MapTableAmbient = 11,
+
+        /// <summary>설치된 패키지의 ScriptableObject 설정에 등록된 사운드입니다.</summary>
+        PackageSettings = 12,
     }
 }

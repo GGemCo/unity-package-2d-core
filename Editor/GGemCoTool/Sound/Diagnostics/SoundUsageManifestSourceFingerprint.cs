@@ -111,7 +111,37 @@ namespace GGemCo2DCoreEditor
             AddAssetSearchResults(paths, "t:Prefab", ConfigEditor.PathUIWindow);
             AddAssetSearchResults(paths, "t:SkillRuntimeSequence", "Assets");
             AddSkillTablePaths(paths);
+            AddContributorSourcePaths(paths);
             return paths.Where(File.Exists).OrderBy(path => path, StringComparer.Ordinal).ToArray();
+        }
+
+        /// <summary>
+        /// 설치된 상위 패키지의 원본 경로 확장기를 검색하여 매니페스트 변경 감지 대상에 추가합니다.
+        /// 개별 확장기의 실패는 다른 원본 경로 수집을 중단하지 않고 경고로 격리합니다.
+        /// </summary>
+        /// <param name="paths">현재까지 수집된 원본 경로 집합입니다.</param>
+        private static void AddContributorSourcePaths(HashSet<string> paths)
+        {
+            if (paths == null)
+                return;
+
+            SoundUsageManifestSourceContext context = new SoundUsageManifestSourceContext(paths);
+            foreach (Type type in TypeCache.GetTypesDerivedFrom<ISoundUsageManifestSourceContributor>())
+            {
+                if (type == null || type.IsAbstract || type.IsInterface || type.ContainsGenericParameters)
+                    continue;
+
+                try
+                {
+                    if (Activator.CreateInstance(type) is ISoundUsageManifestSourceContributor contributor)
+                        contributor.CollectSourcePaths(context);
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogWarning(
+                        $"[SoundUsageManifest] 원본 경로 확장기를 실행하지 못했습니다. type={type.FullName}, error={ex.Message}");
+                }
+            }
         }
 
         /// <summary>

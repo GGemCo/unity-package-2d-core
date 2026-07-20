@@ -156,6 +156,7 @@ namespace GGemCo2DCoreEditor
                 $"행 수: {_lastResult.RecordCount}\n" +
                 $"맵 범위 수: {_lastResult.MapScopeCount}\n" +
                 $"UI 윈도우 범위 수: {_lastResult.UiWindowScopeCount}\n" +
+                $"전역 범위 수: {_lastResult.GlobalScopeCount}\n" +
                 $"외부 분석기 수: {_lastResult.ContributorCount}\n" +
                 $"경고 수: {_lastResult.WarningCount}\n" +
                 $"런타임 테이블 팩 재생성: {_lastResult.RuntimeTablePackRebuilt}",

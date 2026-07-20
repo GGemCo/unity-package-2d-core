@@ -32,6 +32,49 @@ namespace GGemCo2DCoreEditor
     }
 
     /// <summary>
+    /// Core 외부 패키지가 사운드 매니페스트 변경 감지용 원본 경로를 제공하기 위한 에디터 확장 계약입니다.
+    /// </summary>
+    /// <remarks>
+    /// Core Editor는 구현 패키지를 직접 참조하지 않고 Unity <c>TypeCache</c>로 구현체를 검색합니다.
+    /// 설정 에셋처럼 Core가 알 수 없는 원본을 등록하면 변경 후 매니페스트 재생성 누락을 검출할 수 있습니다.
+    /// </remarks>
+    public interface ISoundUsageManifestSourceContributor
+    {
+        /// <summary>
+        /// 매니페스트 분석 결과에 영향을 주는 에셋 또는 텍스트 원본 경로를 등록합니다.
+        /// </summary>
+        /// <param name="context">중복을 제거하여 원본 경로를 수집하는 컨텍스트입니다.</param>
+        void CollectSourcePaths(SoundUsageManifestSourceContext context);
+    }
+
+    /// <summary>
+    /// 외부 패키지의 사운드 매니페스트 원본 경로를 안전하게 수집합니다.
+    /// </summary>
+    public sealed class SoundUsageManifestSourceContext
+    {
+        private readonly ISet<string> _paths;
+
+        /// <summary>
+        /// Core 내부 지문 계산기가 사용할 원본 경로 집합을 연결합니다.
+        /// </summary>
+        /// <param name="paths">대소문자를 구분하지 않는 원본 경로 집합입니다.</param>
+        internal SoundUsageManifestSourceContext(ISet<string> paths)
+        {
+            _paths = paths ?? throw new ArgumentNullException(nameof(paths));
+        }
+
+        /// <summary>
+        /// Unity 프로젝트 기준 에셋 또는 파일 경로를 원본 목록에 추가합니다.
+        /// </summary>
+        /// <param name="path">매니페스트 분석 결과에 영향을 주는 원본 경로입니다.</param>
+        public void AddPath(string path)
+        {
+            if (!string.IsNullOrWhiteSpace(path))
+                _paths.Add(path.Replace('\\', '/'));
+        }
+    }
+
+    /// <summary>
     /// 맵에 배치된 몬스터 한 종류를 나타내는 자동 분석 입력 값입니다.
     /// </summary>
     public readonly struct SoundUsageManifestMapMonsterPlacement
@@ -63,6 +106,7 @@ namespace GGemCo2DCoreEditor
         private readonly SoundUsageManifestBuildResult _result;
         private readonly TableMap _tableMap;
         private readonly TableMonster _tableMonster;
+        private readonly TableSound _tableSound;
         private readonly List<SoundUsageManifestMapMonsterPlacement> _mapMonsterPlacements =
             new List<SoundUsageManifestMapMonsterPlacement>();
         private readonly HashSet<long> _mapMonsterPlacementKeys = new HashSet<long>();
@@ -80,16 +124,19 @@ namespace GGemCo2DCoreEditor
         /// <param name="result">진단 결과를 기록할 객체입니다.</param>
         /// <param name="tableMap">Core 맵 테이블입니다.</param>
         /// <param name="tableMonster">Core 몬스터 테이블입니다.</param>
+        /// <param name="tableSound">Core 대표 사운드 테이블입니다.</param>
         internal SoundUsageManifestBuildContext(
             List<SoundUsageManifestBuildRecord> records,
             SoundUsageManifestBuildResult result,
             TableMap tableMap,
-            TableMonster tableMonster)
+            TableMonster tableMonster,
+            TableSound tableSound)
         {
             _records = records ?? throw new ArgumentNullException(nameof(records));
             _result = result ?? throw new ArgumentNullException(nameof(result));
             _tableMap = tableMap;
             _tableMonster = tableMonster;
+            _tableSound = tableSound;
         }
 
         /// <summary>
@@ -139,6 +186,52 @@ namespace GGemCo2DCoreEditor
                    _tableMap != null &&
                    _tableMap.TryGetDataByUid(mapUid, out map) &&
                    map != null;
+        }
+
+        /// <summary>
+        /// Core sound 테이블에서 지정한 대표 사운드 정보를 조회합니다.
+        /// </summary>
+        /// <param name="soundUid">조회할 대표 사운드 UID입니다.</param>
+        /// <param name="sound">조회에 성공한 대표 사운드 행입니다.</param>
+        /// <returns>유효한 대표 사운드 행을 찾았으면 true입니다.</returns>
+        public bool TryGetSound(int soundUid, out StruckTableSound sound)
+        {
+            sound = null;
+            return soundUid > 0 &&
+                   _tableSound != null &&
+                   _tableSound.TryGetDataByUid(soundUid, out sound) &&
+                   sound != null;
+        }
+
+        /// <summary>
+        /// 외부 패키지 설정에서 발견한 게임 전역 사운드 사용처를 원본 레코드에 추가합니다.
+        /// 게임 시작 시 로드한 참조는 사운드 로더가 파괴될 때까지 유지됩니다.
+        /// </summary>
+        /// <param name="soundUid">sound 테이블의 대표 UID입니다.</param>
+        /// <param name="sourceType">사운드 사용처의 원본 종류입니다.</param>
+        /// <param name="sourceUid">원본 데이터 UID입니다. 설정 에셋처럼 UID가 없으면 0을 사용합니다.</param>
+        /// <param name="sourcePath">원본 에셋 또는 테이블 위치입니다.</param>
+        /// <param name="memo">진단 및 추적에 사용할 설명입니다.</param>
+        public void AddGlobalSoundUsage(
+            int soundUid,
+            SoundUsageManifestSourceType sourceType,
+            int sourceUid,
+            string sourcePath,
+            string memo)
+        {
+            if (soundUid <= 0)
+                return;
+
+            _records.Add(new SoundUsageManifestBuildRecord
+            {
+                ScopeType = SoundUsageManifestScopeType.Global,
+                ScopeUid = SoundUsageManifestScopeIds.Global,
+                SoundUid = soundUid,
+                SourceType = sourceType,
+                SourceUid = sourceUid,
+                SourcePath = sourcePath,
+                Memo = memo,
+            });
         }
 
         /// <summary>

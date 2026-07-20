@@ -34,12 +34,15 @@ namespace GGemCo2DCore
         private const string WarmupGroupPrefix = "core.sound";
         private const int DefaultPreloadConcurrentRequestCount = 3;
         private const string GlobalUiCommonScopeId = "UICommon";
+        private const string GlobalManifestScopeId = "Manifest";
 
         private SoundScopeManager _scopeManager;
         private float _prefabLoadProgress;
         private bool _isDestroying;
         private SoundScopeLease _globalUiCommonScopeLease;
         private int _globalUiCommonRequestVersion;
+        private SoundScopeLease _globalManifestScopeLease;
+        private int _globalManifestRequestVersion;
 
         /// <summary>
         /// 맵, UI 윈도우 등 사용 범위별 사운드 참조를 관리하는 매니저입니다.
@@ -83,6 +86,9 @@ namespace GGemCo2DCore
             _globalUiCommonRequestVersion++;
             _globalUiCommonScopeLease?.Dispose();
             _globalUiCommonScopeLease = null;
+            _globalManifestRequestVersion++;
+            _globalManifestScopeLease?.Dispose();
+            _globalManifestScopeLease = null;
 
             _scopeManager?.Dispose();
             _scopeManager = null;
@@ -193,8 +199,50 @@ namespace GGemCo2DCore
         public async Task PreloadStartupSoundsAsync(TableLoaderManager tableLoaderManager, bool introOnly = false)
         {
             await PreloadMarkedSoundsAsync(tableLoaderManager, introOnly);
+            await RefreshGlobalManifestScopeAsync(tableLoaderManager);
             await RefreshGlobalUiCommonScopeAsync(tableLoaderManager);
             _prefabLoadProgress = 1f;
+        }
+
+        /// <summary>
+        /// 자동 생성 매니페스트의 전역 범위 사운드를 게임 시작 시 획득합니다.
+        /// 새 범위 획득이 끝난 뒤 기존 임대를 교체하여 설정 갱신 중 참조 공백을 방지합니다.
+        /// </summary>
+        /// <param name="tableLoaderManager">매니페스트와 대표 사운드 테이블을 보유한 테이블 로더입니다.</param>
+        private async Task RefreshGlobalManifestScopeAsync(TableLoaderManager tableLoaderManager)
+        {
+            int requestVersion = ++_globalManifestRequestVersion;
+            IReadOnlyList<int> soundUids = tableLoaderManager?.TableSoundUsageManifest?.GetSoundUids(
+                SoundUsageManifestScopeType.Global,
+                SoundUsageManifestScopeIds.Global) ?? Array.Empty<int>();
+            SoundUsageAddressKeyResolver resolver = new SoundUsageAddressKeyResolver(tableLoaderManager);
+            IReadOnlyList<string> addressKeys = resolver.ResolveAddressKeys(soundUids);
+
+            SoundScopeLease acquiredLease = null;
+            if (addressKeys.Count > 0 && !_isDestroying)
+            {
+                try
+                {
+                    acquiredLease = await AcquireScopeAsync(
+                        SoundUsageScopeKey.Global(GlobalManifestScopeId),
+                        addressKeys);
+                }
+                catch (Exception ex)
+                {
+                    GcLogger.LogWarning(
+                        $"[AddressableLoaderSound] 전역 매니페스트 사운드 범위를 준비하지 못했습니다. error={ex.Message}");
+                }
+            }
+
+            if (_isDestroying || requestVersion != _globalManifestRequestVersion)
+            {
+                acquiredLease?.Dispose();
+                return;
+            }
+
+            SoundScopeLease previousLease = _globalManifestScopeLease;
+            _globalManifestScopeLease = acquiredLease;
+            previousLease?.Dispose();
         }
 
         /// <summary>

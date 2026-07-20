@@ -57,7 +57,8 @@ namespace GGemCo2DCoreEditor
                     rawRecords,
                     result,
                     tableMap,
-                    tableMonster);
+                    tableMonster,
+                    tableSound);
 
                 MapSoundUsageScanner mapScanner = new MapSoundUsageScanner(
                     tableMap,
@@ -91,6 +92,11 @@ namespace GGemCo2DCoreEditor
                     .Select(record => record.ScopeUid)
                     .Distinct()
                     .Count();
+                result.GlobalScopeCount = records
+                    .Where(record => record.ScopeType == SoundUsageManifestScopeType.Global)
+                    .Select(record => record.ScopeUid)
+                    .Distinct()
+                    .Count();
 
                 AssetDatabase.ImportAsset(
                     result.OutputPath,
@@ -108,7 +114,7 @@ namespace GGemCo2DCoreEditor
                 AssetDatabase.SaveAssets();
                 result.Succeeded = true;
                 result.AddMessage(
-                    $"매니페스트 생성 완료: records={result.RecordCount}, maps={result.MapScopeCount}, uiWindows={result.UiWindowScopeCount}, contributors={result.ContributorCount}");
+                    $"매니페스트 생성 완료: records={result.RecordCount}, maps={result.MapScopeCount}, uiWindows={result.UiWindowScopeCount}, globals={result.GlobalScopeCount}, contributors={result.ContributorCount}");
             }
             catch (Exception ex)
             {

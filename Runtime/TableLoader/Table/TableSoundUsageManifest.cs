@@ -21,7 +21,7 @@ namespace GGemCo2DCore
     }
 
     /// <summary>
-    /// sound_usage_manifest 테이블을 로드하고 맵 및 UI 윈도우 범위별 사운드 UID를 제공합니다.
+    /// sound_usage_manifest 테이블을 로드하고 전역, 맵 및 UI 윈도우 범위별 사운드 UID를 제공합니다.
     /// </summary>
     public sealed class TableSoundUsageManifest : DefaultTable<StruckTableSoundUsageManifest>
     {
@@ -91,8 +91,8 @@ namespace GGemCo2DCore
         /// <summary>
         /// 지정한 범위에 연결된 매니페스트 행을 반환합니다.
         /// </summary>
-        /// <param name="scopeType">맵 또는 UI 윈도우 범위 종류입니다.</param>
-        /// <param name="scopeUid">맵 UID 또는 UI 윈도우 UID입니다.</param>
+        /// <param name="scopeType">전역, 맵 또는 UI 윈도우 범위 종류입니다.</param>
+        /// <param name="scopeUid">예약된 전역 UID, 맵 UID 또는 UI 윈도우 UID입니다.</param>
         /// <param name="enabledOnly">활성화된 행만 반환할지 여부입니다.</param>
         /// <returns>UID 순서로 정렬된 매니페스트 행 목록입니다.</returns>
         public IReadOnlyList<StruckTableSoundUsageManifest> GetRows(
@@ -124,8 +124,8 @@ namespace GGemCo2DCore
         /// <summary>
         /// 지정한 범위에서 사용하는 대표 sound UID를 중복 없이 반환합니다.
         /// </summary>
-        /// <param name="scopeType">맵 또는 UI 윈도우 범위 종류입니다.</param>
-        /// <param name="scopeUid">맵 UID 또는 UI 윈도우 UID입니다.</param>
+        /// <param name="scopeType">전역, 맵 또는 UI 윈도우 범위 종류입니다.</param>
+        /// <param name="scopeUid">예약된 전역 UID, 맵 UID 또는 UI 윈도우 UID입니다.</param>
         /// <returns>행 UID 순서를 유지한 대표 sound UID 목록입니다.</returns>
         public IReadOnlyList<int> GetSoundUids(SoundUsageManifestScopeType scopeType, int scopeUid)
         {
