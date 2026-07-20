@@ -66,26 +66,59 @@ namespace GGemCo2DCore
 
         #region 몬스터
 
+        /// <summary>
+        /// 현재 맵의 몬스터 리젠 데이터를 로드하고 역직렬화한 뒤 몬스터를 생성합니다.
+        /// </summary>
+        /// <param name="mapTileCommon">몬스터를 배치할 맵 루트입니다.</param>
+        /// <param name="currentMapTableData">현재 맵 테이블 데이터입니다.</param>
+        /// <returns>몬스터 리젠 데이터 처리 작업입니다.</returns>
         public async Task LoadMonsters(MapTileCommon mapTileCommon, StruckTableMap currentMapTableData)
         {
-            string key = ConfigAddressableMap.GetKeyJsonRegenMonster(currentMapTableData.FolderName);
+            string key = string.Empty;
+            string stage = "Addressables 키 생성";
             try
             {
-                TextAsset textFile = await AddressableLoaderController.LoadByKeyAsync<TextAsset>(key);
+                key = ConfigAddressableMap.GetKeyJsonRegenMonster(currentMapTableData.FolderName);
 
-                if (textFile)
+                stage = "Addressables TextAsset 로드";
+                TextAsset textFile = await AddressableLoaderController.LoadByKeyAsync<TextAsset>(key);
+                if (!textFile)
                 {
-                    string content = textFile.text;
-                    if (!string.IsNullOrEmpty(content))
-                    {
-                        CharacterRegenDataList characterRegenDataList = JsonConvert.DeserializeObject<CharacterRegenDataList>(content);
-                        SpawnMonsters(characterRegenDataList.CharacterRegenDatas, mapTileCommon, currentMapTableData);
-                    }
+                    GcLogger.LogWarning(
+                        $"[MonsterRegen] 리젠 TextAsset을 찾지 못했습니다. " +
+                        $"mapUid={currentMapTableData.Uid}, key={key}");
+                    return;
                 }
+
+                stage = "리젠 JSON 텍스트 읽기";
+                string content = textFile.text;
+                if (string.IsNullOrEmpty(content))
+                {
+                    GcLogger.LogWarning(
+                        $"[MonsterRegen] 리젠 JSON 내용이 비어 있습니다. " +
+                        $"mapUid={currentMapTableData.Uid}, key={key}");
+                    return;
+                }
+
+                stage = "리젠 JSON 역직렬화";
+                CharacterRegenDataList characterRegenDataList =
+                    JsonConvert.DeserializeObject<CharacterRegenDataList>(content);
+                if (characterRegenDataList == null)
+                {
+                    throw new JsonSerializationException("몬스터 리젠 JSON 역직렬화 결과가 null입니다.");
+                }
+
+                stage = "몬스터 목록 스폰";
+                SpawnMonsters(characterRegenDataList.CharacterRegenDatas, mapTileCommon, currentMapTableData);
             }
             catch (Exception ex)
             {
-                GcLogger.LogError($"몬스터 regen json 파싱중 오류. file {key}: {ex.Message}");
+                // JSON 파싱 외의 스폰/풀 초기화 예외도 이 경로로 전달되므로 처리 단계를 함께 기록합니다.
+                GcLogger.LogException(ex);
+                GcLogger.LogError(
+                    $"[MonsterRegen] 몬스터 리젠 처리 중 오류가 발생했습니다. " +
+                    $"stage={stage}, mapUid={currentMapTableData?.Uid ?? 0}, key={key}, " +
+                    $"exceptionType={ex.GetType().FullName}, message={ex.Message}");
             }
         }
 
@@ -102,18 +135,55 @@ namespace GGemCo2DCore
         {
             if (monsterList == null) return;
 
-            foreach (CharacterRegenData monsterData in monsterList)
+            for (int index = 0; index < monsterList.Count; index++)
             {
+                CharacterRegenData monsterData = monsterList[index];
+                if (monsterData == null)
+                {
+                    GcLogger.LogWarning(
+                        $"[MonsterRegen] null 리젠 항목을 건너뜁니다. " +
+                        $"mapUid={currentMapTableData?.Uid ?? 0}, index={index}");
+                    continue;
+                }
+
                 int uid = monsterData.Uid;
                 if (uid <= 0) continue;
-                var info = _tableMonster.GetDataByUid(uid);
-                if (info.Uid <= 0 || info.AnimationUid <= 0) continue;
-                SpawnMonster(
-                    uid,
-                    monsterData,
-                    mapTileCommon,
-                    currentMapTableData,
-                    MonsterSpawnRegistrationPolicy.NormalRespawn);
+
+                try
+                {
+                    var info = _tableMonster.GetDataByUid(uid);
+                    if (info == null || info.Uid <= 0 || info.AnimationUid <= 0)
+                    {
+                        GcLogger.LogError(
+                            $"[MonsterRegen] 유효한 몬스터 테이블 정보를 찾지 못했습니다. " +
+                            $"mapUid={currentMapTableData?.Uid ?? 0}, monsterUid={uid}, index={index}");
+                        continue;
+                    }
+
+                    Monster spawnedMonster = SpawnMonster(
+                        uid,
+                        monsterData,
+                        mapTileCommon,
+                        currentMapTableData,
+                        MonsterSpawnRegistrationPolicy.NormalRespawn);
+                    if (spawnedMonster == null)
+                    {
+                        // 프리팹 Addressables 라벨 누락처럼 예외 없이 생성이 실패하는 경로도 진단할 수 있도록 기록합니다.
+                        GcLogger.LogError(
+                            $"[MonsterRegen] 몬스터 스폰 결과가 null입니다. " +
+                            $"mapUid={currentMapTableData?.Uid ?? 0}, monsterUid={uid}, " +
+                            $"animationUid={info.AnimationUid}, index={index}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // 상위 로더에서 스택 트레이스를 기록할 수 있도록 원래 예외를 그대로 다시 전달합니다.
+                    GcLogger.LogError(
+                        $"[MonsterRegen] 개별 몬스터 스폰 중 오류가 발생했습니다. " +
+                        $"mapUid={currentMapTableData?.Uid ?? 0}, monsterUid={uid}, index={index}, " +
+                        $"exceptionType={ex.GetType().FullName}, message={ex.Message}");
+                    throw;
+                }
             }
         }
 

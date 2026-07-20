@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 namespace GGemCo2DCore
 {
@@ -242,7 +244,7 @@ namespace GGemCo2DCore
                 if (lifecycle == null || ReferenceEquals(lifecycle, this))
                     continue;
 
-                lifecycle.OnPoolRent(this);
+                InvokePoolLifecycle(lifecycle, isRent: true);
             }
         }
 
@@ -258,7 +260,42 @@ namespace GGemCo2DCore
                 if (lifecycle == null || ReferenceEquals(lifecycle, this))
                     continue;
 
+                InvokePoolLifecycle(lifecycle, isRent: false);
+            }
+        }
+
+        /// <summary>
+        /// 개별 풀 생명주기 컴포넌트의 대여 또는 반납 콜백을 호출합니다.
+        /// </summary>
+        /// <param name="lifecycle">호출할 풀 생명주기 컴포넌트입니다.</param>
+        /// <param name="isRent"><see langword="true"/>이면 대여 콜백을, 아니면 반납 콜백을 호출합니다.</param>
+        /// <remarks>
+        /// 콜백 실패 시 문제 컴포넌트와 몬스터 식별 정보를 기록하고 예외를 다시 전달하여
+        /// 기존 실패 흐름과 원본 스택 트레이스를 유지합니다.
+        /// </remarks>
+        private void InvokePoolLifecycle(IMonsterPoolLifecycle lifecycle, bool isRent)
+        {
+            try
+            {
+                if (isRent)
+                {
+                    lifecycle.OnPoolRent(this);
+                    return;
+                }
+
                 lifecycle.OnPoolReturn(this);
+            }
+            catch (Exception ex)
+            {
+                string lifecycleType = lifecycle.GetType().FullName;
+                string phase = isRent ? "Rent" : "Return";
+
+                GcLogger.LogException(ex);
+                GcLogger.LogError(
+                    $"[MonsterPool] 풀 생명주기 컴포넌트 호출 중 오류가 발생했습니다. " +
+                    $"phase={phase}, component={lifecycleType}, monsterUid={uid}, monsterVid={vid}, " +
+                    $"gameObject={gameObject.name}, exceptionType={ex.GetType().FullName}, message={ex.Message}");
+                throw;
             }
         }
 
