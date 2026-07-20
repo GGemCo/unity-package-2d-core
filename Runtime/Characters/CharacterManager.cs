@@ -167,17 +167,56 @@ namespace GGemCo2DCore
 
             if (characterBase.IsInitialized)
             {
-                OnCharacterActivated?.Invoke(characterBase);
+                InvokeCharacterActivatedHandlers(characterBase);
                 return;
             }
 
             void HandleInitialized()
             {
                 characterBase.Initialized -= HandleInitialized;
-                OnCharacterActivated?.Invoke(characterBase);
+                InvokeCharacterActivatedHandlers(characterBase);
             }
 
             characterBase.Initialized += HandleInitialized;
+        }
+
+        /// <summary>
+        /// 캐릭터 활성화 이벤트 구독자를 개별적으로 호출합니다.
+        /// </summary>
+        /// <param name="characterBase">활성화가 완료된 캐릭터입니다.</param>
+        /// <remarks>
+        /// Skill, AI BT, Affect 같은 상위 패키지 구독자 하나가 실패하더라도
+        /// Core의 캐릭터 생성 및 맵 등록 흐름 전체가 중단되지 않도록 예외를 격리합니다.
+        /// </remarks>
+        private static void InvokeCharacterActivatedHandlers(CharacterBase characterBase)
+        {
+            Action<CharacterBase> handlers = OnCharacterActivated;
+            if (handlers == null)
+                return;
+
+            Delegate[] invocationList = handlers.GetInvocationList();
+            for (int i = 0; i < invocationList.Length; i++)
+            {
+                if (invocationList[i] is not Action<CharacterBase> handler)
+                    continue;
+
+                try
+                {
+                    handler.Invoke(characterBase);
+                }
+                catch (Exception ex)
+                {
+                    string targetType = handler.Target?.GetType().FullName ?? "static";
+                    string methodName = handler.Method?.Name ?? "unknown";
+
+                    GcLogger.LogException(ex, characterBase);
+                    GcLogger.LogError(
+                        $"[CharacterActivation] 활성화 이벤트 구독자 호출 중 오류가 발생했습니다. " +
+                        $"target={targetType}, method={methodName}, characterType={characterBase.type}, " +
+                        $"characterUid={characterBase.uid}, characterVid={characterBase.vid}, " +
+                        $"exceptionType={ex.GetType().FullName}, message={ex.Message}");
+                }
+            }
         }
 
         private void TrySetupSpriteWhiteOverlay(

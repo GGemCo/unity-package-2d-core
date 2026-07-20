@@ -20,12 +20,17 @@ namespace GGemCo2DCore
         private GameObject _monsterDebugLevelText;
         private GameObject _monsterDebugHpText;
         private GGemCoMonsterSettings _monsterSettings;
-        
+
+        /// <summary>
+        /// 몬스터 UI가 사용할 몬스터와 런타임 설정 참조를 초기화합니다.
+        /// </summary>
+        /// <param name="monster">UI 표시 대상 몬스터입니다.</param>
         public void Initialize(Monster monster)
         {
             _monster = monster;
             _sceneGame = SceneGame.Instance;
-            _monsterSettings = AddressableLoaderSettings.Instance.monsterSettings;
+            AddressableLoaderSettings settingsLoader = AddressableLoaderSettings.Instance;
+            _monsterSettings = settingsLoader != null ? settingsLoader.monsterSettings : null;
         }
 
         public void Dispose()
@@ -49,6 +54,12 @@ namespace GGemCo2DCore
         /// </summary>
         public void RebuildRuntimeUi()
         {
+            if (_monster == null)
+            {
+                GcLogger.LogWarning("[MonsterUI] 몬스터 참조가 없어 런타임 UI 재구성을 건너뜁니다.");
+                return;
+            }
+
             RefreshRuntimeReferences();
 
             if (_sliderHpBar == null)
@@ -67,8 +78,10 @@ namespace GGemCo2DCore
 
             RefreshDebugLevelText();
             RefreshDebugHpText();
-            SetSliderHp(_monster.CurrentHp.Value);
-            SetSuperArmor(_monster.CurrentSuperArmor.Value);
+            if (_monster.CurrentHp != null)
+                SetSliderHp(_monster.CurrentHp.Value);
+            if (_monster.CurrentSuperArmor != null)
+                SetSuperArmor(_monster.CurrentSuperArmor.Value);
         }
 
         /// <summary>
@@ -117,6 +130,16 @@ namespace GGemCo2DCore
             _containerMonsterHpBar = container;
             _sliderHpBar = UnityEngine.Object.Instantiate(_prefabSliderHpBar, _containerMonsterHpBar);
             MonsterHpBar monsterHpBar = _sliderHpBar.GetComponent<MonsterHpBar>();
+            if (monsterHpBar == null)
+            {
+                GcLogger.LogError(
+                    $"[MonsterUI] 생성된 HP 바 프리팹에 {nameof(MonsterHpBar)} 컴포넌트가 없습니다. " +
+                    $"monsterUid={_monster.uid}, prefab={_prefabSliderHpBar.name}");
+                UnityEngine.Object.Destroy(_sliderHpBar);
+                _sliderHpBar = null;
+                return;
+            }
+
             monsterHpBar.Initialize(_monster);
         }
         /// <summary>
@@ -130,7 +153,8 @@ namespace GGemCo2DCore
         {
             if (_sliderHpBar != null)
             {
-                _sliderHpBar.GetComponent<MonsterHpBar>().SetValue(value);    
+                MonsterHpBar monsterHpBar = _sliderHpBar.GetComponent<MonsterHpBar>();
+                monsterHpBar?.SetValue(value);
             }
 
             UpdateDebugHpText(value);
@@ -142,7 +166,11 @@ namespace GGemCo2DCore
         private void RefreshRuntimeReferences()
         {
             _sceneGame ??= SceneGame.Instance;
-            _monsterSettings ??= AddressableLoaderSettings.Instance.monsterSettings;
+            if (_monsterSettings == null)
+            {
+                AddressableLoaderSettings settingsLoader = AddressableLoaderSettings.Instance;
+                _monsterSettings = settingsLoader != null ? settingsLoader.monsterSettings : null;
+            }
         }
 
         /// <summary>
@@ -388,8 +416,19 @@ namespace GGemCo2DCore
             _containerMonsterHpBar = container;
             _monsterUISuperArmor = UnityEngine.Object.Instantiate(_prefabPanelMonsterSuperArmor, _containerMonsterHpBar);
             MonsterUISuperArmor monsterSuperArmor = _monsterUISuperArmor.GetComponent<MonsterUISuperArmor>();
+            if (monsterSuperArmor == null)
+            {
+                GcLogger.LogError(
+                    $"[MonsterUI] 생성된 슈퍼아머 프리팹에 {nameof(MonsterUISuperArmor)} 컴포넌트가 없습니다. " +
+                    $"monsterUid={_monster.uid}, prefab={_prefabPanelMonsterSuperArmor.name}");
+                UnityEngine.Object.Destroy(_monsterUISuperArmor);
+                _monsterUISuperArmor = null;
+                return;
+            }
+
             monsterSuperArmor.Initialize(_monster);
-            monsterSuperArmor.SetValue(_monster.CurrentSuperArmor.Value);
+            if (_monster.CurrentSuperArmor != null)
+                monsterSuperArmor.SetValue(_monster.CurrentSuperArmor.Value);
         }
         
         /// <summary>
@@ -403,7 +442,9 @@ namespace GGemCo2DCore
                 CreateSuperArmor();
                 if (_monsterUISuperArmor != null) 
                 {
-                    _monsterUISuperArmor.GetComponent<MonsterUISuperArmor>().SetValue(value);   
+                    MonsterUISuperArmor monsterSuperArmor =
+                        _monsterUISuperArmor.GetComponent<MonsterUISuperArmor>();
+                    monsterSuperArmor?.SetValue(value);
                 }
             }
             else

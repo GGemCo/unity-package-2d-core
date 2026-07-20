@@ -137,51 +137,77 @@ namespace GGemCo2DCore
         /// <param name="regenData">몬스터를 배치하고 초기화할 리젠 데이터입니다.</param>
         public void PrepareForPoolRent(int monsterUid, CharacterRegenData regenData)
         {
-            CancelPendingPoolReturn();
-            ClearPendingDeathState();
-            _suppressNextDeadCutscene = false;
-            CharacterRegenData = regenData;
-            uid = monsterUid;
-            SetPoolManaged(true);
-            SetHitAreaColliderEnabled(true);
-            _attackSlotController?.ReleaseReservation();
-
-            if (regenData != null)
+            string stage = "기본 풀 상태 초기화";
+            try
             {
-                transform.position = new Vector3(regenData.x, regenData.y, transform.position.z);
+                CancelPendingPoolReturn();
+                ClearPendingDeathState();
+                _suppressNextDeadCutscene = false;
+                CharacterRegenData = regenData;
+                uid = monsterUid;
+                SetPoolManaged(true);
+                SetHitAreaColliderEnabled(true);
+                _attackSlotController?.ReleaseReservation();
+
+                stage = "리젠 위치 및 전투 상태 초기화";
+                if (regenData != null)
+                {
+                    transform.position = new Vector3(regenData.x, regenData.y, transform.position.z);
+                }
+
+                _threatController?.ClearAllThreats();
+                SetAggro(false);
+                SetBattleStatusNone();
+                SetStatusNone();
+                ClearSubStatus();
+                SetAttackerTarget(null);
+                _pendingBrainResetOnNextFadeIn = false;
+                canMoveX = true;
+                canMoveY = true;
+
+                stage = "모션 및 물리 상태 초기화";
+                var motion = GetComponent<ICharacterMotionController>();
+                motion?.CancelMotion(MotionChannel.Skill, reason: 9901);
+                motion?.CancelMotion(MotionChannel.CrowdControl, reason: 9902);
+
+                var physicsOverride = GetComponent<CharacterPhysicsOverrideController>();
+                physicsOverride?.ForceRestoreBaseGravity();
+
+                stage = "풀 대여 생명주기 호출";
+                NotifyPoolRentLifecycles();
+
+                stage = "코루틴 및 Affect 상태 초기화";
+                StopAllCoroutines();
+                _controllerMonster?.StopAttackCoroutine();
+                AffectRuntimeBridge.RemoveAll(gameObject);
+
+                stage = "몬스터 테이블 데이터 초기화";
+                InitializeByTable();
+
+                stage = "몬스터 애니메이션 데이터 초기화";
+                InitializeByAnimationTable();
+
+                stage = "몬스터 리젠 데이터 초기화";
+                InitializeByRegenData();
+
+                stage = "몬스터 런타임 UI 재구성";
+                _monsterUIController ??= new MonsterUIController();
+                _monsterUIController.Initialize(this);
+                _monsterUIController.RebuildRuntimeUi();
+
+                stage = "몬스터 슈퍼아머 상태 적용";
+                EnableSuperArmor(CurrentSuperArmor != null && CurrentSuperArmor.Value > 0);
             }
-
-            _threatController?.ClearAllThreats();
-            SetAggro(false);
-            SetBattleStatusNone();
-            SetStatusNone();
-            ClearSubStatus();
-            SetAttackerTarget(null);
-            _pendingBrainResetOnNextFadeIn = false;
-            canMoveX = true;
-            canMoveY = true;
-
-            var motion = GetComponent<ICharacterMotionController>();
-            motion?.CancelMotion(MotionChannel.Skill, reason: 9901);
-            motion?.CancelMotion(MotionChannel.CrowdControl, reason: 9902);
-
-            var physicsOverride = GetComponent<CharacterPhysicsOverrideController>();
-            physicsOverride?.ForceRestoreBaseGravity();
-
-            NotifyPoolRentLifecycles();
-
-            StopAllCoroutines();
-            _controllerMonster?.StopAttackCoroutine();
-
-            AffectRuntimeBridge.RemoveAll(gameObject);
-            InitializeByTable();
-            InitializeByAnimationTable();
-            InitializeByRegenData();
-
-            _monsterUIController ??= new MonsterUIController();
-            _monsterUIController.Initialize(this);
-            _monsterUIController.RebuildRuntimeUi();
-            EnableSuperArmor(CurrentSuperArmor.Value > 0);
+            catch (Exception ex)
+            {
+                // 풀 대여는 비활성 인스턴스에서 수행되므로 실패 단계를 기록한 뒤 원래 예외를 유지합니다.
+                GcLogger.LogException(ex, this);
+                GcLogger.LogError(
+                    $"[MonsterPool] 몬스터 풀 대여 초기화 중 오류가 발생했습니다. " +
+                    $"stage={stage}, monsterUid={monsterUid}, monsterVid={vid}, gameObject={gameObject.name}, " +
+                    $"exceptionType={ex.GetType().FullName}, message={ex.Message}");
+                throw;
+            }
         }
 
         /// <summary>
