@@ -346,7 +346,26 @@ namespace GGemCo2DCore
             {
                 _controllerMonsterSuperArmor.BreakTriggered -= OnSuperArmorBreak;
                 _controllerMonsterSuperArmor.RestoredToMax -= OnSuperArmorRestoredToMax;
+                _controllerMonsterSuperArmor.Dispose();
+                _controllerMonsterSuperArmor = null;
             }
+        }
+
+        /// <summary>
+        /// 데미지 처리에 연결된 시간 기반 런타임 상태를 갱신합니다.
+        /// </summary>
+        /// <param name="now">현재 스케일 적용 게임 시간입니다.</param>
+        public void Tick(float now)
+        {
+            _controllerMonsterSuperArmor?.Tick(now);
+        }
+
+        /// <summary>
+        /// 사망이나 풀 반환 전에 예약된 슈퍼아머 최대 복구를 취소합니다.
+        /// </summary>
+        internal void CancelPendingSuperArmorRestore()
+        {
+            _controllerMonsterSuperArmor?.CancelPendingRestoreToMax();
         }
 
         /// <summary>
@@ -1080,7 +1099,10 @@ namespace GGemCo2DCore
         private void OnSuperArmorBreak(CharacterConstants.HitReactionType hitReactionType)
         {
             // GcLogger.LogError($"그로기 상태");
-            if (_monsterGroggyAffectUid <= 0)
+            if (_monsterGroggyAffectUid <= 0 ||
+                _monsterGroggyAffectDuration <= 0f ||
+                float.IsNaN(_monsterGroggyAffectDuration) ||
+                float.IsInfinity(_monsterGroggyAffectDuration))
             {
                 GcLogger.LogError($"{nameof(GGemCoMonsterSettings)}에 monsterGroggyAffectUid, monsterGroggyAffectDuration 값을 설정해주세요.");
                 return;

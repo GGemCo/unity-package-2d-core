@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -31,10 +31,16 @@ namespace GGemCo2DCore
             [Tooltip("몬스터 머리위에 보이는 HP 바.")]
             public GameObject prefabSlider;
         }
-        
+
+        [Header("Groggy")]
+        [Tooltip("몬스터가 그로기 상태에 빠질때 적용할 어펙트 Uid")]
+        public int monsterGroggyAffectUid;
+        [Tooltip("슈퍼 아머가 0이 되었을 때, 그로기 상태가 됨. 그로기 상태를 유지하는 시간")]
+        [Min(0f)] public float monsterGroggyAffectDuration;
+
         [Header("HP 바")]
         public List<PrefabHpBar> prefabHpBars;
-        
+
         [Header("Hit Stop")]
         [Tooltip("자신이 타격을 성공시켰을 때 적용할 기본 경직 시간(초)")]
         [Min(0f)] public float defaultSelfHitStopSeconds = 0.03f;
@@ -143,11 +149,6 @@ namespace GGemCo2DCore
 
         [Tooltip("같은 AttackId가 매우 짧은 시간에 여러 번 들어올 때 스택이 과도하게 깎이는 것을 방지(초). 0이면 비활성.")]
         [Min(0f)] public float perAttackConsumeCooldown = 0f;
-
-        [Tooltip("슈퍼 아머가 0이 되었을 때, 그로기 상태가 됨. 적용할 어펙트 Uid")]
-        public int monsterGroggyAffectUid;
-        [Tooltip("슈퍼 아머가 0이 되었을 때, 그로기 상태가 됨. 적용할 어펙트 유지 시간")]
-        public float monsterGroggyAffectDuration;
 
         /// <summary>
         /// 슈퍼아머 브레이크 리셋 모드 적용 대상 등급(비트 마스크)입니다.

@@ -144,6 +144,8 @@ namespace GGemCo2DCore
             if (IsStatusDead())
                 return;
 
+            // 사망 이후에는 Update가 중단되므로 예약된 슈퍼아머 복구를 사전에 정리합니다.
+            _characterDamageController?.CancelPendingSuperArmorRestore();
             _isDeathPending = false;
             SetStatusDead();
             SetBattleStatusNone();

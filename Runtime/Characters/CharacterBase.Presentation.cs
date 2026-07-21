@@ -160,6 +160,8 @@ namespace GGemCo2DCore
             if (IsStatusDead()) return;
             if (CheckEndGround()) return;
 
+            // 일반 C# 컨트롤러는 Unity Update 메시지를 직접 받지 못하므로 캐릭터 수명주기에서 갱신합니다.
+            _characterDamageController?.Tick(Time.time);
             UpdatePosition();
         }
 

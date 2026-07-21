@@ -216,6 +216,8 @@ namespace GGemCo2DCore
         public void PrepareForPoolReturn()
         {
             CancelPendingPoolReturn();
+            // 비사망 경로로 풀에 반환되더라도 이전 스폰의 지연 복구 상태가 남지 않도록 정리합니다.
+            EnableSuperArmor(false);
             ClearPendingDeathState();
             _suppressNextDeadCutscene = false;
             _attackSlotController?.ReleaseReservation();

@@ -48,6 +48,8 @@ namespace GGemCo2DCore
 
         private bool _initialized;
         private bool _isSuperArmorEnabled;
+        private bool _isRestoreToMaxPending;
+        private float _restoreToMaxAt;
 
         /// <summary>
         /// 소유자와 몬스터 설정을 기준으로 슈퍼아머 컨트롤러를 초기화합니다.
@@ -59,6 +61,7 @@ namespace GGemCo2DCore
         /// </param>
         public void Initialize(CharacterBase owner, GGemCoMonsterSettings config = null)
         {
+            CancelPendingRestoreToMax();
             _owner = owner;
             _config = config;
             _initialized = false;
@@ -88,6 +91,7 @@ namespace GGemCo2DCore
             CharacterConstants.StaggerBreakResetMode breakResetMode,
             float perAttackConsumeCooldown = 0f)
         {
+            CancelPendingRestoreToMax();
             _regenDelay = regenDelay;
             _regenInterval = regenInterval;
             _regenPerTick = regenPerTick;
@@ -259,7 +263,10 @@ namespace GGemCo2DCore
 
                     if (ShouldRestoreToMaxOnBreak())
                     {
-                        RestoreToMax();
+                        if (!TryScheduleRestoreToMaxAfterGroggy())
+                        {
+                            RestoreToMax();
+                        }
                     }
 
                     return new HitReactionDecision(true, CurrentStacks, true, hit.ReactionType);
@@ -272,11 +279,54 @@ namespace GGemCo2DCore
             return new HitReactionDecision(true, CurrentStacks, false, CharacterConstants.HitReactionType.None);
         }
 
-        private void Update()
+        /// <summary>
+        /// 슈퍼아머 브레이크 이후 예약된 최대 복구 시점을 갱신합니다.
+        /// </summary>
+        /// <param name="now">현재 스케일 적용 게임 시간입니다.</param>
+        /// <remarks>
+        /// 이 컨트롤러는 일반 C# 클래스이므로 Unity 메시지를 직접 수신하지 않습니다.
+        /// 소유 캐릭터의 Update 흐름에서 명시적으로 호출해야 합니다.
+        /// </remarks>
+        public void Tick(float now)
         {
-            if (!_isSuperArmorEnabled) return;
-            if (!_initialized) return;
-            TickRegen(Time.time);
+            if (!_isRestoreToMaxPending) return;
+            if (!_isSuperArmorEnabled || !_initialized || !_owner)
+            {
+                CancelPendingRestoreToMax();
+                return;
+            }
+
+            if (now < _restoreToMaxAt) return;
+
+            // RestoreToMax 안에서 외부 이벤트가 실행될 수 있으므로 먼저 예약 상태를 해제합니다.
+            CancelPendingRestoreToMax();
+            RestoreToMax();
+        }
+
+        /// <summary>
+        /// 유효한 그로기 Affect 설정을 사용하여 슈퍼아머 최대 복구를 예약합니다.
+        /// </summary>
+        /// <returns>지연 복구를 예약했으면 <see langword="true"/>를 반환합니다.</returns>
+        private bool TryScheduleRestoreToMaxAfterGroggy()
+        {
+            if (_config == null) return false;
+            if (_config.monsterGroggyAffectUid <= 0) return false;
+
+            float duration = _config.monsterGroggyAffectDuration;
+            if (duration <= 0f || float.IsNaN(duration) || float.IsInfinity(duration)) return false;
+
+            _restoreToMaxAt = Time.time + duration;
+            _isRestoreToMaxPending = true;
+            return true;
+        }
+
+        /// <summary>
+        /// 예약된 슈퍼아머 최대 복구 상태를 취소합니다.
+        /// </summary>
+        internal void CancelPendingRestoreToMax()
+        {
+            _isRestoreToMaxPending = false;
+            _restoreToMaxAt = 0f;
         }
 
         private void TickRegen(float now)
@@ -386,6 +436,22 @@ namespace GGemCo2DCore
         public void EnableSuperArmor(bool enable)
         {
             _isSuperArmorEnabled = enable;
+            if (!enable)
+            {
+                CancelPendingRestoreToMax();
+            }
+        }
+
+        /// <summary>
+        /// 예약된 복구 상태와 소유자 참조를 정리합니다.
+        /// </summary>
+        public void Dispose()
+        {
+            CancelPendingRestoreToMax();
+            _owner = null;
+            _config = null;
+            _initialized = false;
+            _isSuperArmorEnabled = false;
         }
 
         public bool IsEnableSuperArmor()
