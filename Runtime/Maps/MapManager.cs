@@ -202,7 +202,6 @@ namespace GGemCo2DCore
             // 맵 언로드 시점에 외부 패키지가 Addressables 핸들을 해제할 수 있도록 알림.
             CharacterSpawnHooks.NotifyMapUnload();
             _mapLoadCharacters?.Reset();
-            _addressableLoaderPrefabCharacter?.Release();
         }
 
         private bool HasValidCurrentMap()
@@ -490,22 +489,26 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 맵 이동시 메모리 해제 처리
+        /// 이전 맵의 런타임 오브젝트와 캐릭터 프리팹 자산을 안전한 순서로 해제합니다.
         /// </summary>
-        /// <returns></returns>
-        IEnumerator UnloadPreviousStage()
+        /// <returns>오브젝트 파괴와 미사용 자산 해제가 완료될 때까지 대기하는 열거자입니다.</returns>
+        private IEnumerator UnloadPreviousStage()
         {
             var previousMap = DetachCurrentMapReference();
 
-            // 현재 씬에 있는 몬스터는 Destroy 대신 Pool로 반환한다.
+            // 활성 몬스터까지 풀에 모은 뒤 풀 전체를 폐기해야 이전 프리팹 자산을 참조하는 인스턴스가 남지 않습니다.
             _mapLoadCharacters?.ReturnAllMonstersToPool(previousMap);
+            _sceneGame?.CharacterManager?.ClearMonsterPool();
             DestroyByTag(ConfigTags.GetValue(ConfigTags.Keys.Npc));
             // 드랍 아이템 지우기
             DestroyByTag(ConfigTags.GetValue(ConfigTags.Keys.DropItem));
 
             DestroyOthers();
-            // 잠시 대기하여 오브젝트가 완전히 삭제되도록 보장
+            // Unity의 Destroy는 프레임 종료 시 반영되므로 자산 핸들을 해제하기 전에 한 프레임 대기합니다.
             yield return null;
+
+            // 풀 인스턴스가 모두 제거된 후 캐릭터 프리팹과 종속 애니메이션 자산의 참조를 해제합니다.
+            _addressableLoaderPrefabCharacter?.Release();
 
             // 사용되지 않는 메모리 해제
             yield return Resources.UnloadUnusedAssets();

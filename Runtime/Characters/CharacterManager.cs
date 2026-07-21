@@ -647,6 +647,13 @@ namespace GGemCo2DCore
             return monster;
         }
 
+        /// <summary>
+        /// 지정한 UID의 몬스터를 풀에서 대여하고, 재사용 가능한 인스턴스가 없으면 새로 생성합니다.
+        /// </summary>
+        /// <param name="uid">대여할 몬스터의 테이블 UID입니다.</param>
+        /// <param name="regenData">이번 스폰에 적용할 리젠 데이터입니다.</param>
+        /// <param name="prefab">직접 사용할 프리팹입니다. null이면 캐시된 Addressables 프리팹을 사용합니다.</param>
+        /// <returns>초기화가 완료된 몬스터 게임 오브젝트이며, 생성에 실패하면 null입니다.</returns>
         public GameObject RentMonster(int uid, CharacterRegenData regenData = null, GameObject prefab = null)
         {
             if (uid <= 0)
@@ -666,16 +673,32 @@ namespace GGemCo2DCore
                 return CreateMonster(uid, regenData, prefab);
             }
 
-            var pooledObject = pooledMonster.gameObject;
-            pooledMonster.CancelPendingPoolReturn();
-            pooledObject.transform.SetParent(null, worldPositionStays: false);
-            pooledMonster.PrepareForPoolRent(uid, regenData);
-            pooledObject.SetActive(true);
-            CharacterBase characterBase = pooledObject.GetComponent<CharacterBase>();
-            characterBase?.RefreshCharacterBodyCollision();
-            characterBase?.Stop();
-            NotifyCharacterActivatedWhenReady(characterBase);
-            return pooledObject;
+            GameObject pooledObject = pooledMonster.gameObject;
+            try
+            {
+                pooledMonster.CancelPendingPoolReturn();
+                pooledObject.transform.SetParent(null, worldPositionStays: false);
+                pooledMonster.PrepareForPoolRent(uid, regenData);
+                pooledObject.SetActive(true);
+
+                CharacterBase characterBase = pooledObject.GetComponent<CharacterBase>();
+                characterBase?.RefreshCharacterBodyCollision();
+                characterBase?.Stop();
+                NotifyCharacterActivatedWhenReady(characterBase);
+                return pooledObject;
+            }
+            catch (Exception ex)
+            {
+                // 대여 도중 실패한 인스턴스는 풀과 맵 어느 쪽에도 정상 등록할 수 없으므로 폐기하고 한 번만 신규 생성을 시도합니다.
+                GcLogger.LogException(ex, pooledMonster);
+                GcLogger.LogError(
+                    $"[MonsterPool] 몬스터 풀 대여에 실패하여 인스턴스를 폐기하고 신규 생성을 시도합니다. " +
+                    $"monsterUid={uid}, monsterVid={pooledMonster.vid}, gameObject={pooledObject.name}, " +
+                    $"exceptionType={ex.GetType().FullName}, message={ex.Message}");
+
+                RemoveCharacter(pooledObject);
+                return CreateMonster(uid, regenData, prefab);
+            }
         }
 
         public bool ReturnMonsterToPool(Monster monster)
@@ -709,6 +732,46 @@ namespace GGemCo2DCore
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// 현재 보관 중인 모든 몬스터 풀 인스턴스를 폐기하고 풀 상태를 초기화합니다.
+        /// </summary>
+        /// <remarks>
+        /// 맵 전환 중 캐릭터 프리팹 Addressables 핸들을 해제하기 전에 호출하여,
+        /// 해제될 애니메이션 및 렌더링 자산을 참조하는 풀 인스턴스가 남지 않도록 합니다.
+        /// </remarks>
+        /// <returns>폐기 요청한 유효한 몬스터 인스턴스 수입니다.</returns>
+        public int ClearMonsterPool()
+        {
+            int destroyedCount = 0;
+
+            foreach (Stack<Monster> bucket in _monsterPoolByUid.Values)
+            {
+                while (bucket.Count > 0)
+                {
+                    Monster monster = bucket.Pop();
+                    if (monster == null)
+                        continue;
+
+                    GameObject monsterObject = monster.gameObject;
+                    if (monsterObject == null)
+                        continue;
+
+                    RemoveCharacter(monsterObject);
+                    destroyedCount++;
+                }
+            }
+
+            _monsterPoolByUid.Clear();
+
+            if (_monsterPoolRoot != null)
+            {
+                Object.Destroy(_monsterPoolRoot.gameObject);
+                _monsterPoolRoot = null;
+            }
+
+            return destroyedCount;
         }
 
         public GameObject CreateCharacter(CharacterConstants.Type type, int characterUid)

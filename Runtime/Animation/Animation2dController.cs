@@ -64,6 +64,14 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 오브젝트가 활성화될 때 Animator와 애니메이션 관련 캐시를 최신 상태로 구성합니다.
+        /// </summary>
+        protected virtual void OnEnable()
+        {
+            EnsureInitialized();
+        }
+
+        /// <summary>
         /// 비활성화 시 진행 중인 순차 추가 애니메이션을 중지합니다.
         /// </summary>
         /// <remarks>
@@ -73,6 +81,23 @@ namespace GGemCo2DCore
         protected virtual void OnDisable()
         {
             StopAddAnimationCoroutine();
+            InvalidateAnimationCache();
+        }
+
+        /// <summary>
+        /// AnimatorController에서 파생된 애니메이션 클립, 이벤트 시간 및 렌더러 캐시를 무효화합니다.
+        /// </summary>
+        /// <remarks>
+        /// 풀 반환과 Addressables 해제가 겹친 뒤 이전 Unity Object 참조가 캐시에 남지 않도록
+        /// 다음 활성화 시점에 전체 캐시를 다시 구성하게 합니다.
+        /// </remarks>
+        private void InvalidateAnimationCache()
+        {
+            _isInitialized = false;
+            _cachedRuntimeAnimatorController = null;
+            _animationClips = null;
+            _clipEventTimeCache.Clear();
+            _spriteRenderers.Clear();
         }
         
         private void EnsureInitialized()
@@ -576,9 +601,9 @@ namespace GGemCo2DCore
                 return null;
             }
 
-            foreach (var clip in _animationClips)
+            foreach (AnimationClip clip in _animationClips)
             {
-                if (clip.name == animationName)
+                if (clip != null && clip.name == animationName)
                 {
                     return clip;
                 }
@@ -817,8 +842,11 @@ namespace GGemCo2DCore
                 return clipLength;
             }
             
-            foreach (var clip in _animationClips)
+            foreach (AnimationClip clip in _animationClips)
             {
+                if (clip == null)
+                    continue;
+
                 if (!clipLength.ContainsKey(clip.name))
                     clipLength.Add(clip.name, Mathf.Max(0f, clip.length));
             }
