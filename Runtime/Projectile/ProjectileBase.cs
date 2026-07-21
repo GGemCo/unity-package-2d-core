@@ -395,13 +395,13 @@ namespace GGemCo2DCore
                   $"Aspect={cam.aspect}, Viewport={viewportPosition}"
                 : "None";
 
-            GcLogger.Log(
-                $"[ProjectileDebug][Launch] ProjectileUid={GetProjectileUidForDiagnostic()}, " +
-                $"Object={name}({GetInstanceID()}), Owner={GetCharacterLabelForDiagnostic(FromCharacter)}, " +
-                $"Target={GetCharacterLabelForDiagnostic(Runtime != null ? Runtime.Target : null)}, " +
-                $"SkillUid={SkillUid}, AttackId={AttackId}, Start={StartPoint}, TargetPoint={TargetPoint}, " +
-                $"Current={transform.position}, Direction={Direction}, Speed={Speed}, " +
-                $"JourneyLength={JourneyLength}, FixedTime={Time.fixedTime}, Camera=[{cameraInfo}]");
+            // GcLogger.Log(
+            //     $"[ProjectileDebug][Launch] ProjectileUid={GetProjectileUidForDiagnostic()}, " +
+            //     $"Object={name}({GetInstanceID()}), Owner={GetCharacterLabelForDiagnostic(FromCharacter)}, " +
+            //     $"Target={GetCharacterLabelForDiagnostic(Runtime != null ? Runtime.Target : null)}, " +
+            //     $"SkillUid={SkillUid}, AttackId={AttackId}, Start={StartPoint}, TargetPoint={TargetPoint}, " +
+            //     $"Current={transform.position}, Direction={Direction}, Speed={Speed}, " +
+            //     $"JourneyLength={JourneyLength}, FixedTime={Time.fixedTime}, Camera=[{cameraInfo}]");
 #endif
         }
 

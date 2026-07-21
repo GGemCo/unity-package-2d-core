@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 namespace GGemCo2DCore
 {
@@ -18,6 +18,13 @@ namespace GGemCo2DCore
         public Transform Parent;
         public float DurationOverride;
         public bool ForceOneShot;
+
+        /// <summary>
+        /// true이면 글로벌 VFX Fade-in 시간을 적용하지 않고 생성 직후 원본 alpha로 표시합니다.
+        /// - 수명이 짧고 이동 자체가 연출인 Projectile 부착 VFX에서 사용합니다.
+        /// </summary>
+        public bool DisableFadeIn;
+
         public float ScaleOverride;
         public string ColorOverride;
         public bool ForceUiCanvasParent;

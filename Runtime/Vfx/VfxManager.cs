@@ -222,6 +222,7 @@ namespace GGemCo2DCore
             CharacterBase heightOwner = owner != null ? owner : request.Target;
 
             behaviour.SetForceOneShot(request.ForceOneShot);
+            behaviour.SetFadeInDisabled(request.DisableFadeIn);
 
             if (request.DurationOverride != 0f)
                 behaviour.SetDuration(request.DurationOverride);

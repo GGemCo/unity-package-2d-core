@@ -36,10 +36,13 @@ namespace GGemCo2DCore
         private float _lifetimeElapsed;
         private bool _timelineDurationElapsedHandled;
 
+        private float _defaultVfxFadeInSec;
+        private float _defaultVfxFadeOutSec;
         private float _vfxFadeInSec;
         private float _vfxFadeOutSec;
         private Easing.EaseType _vfxFadeInEase;
         private Easing.EaseType _vfxFadeOutEase;
+        private bool _disableFadeIn;
         
         public delegate void DelegateEffectDestroy();
         public event DelegateEffectDestroy OnVfxDestroy;
@@ -54,10 +57,11 @@ namespace GGemCo2DCore
         {
             CaptureDefaultTransformIfNeeded();
 
-            _vfxFadeInSec = AddressableLoaderSettings.Instance.settings.vfxFadeInSec;
-            _vfxFadeOutSec = AddressableLoaderSettings.Instance.settings.vfxFadeOutSec;
+            _defaultVfxFadeInSec = AddressableLoaderSettings.Instance.settings.vfxFadeInSec;
+            _defaultVfxFadeOutSec = AddressableLoaderSettings.Instance.settings.vfxFadeOutSec;
             _vfxFadeInEase = AddressableLoaderSettings.Instance.settings.vfxFadeInEase;
             _vfxFadeOutEase = AddressableLoaderSettings.Instance.settings.vfxFadeOutEase;
+            ApplyFadeDurationPolicy();
         }
 
         /// <summary>
@@ -84,6 +88,8 @@ namespace GGemCo2DCore
             _positionY = 0f;
             _positionYType = ConfigCommon.PositionYType.None;
             _duration = 0f;
+            _disableFadeIn = false;
+            ApplyFadeDurationPolicy();
             _releaseOnAnimationComplete = false;
             _isReleasing = false;
             _lifetimeElapsed = 0f;
@@ -187,6 +193,21 @@ namespace GGemCo2DCore
         {
             _duration = duration;
             _useTimelineFade = ShouldUseTimelineFade();
+        }
+
+        /// <summary>
+        /// 이번 생성 요청에서 Fade-in을 생략할지 설정합니다.
+        /// - 풀에서 재사용되는 인스턴스는 <see cref="Initialize"/>에서 기본 정책으로 복구된 뒤 요청별 값을 다시 적용합니다.
+        /// </summary>
+        /// <param name="disable">true이면 생성 alpha를 0으로 낮추지 않고 원본 alpha를 유지합니다.</param>
+        public void SetFadeInDisabled(bool disable)
+        {
+            _disableFadeIn = disable;
+            ApplyFadeDurationPolicy();
+
+            // 비활성 상태에서 다음 OnEnable을 기다리는 풀 인스턴스도 원본 alpha로 확실하게 복구합니다.
+            if (_disableFadeIn)
+                RestoreVisibleState();
         }
 
         public virtual void SetForceOneShot(bool forceOneShot)
@@ -603,6 +624,15 @@ namespace GGemCo2DCore
                 _fadeController = gameObject.AddComponent<VfxFadeController>();
 
             _fadeController.EnsureInitialized();
+        }
+
+        /// <summary>
+        /// 글로벌 VFX Fade 시간과 이번 생성 요청의 예외 정책을 조합해 실제 Fade 시간을 갱신합니다.
+        /// </summary>
+        private void ApplyFadeDurationPolicy()
+        {
+            _vfxFadeInSec = _disableFadeIn ? 0f : Mathf.Max(0f, _defaultVfxFadeInSec);
+            _vfxFadeOutSec = Mathf.Max(0f, _defaultVfxFadeOutSec);
         }
 
         private float GetCurrentAlpha()

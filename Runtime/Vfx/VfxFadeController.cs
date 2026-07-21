@@ -90,6 +90,13 @@ namespace GGemCo2DCore
             SetAlpha(1f);
         }
 
+        /// <summary>
+        /// 외부 색상 변경을 Fade 기준색에 반영하되, 완전히 투명한 Fade 결과를 원본 alpha로 저장하지 않습니다.
+        /// </summary>
+        /// <remarks>
+        /// 현재 Fade alpha가 0이면 표시색만으로 원래 alpha를 역산할 수 없습니다.
+        /// 이 경우 기존 원본 alpha를 유지하여 풀 재사용 후에도 <see cref="RestoreFullAlpha"/>가 가시 상태를 복구하도록 합니다.
+        /// </remarks>
         public void RefreshOriginalColorsFromCurrentState()
         {
             EnsureInitialized();
@@ -100,7 +107,11 @@ namespace GGemCo2DCore
                 if (entry.Renderer == null)
                     continue;
 
-                entry.OriginalColor = entry.Renderer.color;
+                Color currentColor = entry.Renderer.color;
+                if (_currentAlpha <= Mathf.Epsilon)
+                    currentColor.a = entry.OriginalColor.a;
+
+                entry.OriginalColor = currentColor;
                 _sprites[i] = entry;
             }
 

@@ -213,6 +213,8 @@ namespace GGemCo2DCore
             {
                 VfxUid = vfxUid,
                 DurationOverride = -1f,
+                // 비행 시간이 글로벌 Fade-in보다 짧아 alpha가 0인 채 종료되지 않도록 즉시 표시합니다.
+                DisableFadeIn = true,
                 ForceLaserEffectBehaviour = ShouldStretchLaserVfx(),
             };
         }

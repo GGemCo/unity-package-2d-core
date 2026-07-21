@@ -95,6 +95,11 @@ namespace GGemCo2DCore
             if (startClip == null && playClip == null && endClip == null)
                 return false;
 
+            // 무기한 유지 VFX에 종료 클립만 있으면 생성 시점에는 정적 렌더러를 유지합니다.
+            // end 클립은 Projectile 도착·충돌처럼 실제 종료 요청이 들어왔을 때 PlayEnd()에서만 재생합니다.
+            if (duration < 0f && startClip == null && playClip == null && endClip != null)
+                return true;
+
             var startAnimationName = startClip != null
                 ? IVfxAnimationController.KeyClipNameStart
                 : playClip != null
