@@ -14,7 +14,7 @@ namespace GGemCo2DCore
         [Tooltip("크기")]
         [SerializeField] private  Vector3 scale = Vector3.one;
         
-        private void OnEnable()
+        protected override void OnEnable()
         {
             if (!autoStart) return;
             InitializeScale();

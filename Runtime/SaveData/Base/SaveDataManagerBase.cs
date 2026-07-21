@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using UnityEngine;
 
 namespace GGemCo2DCore
@@ -6,7 +6,7 @@ namespace GGemCo2DCore
     /// <summary>
     /// 세이브 데이터 메인 매니저
     /// </summary>
-    public class SaveDataManagerBase : MonoBehaviour, IGameInitializable
+    public class SaveDataManagerBase : MonoBehaviour, IGameInitializable, ISaveDataResetParticipant
     {
         protected TableLoaderManager tableLoaderManager;
         protected SlotMetaDatController slotMetaDatController;
@@ -47,6 +47,11 @@ namespace GGemCo2DCore
         /// </summary>
         public bool IsInitialized => _isInitialized;
 
+        /// <summary>
+        /// 로더 캐시를 정리하기 전에 모든 저장 예약을 중단하도록 초기화 순서를 반환합니다.
+        /// </summary>
+        public virtual int LocalDataResetOrder => 100;
+
         protected virtual void Awake()
         {
             // Awake에서는 Unity 오브젝트 생성만 허용합니다.
@@ -74,6 +79,7 @@ namespace GGemCo2DCore
             tableLoaderManager = context.TableLoader;
             InitializeSaveDirectory(context.SettingsLoader);
             InitializeController();
+            SaveDataResetParticipantRegistry.Register(this);
             _isInitialized = true;
         }
 
@@ -155,10 +161,7 @@ namespace GGemCo2DCore
             _lastSaveTime = Time.time;
 
             // 강제 저장 시작. 저장 기능이 비활성화되었거나 간격이 0 이하이면 예약하지 않습니다.
-            if (_useSaveData && _forceSaveInterval > 0f)
-            {
-                InvokeRepeating(nameof(ForceSave), _forceSaveInterval, _forceSaveInterval);
-            }
+            ScheduleForceSaveInvoke();
         }
 
         /// <summary>
@@ -166,7 +169,7 @@ namespace GGemCo2DCore
         /// </summary>
         public void StartSaveData()
         {
-            if (_isResetInProgress)
+            if (_isResetInProgress || SaveDataResetParticipantRegistry.IsResetInProgress)
             {
                 return;
             }
@@ -195,7 +198,7 @@ namespace GGemCo2DCore
         /// </summary>
         private void ForceSave()
         {
-            if (_isResetInProgress)
+            if (_isResetInProgress || SaveDataResetParticipantRegistry.IsResetInProgress)
             {
                 return;
             }
@@ -212,7 +215,7 @@ namespace GGemCo2DCore
         /// </summary>
         public virtual bool SaveData()
         {
-            if (_isResetInProgress)
+            if (_isResetInProgress || SaveDataResetParticipantRegistry.IsResetInProgress)
             {
                 GcLogger.LogWarning("저장 데이터 초기화 중에는 저장할 수 없습니다.");
                 return false;
@@ -257,28 +260,50 @@ namespace GGemCo2DCore
         /// <returns>초기화 성공 여부입니다.</returns>
         public bool ResetLocalData(SaveDataResetScope scope)
         {
-            if (_isResetInProgress)
+            if (_isResetInProgress || SaveDataResetParticipantRegistry.IsResetInProgress)
             {
                 return false;
             }
 
+            // 초기화 성공 후에는 현재 장면의 메모리 데이터를 다시 만들지 않습니다.
+            // 옵션 UI가 Intro 장면으로 전환하면 새 저장 매니저가 빈 저장소를 기준으로 초기화합니다.
+            return SaveDataResetUtility.ResetPersistentStorage(scope);
+        }
+
+        /// <summary>
+        /// 로컬 데이터 삭제 전에 현재 매니저의 예약 저장을 모두 중단하고 저장 차단 상태로 전환합니다.
+        /// </summary>
+        /// <param name="scope">요청된 로컬 데이터 초기화 범위입니다.</param>
+        public virtual void PrepareLocalDataReset(SaveDataResetScope scope)
+        {
             _isResetInProgress = true;
-            try
-            {
-                StopScheduledSaveInvokes();
+            StopScheduledSaveInvokes();
+        }
 
-                if (!SaveDataResetUtility.ResetPersistentStorage(scope))
-                {
-                    return false;
-                }
+        /// <summary>
+        /// 매니저가 보유한 런타임 저장 상태를 정리합니다.
+        /// 파생 매니저에서 추가 캐시 정리가 필요한 경우 재정의할 수 있습니다.
+        /// </summary>
+        /// <param name="scope">요청된 로컬 데이터 초기화 범위입니다.</param>
+        public virtual void ClearLocalDataRuntimeState(SaveDataResetScope scope)
+        {
+        }
 
-                InitializeController();
-                return true;
-            }
-            finally
+        /// <summary>
+        /// 로컬 데이터 초기화 결과를 반영합니다.
+        /// 성공한 현재 장면의 매니저는 이전 메모리가 재저장되지 않도록 차단 상태를 유지합니다.
+        /// </summary>
+        /// <param name="scope">요청된 로컬 데이터 초기화 범위입니다.</param>
+        /// <param name="success">영구 저장소 삭제까지 성공했으면 true입니다.</param>
+        public virtual void CompleteLocalDataReset(SaveDataResetScope scope, bool success)
+        {
+            if (success)
             {
-                _isResetInProgress = false;
+                return;
             }
+
+            _isResetInProgress = false;
+            ScheduleForceSaveInvoke();
         }
 
         /// <summary>
@@ -290,9 +315,28 @@ namespace GGemCo2DCore
             CancelInvoke(nameof(ForceSave));
         }
 
-        private void OnDestroy()
+        /// <summary>
+        /// 저장 매니저가 파괴될 때 전역 초기화 참여자 등록을 해제합니다.
+        /// </summary>
+        protected virtual void OnDestroy()
         {
-            
+            SaveDataResetParticipantRegistry.Unregister(this);
+        }
+
+        /// <summary>
+        /// 저장 기능과 강제 저장 간격이 유효할 때 주기 저장 호출을 예약합니다.
+        /// </summary>
+        private void ScheduleForceSaveInvoke()
+        {
+            if (!_isResetInProgress &&
+                !SaveDataResetParticipantRegistry.IsResetInProgress &&
+                isActiveAndEnabled &&
+                _useSaveData &&
+                _forceSaveInterval > 0f &&
+                !IsInvoking(nameof(ForceSave)))
+            {
+                InvokeRepeating(nameof(ForceSave), _forceSaveInterval, _forceSaveInterval);
+            }
         }
 
         protected SaveEnvelope BuildEnvelopeForSave()

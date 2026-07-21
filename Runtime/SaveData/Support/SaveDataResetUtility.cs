@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using UnityEngine;
 
@@ -21,9 +21,16 @@ namespace GGemCo2DCore
                 return false;
             }
 
+            if (!SaveDataResetParticipantRegistry.TryBeginReset(scope))
+            {
+                GcLogger.LogWarning("[SaveDataResetUtility] 이미 로컬 데이터 초기화가 진행 중입니다.");
+                return false;
+            }
+
+            bool success = false;
             try
             {
-                ClearRuntimeCaches();
+                ClearRuntimeCaches(scope);
                 DeleteStorageDirectory(saveDirectory);
                 DeleteStorageDirectory(thumbnailDirectory);
 
@@ -42,12 +49,17 @@ namespace GGemCo2DCore
                         break;
                 }
 
+                success = true;
                 return true;
             }
             catch (Exception ex)
             {
                 GcLogger.LogError($"[SaveDataResetUtility] 로컬 데이터 초기화 중 오류가 발생했습니다. {ex}");
                 return false;
+            }
+            finally
+            {
+                SaveDataResetParticipantRegistry.CompleteReset(scope, success);
             }
         }
 
@@ -77,10 +89,14 @@ namespace GGemCo2DCore
         /// <summary>
         /// 삭제 전에 메모리에 남아 있는 저장 관련 캐시를 정리합니다.
         /// </summary>
-        private static void ClearRuntimeCaches()
+        /// <param name="scope">요청된 로컬 데이터 초기화 범위입니다.</param>
+        private static void ClearRuntimeCaches(SaveDataResetScope scope)
         {
-            SaveDataLoader.Instance?.ClearLoadedData();
-            SaveRegistry.ClearPendingRestore();
+            SaveDataResetParticipantRegistry.ClearRuntimeState(scope);
+
+            // 초기화 이후 현재 장면의 기여자가 이전 데이터를 다시 캡처하지 않도록
+            // 보류 복원 데이터뿐 아니라 등록된 기여자와 이벤트도 함께 정리합니다.
+            SaveRegistry.Clear();
         }
 
         /// <summary>

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using UnityEngine;
 
@@ -7,7 +7,7 @@ namespace GGemCo2DCore
     /// <summary>
     /// 세이브 데이터 json 파일 로드
     /// </summary>
-    public class SaveDataLoaderBase : MonoBehaviour
+    public class SaveDataLoaderBase : MonoBehaviour, ISaveDataResetParticipant
     {
         private int _maxSlotCount;
         private string _saveDirectory;
@@ -20,8 +20,15 @@ namespace GGemCo2DCore
         /// </summary>
         public SaveDataLoadResult LastLoadResult { get; private set; }
 
+        /// <summary>
+        /// 저장 매니저가 예약 저장을 먼저 중단한 뒤 로더 캐시를 정리하도록 초기화 순서를 반환합니다.
+        /// </summary>
+        public virtual int LocalDataResetOrder => 200;
+
         protected virtual void Awake()
         {
+            SaveDataResetParticipantRegistry.Register(this);
+
             if (!AddressableLoaderSettings.Instance) return;
             _maxSlotCount = AddressableLoaderSettings.Instance.saveSettings.saveDataMaxSlotCount;
             _saveDirectory = AddressableLoaderSettings.Instance.saveSettings.SaveDataFolderName;
@@ -127,6 +134,51 @@ namespace GGemCo2DCore
         /// <param name="result">로드와 복구 처리 결과입니다.</param>
         protected virtual void OnLoadFailed(SaveDataLoadResult result)
         {
+        }
+
+        /// <summary>
+        /// 로컬 데이터 초기화 전에 로더가 수행할 준비 작업입니다.
+        /// 로더는 저장 요청을 발생시키지 않으므로 기본 구현에서는 별도 작업을 하지 않습니다.
+        /// </summary>
+        /// <param name="scope">요청된 로컬 데이터 초기화 범위입니다.</param>
+        public virtual void PrepareLocalDataReset(SaveDataResetScope scope)
+        {
+        }
+
+        /// <summary>
+        /// 로컬 데이터 초기화 시 파생 로더가 보관 중인 역직렬화 컨테이너를 정리합니다.
+        /// </summary>
+        /// <param name="scope">요청된 로컬 데이터 초기화 범위입니다.</param>
+        public void ClearLocalDataRuntimeState(SaveDataResetScope scope)
+        {
+            LastLoadResult = null;
+            OnClearLoadedDataForReset(scope);
+        }
+
+        /// <summary>
+        /// 로컬 데이터 초기화 완료 결과를 처리합니다.
+        /// 로더의 기본 구현에서는 별도 후처리를 하지 않습니다.
+        /// </summary>
+        /// <param name="scope">요청된 로컬 데이터 초기화 범위입니다.</param>
+        /// <param name="success">영구 저장소 삭제까지 성공했으면 true입니다.</param>
+        public virtual void CompleteLocalDataReset(SaveDataResetScope scope, bool success)
+        {
+        }
+
+        /// <summary>
+        /// 파생 로더가 보관 중인 로드 컨테이너를 초기화합니다.
+        /// </summary>
+        /// <param name="scope">요청된 로컬 데이터 초기화 범위입니다.</param>
+        protected virtual void OnClearLoadedDataForReset(SaveDataResetScope scope)
+        {
+        }
+
+        /// <summary>
+        /// 로더가 파괴될 때 저장 초기화 참여자 등록을 해제합니다.
+        /// </summary>
+        protected virtual void OnDestroy()
+        {
+            SaveDataResetParticipantRegistry.Unregister(this);
         }
 
         /// <summary>

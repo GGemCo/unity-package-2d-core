@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 
 namespace GGemCo2DCore
 {
@@ -27,11 +27,16 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 바로 해제를 위해 추가
+        /// Core 저장 로더가 제거될 때 컨테이너와 싱글톤 참조를 정리합니다.
         /// </summary>
-        private void OnDestroy()
+        protected override void OnDestroy()
         {
+            base.OnDestroy();
             _saveDataContainer = null;
+            if (Instance == this)
+            {
+                Instance = null;
+            }
         }
 
         /// <summary>
@@ -63,6 +68,15 @@ namespace GGemCo2DCore
         public void ClearLoadedData()
         {
             _saveDataContainer = null;
+        }
+
+        /// <summary>
+        /// 로컬 데이터 초기화 시 Core 저장 컨테이너를 메모리에서 제거합니다.
+        /// </summary>
+        /// <param name="scope">요청된 로컬 데이터 초기화 범위입니다.</param>
+        protected override void OnClearLoadedDataForReset(SaveDataResetScope scope)
+        {
+            ClearLoadedData();
         }
     }
 }
