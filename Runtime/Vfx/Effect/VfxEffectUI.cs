@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 namespace GGemCo2DCore
 {
@@ -25,6 +25,56 @@ namespace GGemCo2DCore
         {
             InitializeScale();
             Play(-1f, timeScale, forceReset);
+        }
+
+        /// <summary>
+        /// start 애니메이션 클립만 첫 프레임부터 한 번 재생합니다.
+        /// </summary>
+        /// <param name="forceReset">
+        /// 같은 start 상태를 재생 중이어도 첫 프레임부터 다시 재생하려면 <see langword="true"/>입니다.
+        /// </param>
+        /// <returns>start 클립이 존재하여 재생을 시작했으면 <see langword="true"/>를 반환합니다.</returns>
+        /// <remarks>
+        /// start 이후 play/end 클립을 연결하지 않습니다.
+        /// 클립 재생 완료 후에는 Animator가 start 클립의 마지막 프레임을 유지합니다.
+        /// </remarks>
+        public bool PlayStartClipOnce(bool forceReset = true)
+        {
+            InitializeScale();
+
+            const string clipName = IVfxAnimationController.KeyClipNameStart;
+            if (GetClipByName(clipName) == null)
+            {
+                return false;
+            }
+
+            // PlayAnimation이 기존 순차 재생 코루틴을 정리하므로
+            // 파괴 연출 도중 복구되어도 start 클립만 독립적으로 다시 재생됩니다.
+            PlayAnimation(clipName, timeScale: timeScale, forceReset: forceReset);
+            return true;
+        }
+        
+        /// <summary>
+        /// end 애니메이션 클립만 첫 프레임부터 한 번 재생합니다.
+        /// </summary>
+        /// <param name="forceReset">
+        /// 같은 end 상태를 재생 중이어도 첫 프레임부터 다시 재생하려면 <see langword="true"/>입니다.
+        /// </param>
+        /// <returns>start 클립이 존재하여 재생을 시작했으면 <see langword="true"/>를 반환합니다.</returns>
+        public bool PlayEndClipOnce(bool forceReset = true)
+        {
+            InitializeScale();
+
+            const string clipName = IVfxAnimationController.KeyClipNameEnd;
+            if (GetClipByName(clipName) == null)
+            {
+                return false;
+            }
+
+            // PlayAnimation이 기존 순차 재생 코루틴을 정리하므로
+            // 파괴 연출 도중 복구되어도 start 클립만 독립적으로 다시 재생됩니다.
+            PlayAnimation(clipName, timeScale: timeScale, forceReset: forceReset);
+            return true;
         }
 
         /// <summary>

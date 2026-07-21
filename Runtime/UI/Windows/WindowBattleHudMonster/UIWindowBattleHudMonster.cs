@@ -254,7 +254,7 @@ namespace GGemCo2DCore
                 if (!shieldIcon.activeInHierarchy) continue;
 
                 VfxEffectUI vfxEffect = GetShieldVfxEffect(shieldIcon);
-                vfxEffect?.PlayEffect(forceReset: true);
+                vfxEffect?.PlayEndClipOnce(forceReset: true);
             }
         }
 
