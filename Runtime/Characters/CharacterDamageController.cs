@@ -313,6 +313,7 @@ namespace GGemCo2DCore
             _controllerMonsterSuperArmor.Initialize(_characterBase, monsterSettings);
             
             _controllerMonsterSuperArmor.BreakTriggered += OnSuperArmorBreak;
+            _controllerMonsterSuperArmor.RestoredToMax += OnSuperArmorRestoredToMax;
 
             if (monsterSettings)
             {
@@ -344,6 +345,7 @@ namespace GGemCo2DCore
             if (_controllerMonsterSuperArmor != null)
             {
                 _controllerMonsterSuperArmor.BreakTriggered -= OnSuperArmorBreak;
+                _controllerMonsterSuperArmor.RestoredToMax -= OnSuperArmorRestoredToMax;
             }
         }
 
@@ -1058,6 +1060,17 @@ namespace GGemCo2DCore
         public void EnableSuperArmor(bool enable)
         {
             _controllerMonsterSuperArmor.EnableSuperArmor(enable);
+        }
+
+        /// <summary>
+        /// 컨트롤러에서 발생한 슈퍼아머 최대 복구 이벤트를 캐릭터 공개 이벤트로 전달합니다.
+        /// </summary>
+        /// <param name="currentValue">복구된 현재 슈퍼아머 값입니다.</param>
+        /// <param name="maxValue">복구 시점의 최대 슈퍼아머 값입니다.</param>
+        private void OnSuperArmorRestoredToMax(int currentValue, int maxValue)
+        {
+            if (!_characterBase) return;
+            _characterBase.NotifySuperArmorRestoredToMax(currentValue, maxValue);
         }
 
         /// <summary>

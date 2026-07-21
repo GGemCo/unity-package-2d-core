@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -14,9 +15,28 @@ namespace GGemCo2DCore
         private bool _isDeathPending;
 
         /// <summary>
+        /// 브레이크 리셋 정책에 의해 슈퍼아머가 최대값으로 복구된 뒤 발생합니다.
+        /// </summary>
+        /// <remarks>
+        /// 첫 번째 인자는 복구된 현재값이고, 두 번째 인자는 최대값입니다.
+        /// 리소스의 일반적인 값 변경은 <see cref="CharacterStat.CurrentSuperArmor"/>를 구독해야 합니다.
+        /// </remarks>
+        public event Action<int, int> SuperArmorRestoredToMax;
+
+        /// <summary>
         /// 사망 확정 전 액션이 실행 중이어서 최종 사망 처리가 잠시 보류되었는지 여부입니다.
         /// </summary>
         public bool IsDeathPending => _isDeathPending;
+
+        /// <summary>
+        /// 슈퍼아머 최대 복구 완료를 캐릭터 구독자에게 전달합니다.
+        /// </summary>
+        /// <param name="currentValue">복구된 현재 슈퍼아머 값입니다.</param>
+        /// <param name="maxValue">복구 시점의 최대 슈퍼아머 값입니다.</param>
+        internal void NotifySuperArmorRestoredToMax(int currentValue, int maxValue)
+        {
+            SuperArmorRestoredToMax?.Invoke(currentValue, maxValue);
+        }
 
         /// <summary>
         /// 현재 캐릭터가 지정한 데미지를 받을 수 있는지 확인합니다.

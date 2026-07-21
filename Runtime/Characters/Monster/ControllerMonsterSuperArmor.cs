@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using UnityEngine;
 
 namespace GGemCo2DCore
@@ -20,18 +20,27 @@ namespace GGemCo2DCore
         /// <summary>브레이크(0 도달)로 리액션이 확정될 때</summary>
         public event Action<CharacterConstants.HitReactionType> BreakTriggered;
 
+        /// <summary>
+        /// 브레이크 리셋 정책에 의해 슈퍼아머가 최대값으로 복구된 뒤 발생합니다.
+        /// </summary>
+        /// <remarks>
+        /// 첫 번째 인자는 복구된 현재값이고, 두 번째 인자는 최대값입니다.
+        /// 단순 자연 회복과 ResetToMax 연출을 구분해야 하는 UI에서 사용할 수 있습니다.
+        /// </remarks>
+        public event Action<int, int> RestoredToMax;
+
         private GGemCoMonsterSettings _config;
 
         // owner (SSOT: CharacterBase.CurrentSuperArmor)
         private CharacterBase _owner;
-        
+
         private float _regenDelay;
         private float _regenInterval;
         private int _regenPerTick;
         private CharacterConstants.StaggerBreakResetMode _breakResetMode;
 
         private float _nextRegenTime;
-        
+
         // anti multi-hit spam
         private float _perAttackConsumeCooldown;
         private int _lastAttackId;
@@ -58,6 +67,7 @@ namespace GGemCo2DCore
                 GcLogger.LogError($"연결된 몬스터가 없습니다.");
                 return;
             }
+
             if (_config != null)
             {
                 ApplyConfig(_config);
@@ -164,18 +174,20 @@ namespace GGemCo2DCore
         public HitReactionDecision ApplyHit(in HitPayload hit, bool ignoreReactionByStatus = false)
         {
             if (!_isSuperArmorEnabled) return HitReactionDecision.NoReaction(0);
-            
+
             EnsureInitialized();
-            
+
             if (_owner == null)
             {
                 return HitReactionDecision.NoReaction(0);
             }
+
             // 리액션 타입이 없으면 아무것도 하지 않는다.
             if (hit.ReactionType == CharacterConstants.HitReactionType.None)
             {
                 return HitReactionDecision.NoReaction(CurrentStacks);
             }
+
             // 강제 리액션
             if (hit.ForceReaction)
             {
@@ -204,8 +216,9 @@ namespace GGemCo2DCore
                         return HitReactionDecision.NoReaction(CurrentStacks);
                 }
             }
+
             int before = _owner.CurrentSuperArmor.Value;
-            
+
             // 0인 상태에서의 피격: 슈퍼아머가 없으므로 리액션 발생
             if (before <= 0)
             {
@@ -217,7 +230,7 @@ namespace GGemCo2DCore
 
                 return HitReactionDecision.NoReaction(0);
             }
-            
+
             // 슈퍼아머 소모(overspend 방지: 남은 만큼만 소비)
             int spend = hit.StaggerStackDamage;
             if (spend > before) spend = before;
@@ -231,30 +244,30 @@ namespace GGemCo2DCore
                 _lastAttackId = hit.AttackId;
                 _lastAttackConsumeTime = Time.time;
             }
-            
+
             long after = _owner.CurrentSuperArmor.Value;
-            
+
             // UI/디버그
             FireStacksChangedIfDifferent(before, after);
-            
+
             // 브레이크: 0 도달 시 “무조건” 리액션
             if (after <= 0)
             {
                 if (!ignoreReactionByStatus)
                 {
                     BreakTriggered?.Invoke(hit.ReactionType);
-                
+
                     if (ShouldRestoreToMaxOnBreak())
                     {
                         RestoreToMax();
-                        FireStacksChanged();
                     }
-                
+
                     return new HitReactionDecision(true, CurrentStacks, true, hit.ReactionType);
                 }
 
                 return new HitReactionDecision(true, 0, false, CharacterConstants.HitReactionType.None);
             }
+
             // 아직 슈퍼아머가 남아있으면 리액션 없음
             return new HitReactionDecision(true, CurrentStacks, false, CharacterConstants.HitReactionType.None);
         }
@@ -269,7 +282,7 @@ namespace GGemCo2DCore
         private void TickRegen(float now)
         {
             if (_regenInterval <= 0) return;
-            
+
             int max = GetMaxSuperArmor();
             int cur = _owner.CurrentSuperArmor.Value;
 
@@ -306,21 +319,36 @@ namespace GGemCo2DCore
 
             return 0;
         }
-        private void RestoreToMax()
+
+        /// <summary>
+        /// 현재 슈퍼아머를 최대값까지 복구하고 값 변경 이벤트와 리셋 완료 이벤트를 전달합니다.
+        /// </summary>
+        /// <returns>실제로 슈퍼아머 값이 증가했으면 <see langword="true"/>를 반환합니다.</returns>
+        private bool RestoreToMax()
         {
             if (!_owner)
             {
                 GcLogger.LogError($"연결된 몬스터가 없습니다.");
-                return;
+                return false;
             }
 
             int max = GetMaxSuperArmor();
             int cur = _owner.CurrentSuperArmor.Value;
             int delta = max - cur;
-            if (delta <= 0) return;
+            if (delta <= 0) return false;
 
             _owner.RestoreSuperArmor(delta);
+
+            int restoredValue = _owner.CurrentSuperArmor.Value;
+            if (restoredValue <= cur) return false;
+
+            // CurrentSuperArmor 구독자에게 값이 먼저 반영된 뒤 의미 이벤트를 전달해야
+            // UI가 활성 아이콘을 복구한 상태에서 start 애니메이션을 재생할 수 있습니다.
+            FireStacksChanged();
+            RestoredToMax?.Invoke(restoredValue, max);
+            return true;
         }
+
         /// <summary>
         /// 지연 초기화가 필요한 상황에서 최소 1회 초기화를 보장합니다.
         /// </summary>
@@ -343,7 +371,7 @@ namespace GGemCo2DCore
                 InitializeDefaultData();
             }
         }
-        
+
         private void FireStacksChanged()
         {
             StacksChanged?.Invoke(CurrentStacks, MaxStacks);
@@ -354,6 +382,7 @@ namespace GGemCo2DCore
             if (before == after) return;
             FireStacksChanged();
         }
+
         public void EnableSuperArmor(bool enable)
         {
             _isSuperArmorEnabled = enable;
