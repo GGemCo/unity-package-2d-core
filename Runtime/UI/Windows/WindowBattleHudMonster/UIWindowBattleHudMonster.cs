@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using R3;
 using TMPro;
@@ -24,8 +23,8 @@ namespace GGemCo2DCore
         private List<GameObject> _shieldIcons;
         private readonly Dictionary<GameObject, VfxEffectUI> _shieldVfxEffects =
             new Dictionary<GameObject, VfxEffectUI>();
-        private readonly Dictionary<GameObject, Coroutine> _pendingShieldHideCoroutines =
-            new Dictionary<GameObject, Coroutine>();
+        private readonly HashSet<GameObject> _pendingShieldHideIcons = new HashSet<GameObject>();
+        private Action<VfxEffectUI> _shieldBreakCompletedHandler;
         private int _lastSuperArmorValue;
         private int _currentMonsterInstanceId;
         private AddressableLoaderCharacterImageName _addressableLoaderCharacterImageName;
@@ -44,6 +43,7 @@ namespace GGemCo2DCore
             _lastSuperArmorValue = 0;
             _currentMonsterInstanceId = 0;
             _addressableLoaderCharacterImageName = AddressableLoaderCharacterImageName.Instance;
+            _shieldBreakCompletedHandler = OnShieldBreakEffectCompleted;
         }
 
         /// <summary>
@@ -79,14 +79,22 @@ namespace GGemCo2DCore
         /// <param name="showSuperArmor">슈퍼아머 UI 표시 여부입니다.</param>
         /// <remarks>
         /// 전역 전투 HUD는 한 번에 하나의 몬스터만 표시하므로 새 몬스터를 바인딩하기 전에 이전 구독을 정리합니다.
+        /// 동일한 몬스터와 표시 정책이 다시 전달되면 진행 중인 아이콘 연출을 보존하기 위해 재바인딩하지 않습니다.
         /// </remarks>
         public void Bind(Monster monster, bool showSuperArmor)
         {
-            Unbind();
             if (!monster)
+            {
+                Unbind();
+                return;
+            }
+
+            if (_boundMonster == monster && _boundShowSuperArmor == showSuperArmor)
             {
                 return;
             }
+
+            Unbind();
 
             _boundMonster = monster;
             _boundShowSuperArmor = showSuperArmor;
@@ -333,7 +341,7 @@ namespace GGemCo2DCore
                             shieldIcon.SetActive(false);
                         }
                     }
-                    else if (!_pendingShieldHideCoroutines.ContainsKey(shieldIcon))
+                    else if (!_pendingShieldHideIcons.Contains(shieldIcon))
                     {
                         shieldIcon.SetActive(false);
                     }
@@ -417,20 +425,40 @@ namespace GGemCo2DCore
                 return;
             }
 
-            float duration = vfxEffect.PlayOneShotEffect(forceReset: true);
-            if (duration <= 0f)
+            // 완료 콜백이 같은 프레임에 실행되는 짧은 클립 구성도 안전하게 처리하도록
+            // 재생 요청 전에 숨김 대기 상태를 먼저 등록합니다.
+            _pendingShieldHideIcons.Add(shieldIcon);
+            bool started = vfxEffect.PlayOneShotEffect(
+                _shieldBreakCompletedHandler,
+                forceReset: true);
+            if (!started)
             {
+                _pendingShieldHideIcons.Remove(shieldIcon);
                 shieldIcon.SetActive(false);
                 return;
             }
             if (!CanPlayShieldAnimation())
             {
+                CancelPendingShieldHide(shieldIcon);
                 shieldIcon.SetActive(false);
                 return;
             }
+        }
 
-            Coroutine coroutine = StartCoroutine(HideShieldIconAfterDelay(shieldIcon, duration));
-            _pendingShieldHideCoroutines[shieldIcon] = coroutine;
+        /// <summary>
+        /// 슈퍼아머 아이콘의 one-shot 애니메이션이 실제로 완료된 뒤 아이콘을 비활성화합니다.
+        /// </summary>
+        /// <param name="vfxEffect">재생을 완료한 UI VFX 컴포넌트입니다.</param>
+        private void OnShieldBreakEffectCompleted(VfxEffectUI vfxEffect)
+        {
+            if (vfxEffect == null) return;
+
+            GameObject shieldIcon = vfxEffect.gameObject;
+            if (shieldIcon == null) return;
+
+            // 복구 또는 값 재동기화로 취소된 아이콘은 숨기지 않습니다.
+            if (!_pendingShieldHideIcons.Remove(shieldIcon)) return;
+            shieldIcon.SetActive(false);
         }
 
         /// <summary>
@@ -448,54 +476,32 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 지정한 시간 대기 후 슈퍼아머 아이콘을 비활성화합니다.
-        /// </summary>
-        /// <param name="shieldIcon">비활성화할 아이콘입니다.</param>
-        /// <param name="delay">대기 시간(초)입니다.</param>
-        /// <returns>코루틴 열거자입니다.</returns>
-        private IEnumerator HideShieldIconAfterDelay(GameObject shieldIcon, float delay)
-        {
-            yield return new WaitForSeconds(delay);
-
-            if (shieldIcon != null)
-            {
-                shieldIcon.SetActive(false);
-            }
-
-            _pendingShieldHideCoroutines.Remove(shieldIcon);
-        }
-
-        /// <summary>
-        /// 특정 아이콘에 예약된 숨김 코루틴을 취소합니다.
+        /// 특정 아이콘에 예약된 one-shot 완료 후 숨김 처리를 취소합니다.
         /// </summary>
         /// <param name="shieldIcon">취소 대상 아이콘입니다.</param>
         private void CancelPendingShieldHide(GameObject shieldIcon)
         {
             if (shieldIcon == null) return;
-            if (!_pendingShieldHideCoroutines.TryGetValue(shieldIcon, out var coroutine)) return;
 
-            if (coroutine != null)
-            {
-                StopCoroutine(coroutine);
-            }
-
-            _pendingShieldHideCoroutines.Remove(shieldIcon);
+            VfxEffectUI vfxEffect = GetShieldVfxEffect(shieldIcon);
+            vfxEffect?.CancelOneShotEffect();
+            _pendingShieldHideIcons.Remove(shieldIcon);
         }
 
         /// <summary>
-        /// 예약된 모든 숨김 코루틴을 취소합니다.
+        /// 예약된 모든 one-shot 완료 후 숨김 처리를 취소합니다.
         /// </summary>
         private void CancelAllPendingShieldHide()
         {
-            foreach (var pair in _pendingShieldHideCoroutines)
+            foreach (GameObject shieldIcon in _pendingShieldHideIcons)
             {
-                if (pair.Value != null)
-                {
-                    StopCoroutine(pair.Value);
-                }
+                if (shieldIcon == null) continue;
+
+                VfxEffectUI vfxEffect = GetShieldVfxEffect(shieldIcon);
+                vfxEffect?.CancelOneShotEffect();
             }
 
-            _pendingShieldHideCoroutines.Clear();
+            _pendingShieldHideIcons.Clear();
         }
 
         /// <summary>
