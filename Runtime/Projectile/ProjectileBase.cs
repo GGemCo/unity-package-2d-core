@@ -284,6 +284,8 @@ namespace GGemCo2DCore
             PrevPos = StartPoint;
             Initialized = true;
 
+            LogLaunchDiagnostic();
+
             if (_hitCollider != null)
                 Physics2D.SyncTransforms();
 
@@ -370,9 +372,90 @@ namespace GGemCo2DCore
 
             if (ShouldDestroyWhenOutOfView && !IsInCameraView())
             {
-                GcLogger.Log("[Projectile] Out of camera view. Destroy.");
+                LogOutOfViewDiagnostic(newPos - delta);
                 Destroy(gameObject);
             }
+        }
+
+        /// <summary>
+        /// 발사 직후 재검증에 필요한 발사체 상태를 진단 로그로 기록합니다.
+        /// - 일반 릴리스 빌드의 로그 및 문자열 할당을 방지하기 위해 에디터 또는 Development Build에서만 실행합니다.
+        /// </summary>
+        private void LogLaunchDiagnostic()
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Camera cam = SceneGame.Instance != null ? SceneGame.Instance.mainCamera : null;
+            Vector3 viewportPosition = cam
+                ? cam.WorldToViewportPoint(transform.position)
+                : Vector3.zero;
+
+            string cameraInfo = cam
+                ? $"{cam.name}({cam.GetInstanceID()}), Position={cam.transform.position}, " +
+                  $"Orthographic={cam.orthographic}, OrthographicSize={cam.orthographicSize}, " +
+                  $"Aspect={cam.aspect}, Viewport={viewportPosition}"
+                : "None";
+
+            GcLogger.Log(
+                $"[ProjectileDebug][Launch] ProjectileUid={GetProjectileUidForDiagnostic()}, " +
+                $"Object={name}({GetInstanceID()}), Owner={GetCharacterLabelForDiagnostic(FromCharacter)}, " +
+                $"Target={GetCharacterLabelForDiagnostic(Runtime != null ? Runtime.Target : null)}, " +
+                $"SkillUid={SkillUid}, AttackId={AttackId}, Start={StartPoint}, TargetPoint={TargetPoint}, " +
+                $"Current={transform.position}, Direction={Direction}, Speed={Speed}, " +
+                $"JourneyLength={JourneyLength}, FixedTime={Time.fixedTime}, Camera=[{cameraInfo}]");
+#endif
+        }
+
+        /// <summary>
+        /// 화면 이탈로 제거되기 직전의 발사체와 카메라 상태를 진단 로그로 기록합니다.
+        /// - 일반 릴리스 빌드의 로그 및 문자열 할당을 방지하기 위해 에디터 또는 Development Build에서만 실행합니다.
+        /// </summary>
+        /// <param name="previousPosition">이번 물리 프레임의 이동 전 월드 좌표입니다.</param>
+        private void LogOutOfViewDiagnostic(Vector2 previousPosition)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Camera cam = SceneGame.Instance != null ? SceneGame.Instance.mainCamera : null;
+            Vector3 viewportPosition = cam
+                ? cam.WorldToViewportPoint(transform.position)
+                : Vector3.zero;
+
+            string cameraInfo = cam
+                ? $"{cam.name}({cam.GetInstanceID()}), Position={cam.transform.position}, " +
+                  $"Orthographic={cam.orthographic}, OrthographicSize={cam.orthographicSize}, " +
+                  $"Aspect={cam.aspect}, Viewport={viewportPosition}"
+                : "None";
+
+            GcLogger.Log(
+                $"[ProjectileDebug][OutOfViewDestroy] ProjectileUid={GetProjectileUidForDiagnostic()}, " +
+                $"Object={name}({GetInstanceID()}), Owner={GetCharacterLabelForDiagnostic(FromCharacter)}, " +
+                $"Target={GetCharacterLabelForDiagnostic(Runtime != null ? Runtime.Target : null)}, " +
+                $"SkillUid={SkillUid}, AttackId={AttackId}, Start={StartPoint}, TargetPoint={TargetPoint}, " +
+                $"Current={transform.position}, Previous={previousPosition}, Direction={Direction}, Speed={Speed}, " +
+                $"JourneyLength={JourneyLength}, Elapsed={Time.fixedTime - StartTime}, " +
+                $"FixedTime={Time.fixedTime}, Camera=[{cameraInfo}]");
+#else
+            GcLogger.Log("[Projectile] Out of camera view. Destroy.");
+#endif
+        }
+
+        /// <summary>
+        /// 진단 로그에 사용할 발사체 UID를 안전하게 반환합니다.
+        /// </summary>
+        /// <returns>테이블 정보가 유효하면 발사체 UID, 아니면 0입니다.</returns>
+        private int GetProjectileUidForDiagnostic()
+        {
+            return Info != null ? Info.Uid : 0;
+        }
+
+        /// <summary>
+        /// 진단 로그에서 캐릭터를 구분할 수 있도록 이름과 인스턴스 ID를 조합합니다.
+        /// </summary>
+        /// <param name="character">로그에 표시할 캐릭터입니다.</param>
+        /// <returns>캐릭터 식별 문자열이며, 참조가 없으면 <c>None</c>입니다.</returns>
+        private static string GetCharacterLabelForDiagnostic(CharacterBase character)
+        {
+            return character
+                ? $"{character.name}({character.GetInstanceID()})"
+                : "None";
         }
 
         /// <summary>
