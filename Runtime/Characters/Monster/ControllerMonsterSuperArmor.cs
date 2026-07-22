@@ -44,6 +44,7 @@ namespace GGemCo2DCore
         // anti multi-hit spam
         private float _perAttackConsumeCooldown;
         private int _lastAttackId;
+        private SuperArmorDamageCause _lastDamageCause;
         private float _lastAttackConsumeTime;
 
         private bool _initialized;
@@ -210,17 +211,6 @@ namespace GGemCo2DCore
                 return HitReactionDecision.NoReaction(CurrentStacks);
             }
 
-            // 같은 AttackId 다단 히트 과소/과대 방지(선택)
-            if (_perAttackConsumeCooldown > 0f && hit.AttackId != 0)
-            {
-                if (_lastAttackId == hit.AttackId)
-                {
-                    float dt = Time.time - _lastAttackConsumeTime;
-                    if (dt < _perAttackConsumeCooldown)
-                        return HitReactionDecision.NoReaction(CurrentStacks);
-                }
-            }
-
             int before = _owner.CurrentSuperArmor.Value;
 
             // 0인 상태에서의 피격: 슈퍼아머가 없으므로 리액션 발생
@@ -235,40 +225,22 @@ namespace GGemCo2DCore
                 return HitReactionDecision.NoReaction(0);
             }
 
-            // 슈퍼아머 소모(overspend 방지: 남은 만큼만 소비)
-            int spend = hit.StaggerStackDamage;
-            if (spend > before) spend = before;
-
-            _owner.TrySpendSuperArmor(spend);
-
-            _nextRegenTime = Time.time + _regenDelay;
-
-            if (_perAttackConsumeCooldown > 0f && hit.AttackId != 0)
+            if (!TryConsumeSuperArmor(
+                    hit.StaggerStackDamage,
+                    hit.AttackId,
+                    SuperArmorDamageCause.IncomingHit,
+                    hit.ReactionType,
+                    triggerBreak: !ignoreReactionByStatus,
+                    out SuperArmorDamageResult damageResult))
             {
-                _lastAttackId = hit.AttackId;
-                _lastAttackConsumeTime = Time.time;
+                return HitReactionDecision.NoReaction(CurrentStacks);
             }
 
-            long after = _owner.CurrentSuperArmor.Value;
-
-            // UI/디버그
-            FireStacksChangedIfDifferent(before, after);
-
-            // 브레이크: 0 도달 시 “무조건” 리액션
-            if (after <= 0)
+            // 브레이크: 0 도달 시 외부 상태가 허용하는 경우에만 리액션을 실행한다.
+            if (damageResult.WasBroken)
             {
                 if (!ignoreReactionByStatus)
                 {
-                    BreakTriggered?.Invoke(hit.ReactionType);
-
-                    if (ShouldRestoreToMaxOnBreak())
-                    {
-                        if (!TryScheduleRestoreToMaxAfterGroggy())
-                        {
-                            RestoreToMax();
-                        }
-                    }
-
                     return new HitReactionDecision(true, CurrentStacks, true, hit.ReactionType);
                 }
 
@@ -277,6 +249,116 @@ namespace GGemCo2DCore
 
             // 아직 슈퍼아머가 남아있으면 리액션 없음
             return new HitReactionDecision(true, CurrentStacks, false, CharacterConstants.HitReactionType.None);
+        }
+
+        /// <summary>
+        /// 외부 전투 정책에서 전달한 요청으로 슈퍼아머를 차감합니다.
+        /// </summary>
+        /// <param name="request">적용할 슈퍼아머 차감 요청입니다.</param>
+        /// <param name="result">실제 차감 및 브레이크 처리 결과입니다.</param>
+        /// <returns>슈퍼아머가 실제로 차감되었으면 <see langword="true"/>입니다.</returns>
+        public bool TryApplySuperArmorDamage(
+            in SuperArmorDamageRequest request,
+            out SuperArmorDamageResult result)
+        {
+            result = SuperArmorDamageResult.None;
+            if (!_isSuperArmorEnabled || request.Amount <= 0)
+            {
+                return false;
+            }
+
+            EnsureInitialized();
+            if (!_owner)
+            {
+                return false;
+            }
+
+            return TryConsumeSuperArmor(
+                request.Amount,
+                request.AttackId,
+                request.Cause,
+                request.BreakReactionType,
+                triggerBreak: true,
+                out result);
+        }
+
+        /// <summary>
+        /// 슈퍼아머 수치를 차감하고 재생 지연, 브레이크, 최대 복구 정책을 공통으로 처리합니다.
+        /// </summary>
+        /// <param name="amount">차감할 슈퍼아머 수치입니다.</param>
+        /// <param name="attackId">동일 공격 판정을 구분하는 식별자입니다.</param>
+        /// <param name="cause">슈퍼아머 차감이 발생한 원인입니다.</param>
+        /// <param name="breakReactionType">브레이크에 전달할 피격 리액션 타입입니다.</param>
+        /// <param name="triggerBreak">0 도달 시 브레이크 이벤트와 복구 정책을 실행할지 여부입니다.</param>
+        /// <param name="result">실제 차감 및 브레이크 처리 결과입니다.</param>
+        /// <returns>슈퍼아머가 실제로 차감되었으면 <see langword="true"/>입니다.</returns>
+        private bool TryConsumeSuperArmor(
+            int amount,
+            int attackId,
+            SuperArmorDamageCause cause,
+            CharacterConstants.HitReactionType breakReactionType,
+            bool triggerBreak,
+            out SuperArmorDamageResult result)
+        {
+            result = SuperArmorDamageResult.None;
+            if (!_owner || amount <= 0)
+            {
+                return false;
+            }
+
+            // 동일 공격의 다중 Collider 또는 다단 판정이 설정된 쿨다운 안에서 중복 차감되지 않도록 합니다.
+            if (_perAttackConsumeCooldown > 0f &&
+                attackId != 0 &&
+                _lastAttackId == attackId &&
+                _lastDamageCause == cause)
+            {
+                float elapsed = Time.time - _lastAttackConsumeTime;
+                if (elapsed < _perAttackConsumeCooldown)
+                {
+                    return false;
+                }
+            }
+
+            int before = _owner.CurrentSuperArmor.Value;
+            if (before <= 0)
+            {
+                return false;
+            }
+
+            // 남은 슈퍼아머보다 큰 요청은 현재 남은 수치만큼만 차감합니다.
+            int spend = Mathf.Min(amount, before);
+            if (!_owner.TrySpendSuperArmor(spend))
+            {
+                return false;
+            }
+
+            _nextRegenTime = Time.time + _regenDelay;
+
+            if (_perAttackConsumeCooldown > 0f && attackId != 0)
+            {
+                _lastAttackId = attackId;
+                _lastDamageCause = cause;
+                _lastAttackConsumeTime = Time.time;
+            }
+
+            int after = _owner.CurrentSuperArmor.Value;
+            bool wasBroken = after <= 0;
+            FireStacksChangedIfDifferent(before, after);
+
+            result = new SuperArmorDamageResult(before, after, before - after, wasBroken);
+            if (!wasBroken || !triggerBreak)
+            {
+                return result.WasApplied;
+            }
+
+            BreakTriggered?.Invoke(breakReactionType);
+
+            if (ShouldRestoreToMaxOnBreak() && !TryScheduleRestoreToMaxAfterGroggy())
+            {
+                RestoreToMax();
+            }
+
+            return result.WasApplied;
         }
 
         /// <summary>

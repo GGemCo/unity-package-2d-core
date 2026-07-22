@@ -369,6 +369,25 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 외부 전투 정책에서 전달한 요청으로 현재 캐릭터의 슈퍼아머를 차감합니다.
+        /// </summary>
+        /// <param name="request">적용할 슈퍼아머 차감 요청입니다.</param>
+        /// <param name="result">실제 차감 및 브레이크 처리 결과입니다.</param>
+        /// <returns>슈퍼아머가 실제로 차감되었으면 <see langword="true"/>입니다.</returns>
+        public bool TryApplySuperArmorDamage(
+            in SuperArmorDamageRequest request,
+            out SuperArmorDamageResult result)
+        {
+            result = SuperArmorDamageResult.None;
+            if (_controllerMonsterSuperArmor == null || !_characterBase || !_characterBase.IsMonster())
+            {
+                return false;
+            }
+
+            return _controllerMonsterSuperArmor.TryApplySuperArmorDamage(in request, out result);
+        }
+
+        /// <summary>
         /// 데미지 타입에 따라 데미지 텍스트 색상을 결정합니다.
         /// </summary>
         /// <param name="damageType">데미지 타입입니다.</param>

@@ -9,7 +9,7 @@ namespace GGemCo2DCore
     /// 플레이어, 몬스터, NPC가 공유하는 공용 캐릭터 기반 클래스입니다.
     /// 2D 코어 시스템의 초기화, 전투, 표현, 애니메이션 이벤트를 partial 구현으로 나누어 제공합니다.
     /// </summary>
-    public partial class CharacterBase : CharacterStat, ICharacterActionController
+    public partial class CharacterBase : CharacterStat, ICharacterActionController, ISuperArmorDamageReceiver
     {
         /// <summary>
         /// CharacterBase 초기화 완료 여부입니다.
