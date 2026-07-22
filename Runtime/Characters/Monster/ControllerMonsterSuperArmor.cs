@@ -38,6 +38,7 @@ namespace GGemCo2DCore
         private float _regenInterval;
         private int _regenPerTick;
         private CharacterConstants.StaggerBreakResetMode _breakResetMode;
+        private bool _consumeSuperArmorOnIncomingHit = true;
 
         private float _nextRegenTime;
 
@@ -83,14 +84,21 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 테이블/런타임 초기화용.
+        /// 슈퍼아머의 재생, 브레이크, 일반 피격 차감 정책을 초기화합니다.
         /// </summary>
+        /// <param name="regenDelay">슈퍼아머 재생을 시작하기 전 대기 시간입니다.</param>
+        /// <param name="regenInterval">슈퍼아머 재생 틱 간격입니다.</param>
+        /// <param name="regenPerTick">재생 틱당 회복할 슈퍼아머 수치입니다.</param>
+        /// <param name="breakResetMode">슈퍼아머 브레이크 이후 적용할 복구 모드입니다.</param>
+        /// <param name="perAttackConsumeCooldown">동일 공격 판정의 중복 차감을 막을 시간입니다.</param>
+        /// <param name="consumeSuperArmorOnIncomingHit">일반 피격으로 슈퍼아머를 차감할지 여부입니다.</param>
         public void InitializeData(
             float regenDelay,
             float regenInterval,
             int regenPerTick,
             CharacterConstants.StaggerBreakResetMode breakResetMode,
-            float perAttackConsumeCooldown = 0f)
+            float perAttackConsumeCooldown = 0f,
+            bool consumeSuperArmorOnIncomingHit = true)
         {
             CancelPendingRestoreToMax();
             _regenDelay = regenDelay;
@@ -98,6 +106,7 @@ namespace GGemCo2DCore
             _regenPerTick = regenPerTick;
             _breakResetMode = breakResetMode;
             _perAttackConsumeCooldown = perAttackConsumeCooldown;
+            _consumeSuperArmorOnIncomingHit = consumeSuperArmorOnIncomingHit;
 
             _nextRegenTime = Time.time + _regenDelay;
             _initialized = true;
@@ -108,7 +117,7 @@ namespace GGemCo2DCore
         /// <summary>
         /// 몬스터 설정 값을 컨트롤러 내부 파라미터로 적용합니다.
         /// </summary>
-        /// <param name="monsterSettings">슈퍼아머 재생성/회복/브레이크 관련 설정입니다.</param>
+        /// <param name="monsterSettings">슈퍼아머 재생, 회복, 브레이크, 일반 피격 차감 설정입니다.</param>
         public void ApplyConfig(GGemCoMonsterSettings monsterSettings)
         {
             if (monsterSettings == null) return;
@@ -120,7 +129,8 @@ namespace GGemCo2DCore
                 regenPerTick: monsterSettings.regenPerTick,
                 // breakResetMode는 브레이크 시점에 현재 Grade로 다시 판정합니다.
                 breakResetMode: monsterSettings.breakResetMode,
-                perAttackConsumeCooldown: monsterSettings.perAttackConsumeCooldown);
+                perAttackConsumeCooldown: monsterSettings.perAttackConsumeCooldown,
+                consumeSuperArmorOnIncomingHit: monsterSettings.ConsumeSuperArmorOnIncomingHit);
         }
 
         /// <summary>
@@ -130,7 +140,8 @@ namespace GGemCo2DCore
         {
             InitializeData(regenDelay: 0f, regenInterval: 0f, regenPerTick: 0,
                 breakResetMode: CharacterConstants.StaggerBreakResetMode.KeepZero,
-                perAttackConsumeCooldown: 0f);
+                perAttackConsumeCooldown: 0f,
+                consumeSuperArmorOnIncomingHit: true);
         }
 
         /// <summary>
@@ -223,6 +234,13 @@ namespace GGemCo2DCore
                 }
 
                 return HitReactionDecision.NoReaction(0);
+            }
+
+            // 일반 피격 차감이 비활성화되어도 보유 중인 슈퍼아머의 피격 리액션 무시 정책은 유지합니다.
+            // 저스트 가드와 같은 외부 차감 요청은 별도 API를 사용하므로 이 설정의 영향을 받지 않습니다.
+            if (!_consumeSuperArmorOnIncomingHit)
+            {
+                return HitReactionDecision.NoReaction(before);
             }
 
             if (!TryConsumeSuperArmor(

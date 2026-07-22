@@ -134,6 +134,9 @@ namespace GGemCo2DCore
         [SerializeField] private bool resetToRegenPositionOnCullingBrainReset = false;
 
         [Header("Supper Armor")]
+        [Tooltip("일반 피격의 경직 수치로 몬스터 슈퍼아머를 차감할지 여부입니다.")]
+        [SerializeField] private bool consumeSuperArmorOnIncomingHit = true;
+
         [Tooltip("스택이 깎인 이후, 회복을 시작하기까지 대기 시간(초)")]
         [Min(0f)] public float regenDelay = 0f;
 
@@ -149,6 +152,11 @@ namespace GGemCo2DCore
 
         [Tooltip("같은 AttackId가 매우 짧은 시간에 여러 번 들어올 때 스택이 과도하게 깎이는 것을 방지(초). 0이면 비활성.")]
         [Min(0f)] public float perAttackConsumeCooldown = 0f;
+
+        /// <summary>
+        /// 일반 피격의 경직 수치로 몬스터 슈퍼아머를 차감할지 여부입니다.
+        /// </summary>
+        public bool ConsumeSuperArmorOnIncomingHit => consumeSuperArmorOnIncomingHit;
 
         /// <summary>
         /// 슈퍼아머 브레이크 리셋 모드 적용 대상 등급(비트 마스크)입니다.
