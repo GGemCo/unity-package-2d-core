@@ -55,6 +55,8 @@ namespace GGemCo2DCore
         private readonly List<Transform> _segments = new();
         private readonly List<GameObject> _runtimeClones = new();
         private readonly List<Transform> _actorResidencyAnchors = new();
+        private readonly List<Transform> _recycleCandidates = new();
+        private readonly List<float> _recycleCandidateEdges = new();
 
         private float _debugElapsedTime;
         private bool _isRuntimeClone;
@@ -62,6 +64,7 @@ namespace GGemCo2DCore
         private bool _hasPreviousLoopCameraPosition;
         private Camera _previousLoopCamera;
         private Vector3 _previousLoopCameraPosition;
+        private Vector3 _autoMoveStartAxis;
         private MapTileCommon _mapTileCommon;
 
         /// <summary>
@@ -201,6 +204,7 @@ namespace GGemCo2DCore
                 return;
             }
 
+            _autoMoveStartAxis = autoMoveStartAxis;
             CreateRuntimeClones(-autoMoveStartAxis, preloadCloneCountOppositeAutoMoveStartDirection);
             CreateRuntimeClones(autoMoveStartAxis, preloadCloneCountAutoMoveStartDirection);
 
@@ -312,6 +316,24 @@ namespace GGemCo2DCore
             }
 
             Vector3 spawnAxis = -recycleAxis;
+            CollectRecycleCandidates(recycleAxis, residencyForwardEdge + recyclePadding);
+
+            int protectedCloneCount = ResolveProtectedPreloadCloneCount(recycleAxis);
+            int recycleCount = Mathf.Max(0, _recycleCandidates.Count - protectedCloneCount);
+            RecycleFurthestCandidates(spawnAxis, recycleCount);
+        }
+
+        /// <summary>
+        /// 카메라와 캐릭터 유지 범위를 완전히 벗어난 배경 조각을 재배치 후보 목록에 수집합니다.
+        /// 후보 목록은 필드 컬렉션을 비운 뒤 재사용하여 반복 프레임의 관리 힙 할당을 방지합니다.
+        /// </summary>
+        /// <param name="recycleAxis">배경 조각이 화면 밖으로 빠져나가는 월드 방향입니다.</param>
+        /// <param name="recycleBoundary">이 값을 초과하면 재배치 후보로 판정할 투영 좌표입니다.</param>
+        private void CollectRecycleCandidates(Vector3 recycleAxis, float recycleBoundary)
+        {
+            _recycleCandidates.Clear();
+            _recycleCandidateEdges.Clear();
+
             for (int i = 0; i < _segments.Count; i++)
             {
                 Transform segment = _segments[i];
@@ -325,13 +347,83 @@ namespace GGemCo2DCore
                     continue;
                 }
 
-                if (segmentBackEdge <= residencyForwardEdge + recyclePadding)
+                if (segmentBackEdge <= recycleBoundary)
                 {
                     continue;
                 }
 
-                PlaceSegmentAfterLast(segment, spawnAxis);
+                _recycleCandidates.Add(segment);
+                _recycleCandidateEdges.Add(segmentBackEdge);
             }
+        }
+
+        /// <summary>
+        /// 현재 이탈 방향에 남겨야 하는 최소 사전 복제 조각 수를 반환합니다.
+        /// 자동 이동 시작 방향과 반대 방향이 아닌 축에서는 별도 보호 수를 적용하지 않습니다.
+        /// </summary>
+        /// <param name="recycleAxis">배경 조각이 화면 밖으로 빠져나가는 월드 방향입니다.</param>
+        /// <returns>현재 방향에서 재배치하지 않고 유지할 최소 조각 수입니다.</returns>
+        private int ResolveProtectedPreloadCloneCount(Vector3 recycleAxis)
+        {
+            float alignment = Vector3.Dot(recycleAxis, _autoMoveStartAxis);
+            if (alignment > DirectionEpsilon)
+            {
+                return preloadCloneCountAutoMoveStartDirection;
+            }
+
+            if (alignment < -DirectionEpsilon)
+            {
+                return preloadCloneCountOppositeAutoMoveStartDirection;
+            }
+
+            return 0;
+        }
+
+        /// <summary>
+        /// 보호 수를 초과한 재배치 후보 중 화면에서 가장 멀리 벗어난 조각부터 반대편 끝으로 옮깁니다.
+        /// </summary>
+        /// <param name="spawnAxis">재활용할 조각을 이어 붙일 월드 방향입니다.</param>
+        /// <param name="recycleCount">이번 프레임에 재배치할 최대 조각 수입니다.</param>
+        private void RecycleFurthestCandidates(Vector3 spawnAxis, int recycleCount)
+        {
+            for (int recycleIndex = 0; recycleIndex < recycleCount; recycleIndex++)
+            {
+                int furthestCandidateIndex = FindFurthestRecycleCandidateIndex();
+                if (furthestCandidateIndex < 0)
+                {
+                    return;
+                }
+
+                Transform segment = _recycleCandidates[furthestCandidateIndex];
+                PlaceSegmentAfterLast(segment, spawnAxis);
+
+                _recycleCandidates.RemoveAt(furthestCandidateIndex);
+                _recycleCandidateEdges.RemoveAt(furthestCandidateIndex);
+            }
+        }
+
+        /// <summary>
+        /// 현재 재배치 후보 중 유지 범위에서 가장 멀리 벗어난 조각의 인덱스를 찾습니다.
+        /// </summary>
+        /// <returns>가장 먼 후보의 인덱스이며, 후보가 없으면 -1입니다.</returns>
+        private int FindFurthestRecycleCandidateIndex()
+        {
+            int furthestIndex = -1;
+            float furthestEdge = float.NegativeInfinity;
+
+            for (int i = 0; i < _recycleCandidateEdges.Count; i++)
+            {
+                float candidateEdge = _recycleCandidateEdges[i];
+                if (candidateEdge <= furthestEdge)
+                {
+                    continue;
+                }
+
+                furthestEdge = candidateEdge;
+                furthestIndex = i;
+            }
+
+            return furthestIndex;
         }
 
         /// <summary>
@@ -716,6 +808,9 @@ namespace GGemCo2DCore
 
             _runtimeClones.Clear();
             _segments.Clear();
+            _recycleCandidates.Clear();
+            _recycleCandidateEdges.Clear();
+            _autoMoveStartAxis = Vector3.zero;
             _isInfiniteLoopInitialized = false;
         }
 
