@@ -20,10 +20,11 @@ namespace GGemCo2DCore
         [SerializeField] private bool useInfiniteLoop = true;
         [Tooltip("반복 범위를 판정할 카메라입니다. 비워두면 SceneGame의 메인 카메라, 그다음 Camera.main을 사용합니다.")]
         [SerializeField] private Camera loopCamera;
-        [Tooltip("시작할 때 이동 방향의 반대편에 미리 생성할 반복 배경 복제본 수입니다.")]
-        [SerializeField, Min(0)] private int preloadCloneCountOppositeMoveDirection = 1;
-        [Tooltip("시작할 때 이동 방향 쪽에 미리 생성할 반복 배경 복제본 수입니다.")]
-        [SerializeField, Min(0)] private int preloadCloneCountMoveDirection;
+        [Tooltip("시작할 때 GGemCoSettings.autoMoveStartDirection의 반대편에 미리 생성할 반복 배경 복제본 수입니다.")]
+        [SerializeField, Min(0)] private int preloadCloneCountOppositeAutoMoveStartDirection = 1;
+        [Tooltip("시작할 때 GGemCoSettings.autoMoveStartDirection 쪽에 미리 생성할 반복 배경 복제본 수입니다.")]
+        [FormerlySerializedAs("preloadCloneCountMoveDirection")]
+        [SerializeField, Min(0)] private int preloadCloneCountAutoMoveStartDirection;
         [Tooltip("이어지는 배경 조각 사이에 추가할 간격입니다. 이동 축 기준 월드 유닛으로 적용합니다.")]
         [SerializeField, Min(0f)] private float segmentSpacing = 0f;
         [Tooltip("배경 조각이 유지 범위를 완전히 벗어난 뒤 재배치되기까지 허용할 여유 거리입니다.")]
@@ -64,12 +65,12 @@ namespace GGemCo2DCore
         private MapTileCommon _mapTileCommon;
 
         /// <summary>
-        /// 새로 추가하거나 Reset한 컴포넌트가 이동 방향 양쪽에 반복 배경을 하나씩 준비하도록 기본값을 설정합니다.
+        /// 새로 추가하거나 Reset한 컴포넌트가 자동 이동 시작 방향 양쪽에 반복 배경을 하나씩 준비하도록 기본값을 설정합니다.
         /// </summary>
         private void Reset()
         {
-            preloadCloneCountOppositeMoveDirection = 1;
-            preloadCloneCountMoveDirection = 1;
+            preloadCloneCountOppositeAutoMoveStartDirection = 1;
+            preloadCloneCountAutoMoveStartDirection = 1;
         }
 
         /// <summary>
@@ -77,14 +78,15 @@ namespace GGemCo2DCore
         /// </summary>
         private void OnValidate()
         {
-            preloadCloneCountOppositeMoveDirection = Mathf.Max(0, preloadCloneCountOppositeMoveDirection);
-            preloadCloneCountMoveDirection = Mathf.Max(0, preloadCloneCountMoveDirection);
+            preloadCloneCountOppositeAutoMoveStartDirection =
+                Mathf.Max(0, preloadCloneCountOppositeAutoMoveStartDirection);
+            preloadCloneCountAutoMoveStartDirection = Mathf.Max(0, preloadCloneCountAutoMoveStartDirection);
             if (useInfiniteLoop &&
-                preloadCloneCountOppositeMoveDirection == 0 &&
-                preloadCloneCountMoveDirection == 0)
+                preloadCloneCountOppositeAutoMoveStartDirection == 0 &&
+                preloadCloneCountAutoMoveStartDirection == 0)
             {
-                // 반복 배경에 복제본이 하나도 없으면 재배치가 동작하지 않으므로 기존 방향에 최소 한 개를 유지합니다.
-                preloadCloneCountOppositeMoveDirection = 1;
+                // 반복 배경에 복제본이 하나도 없으면 재배치가 동작하지 않으므로 시작 방향 반대편에 최소 한 개를 유지합니다.
+                preloadCloneCountOppositeAutoMoveStartDirection = 1;
             }
 
             segmentSpacing = Mathf.Max(0f, segmentSpacing);
@@ -175,7 +177,8 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 현재 방향 값을 기준으로 런타임 반복 배경에 사용할 원본과 복사본 목록을 구성합니다.
+        /// 전역 자동 이동 시작 방향을 기준으로 런타임 반복 배경에 사용할 원본과 복사본 목록을 구성합니다.
+        /// 설정 로더가 아직 준비되지 않았으면 잘못된 방향으로 복제하지 않고 다음 Update에서 초기화를 다시 시도합니다.
         /// </summary>
         private void InitializeInfiniteLoop()
         {
@@ -187,16 +190,44 @@ namespace GGemCo2DCore
             _segments.Clear();
             _segments.Add(transform);
 
-            if (!TryResolveWorldMoveAxis(out Vector3 moveAxis))
+            if (!TryResolveWorldMoveAxis(out _))
             {
                 _isInfiniteLoopInitialized = true;
                 return;
             }
 
-            CreateRuntimeClones(-moveAxis, preloadCloneCountOppositeMoveDirection);
-            CreateRuntimeClones(moveAxis, preloadCloneCountMoveDirection);
+            if (!TryResolveAutoMoveStartAxis(out Vector3 autoMoveStartAxis))
+            {
+                return;
+            }
+
+            CreateRuntimeClones(-autoMoveStartAxis, preloadCloneCountOppositeAutoMoveStartDirection);
+            CreateRuntimeClones(autoMoveStartAxis, preloadCloneCountAutoMoveStartDirection);
 
             _isInfiniteLoopInitialized = true;
+        }
+
+        /// <summary>
+        /// 로드된 메인 설정의 자동 이동 시작 방향을 월드 X축 방향으로 변환합니다.
+        /// </summary>
+        /// <param name="startAxis">왼쪽이면 월드 X축 음의 방향, 오른쪽이면 양의 방향입니다.</param>
+        /// <returns>메인 설정이 준비되어 방향을 확인할 수 있으면 <see langword="true"/>를 반환합니다.</returns>
+        private static bool TryResolveAutoMoveStartAxis(out Vector3 startAxis)
+        {
+            GGemCoSettings settings = AddressableLoaderSettings.Instance != null
+                ? AddressableLoaderSettings.Instance.settings
+                : null;
+
+            if (settings == null)
+            {
+                startAxis = Vector3.zero;
+                return false;
+            }
+
+            startAxis = settings.autoMoveStartDirection == AutoMoveDirection.Left
+                ? Vector3.left
+                : Vector3.right;
+            return true;
         }
 
         /// <summary>
