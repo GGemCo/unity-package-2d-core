@@ -9,26 +9,41 @@ namespace GGemCo2DCore
     public class ParallaxDefault : MonoBehaviour
     {
         [Header("Move")]
+        [Tooltip("배경의 이동 속도입니다. direction을 정규화한 뒤 초당 로컬 유닛으로 적용합니다.")]
         [SerializeField] private float speed = 1f;
+        [Tooltip("배경이 이동할 로컬 방향입니다. 벡터의 크기는 이동 속도에 영향을 주지 않습니다.")]
         [SerializeField] private Vector3 direction = Vector3.left;
 
         [Header("Infinite Loop")]
+        [Tooltip("배경 조각을 이어 붙이고 화면을 벗어난 조각을 재배치하여 무한 반복할지 여부입니다.")]
         [SerializeField] private bool useInfiniteLoop = true;
+        [Tooltip("반복 범위를 판정할 카메라입니다. 비워두면 SceneGame의 메인 카메라, 그다음 Camera.main을 사용합니다.")]
         [SerializeField] private Camera loopCamera;
+        [Tooltip("시작할 때 원본 뒤에 미리 생성할 반복 배경 복제본 수입니다.")]
         [SerializeField, Min(1)] private int preloadCloneCount = 1;
+        [Tooltip("이어지는 배경 조각 사이에 추가할 간격입니다. 이동 축 기준 월드 유닛으로 적용합니다.")]
         [SerializeField, Min(0f)] private float segmentSpacing = 0f;
+        [Tooltip("배경 조각이 유지 범위를 완전히 벗어난 뒤 재배치되기까지 허용할 여유 거리입니다.")]
         [SerializeField, Min(0f)] private float recyclePadding = 0f;
+        [Tooltip("카메라와 배경의 상대 이동 방향을 기준으로 배경 조각의 재배치 방향을 결정할지 여부입니다.")]
         [SerializeField] private bool useCameraRelativeLoopDirection = true;
+        [Tooltip("카메라 기준 상대 이동 방향이 반대로 바뀌었다고 판단할 최소 이동량입니다.")]
         [SerializeField, Min(0f)] private float cameraRelativeDirectionThreshold = 0.001f;
 
         [Header("Actor Residency")]
+        [Tooltip("현재 맵의 캐릭터 위치까지 배경 유지 범위에 포함하여 캐릭터 주변 조각의 조기 재배치를 방지할지 여부입니다.")]
         [SerializeField] private bool useActorResidencyAnchors = true;
+        [Tooltip("각 캐릭터 위치를 기준으로 배경 유지 범위에 추가할 여유 거리입니다.")]
         [SerializeField, Min(0f)] private float actorResidencyPadding = 2f;
+        [Tooltip("비활성화된 캐릭터의 위치도 배경 유지 범위 계산에 포함할지 여부입니다.")]
         [SerializeField] private bool includeInactiveActorResidencyAnchors;
 
         [Header("Debug")]
+        [Tooltip("지정한 주기마다 월드 이동 속도와 화면 픽셀 이동 속도를 Console에 출력할지 여부입니다.")]
         [SerializeField] private bool enableDebugLog = false;
+        [Tooltip("화면 픽셀 이동 속도를 계산할 카메라입니다. 비워두면 Camera.main을 사용합니다.")]
         [SerializeField] private Camera debugCamera;
+        [Tooltip("디버그 이동 정보를 출력하는 시간 간격입니다(초).")]
         [SerializeField] private float debugLogInterval = 1f;
 
         private const float DirectionEpsilon = 0.0001f;
