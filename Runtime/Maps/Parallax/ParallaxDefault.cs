@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace GGemCo2DCore
 {
@@ -19,8 +20,10 @@ namespace GGemCo2DCore
         [SerializeField] private bool useInfiniteLoop = true;
         [Tooltip("반복 범위를 판정할 카메라입니다. 비워두면 SceneGame의 메인 카메라, 그다음 Camera.main을 사용합니다.")]
         [SerializeField] private Camera loopCamera;
-        [Tooltip("시작할 때 원본 뒤에 미리 생성할 반복 배경 복제본 수입니다.")]
-        [SerializeField, Min(1)] private int preloadCloneCount = 1;
+        [Tooltip("시작할 때 이동 방향의 반대편에 미리 생성할 반복 배경 복제본 수입니다.")]
+        [SerializeField, Min(0)] private int preloadCloneCountOppositeMoveDirection = 1;
+        [Tooltip("시작할 때 이동 방향 쪽에 미리 생성할 반복 배경 복제본 수입니다.")]
+        [SerializeField, Min(0)] private int preloadCloneCountMoveDirection;
         [Tooltip("이어지는 배경 조각 사이에 추가할 간격입니다. 이동 축 기준 월드 유닛으로 적용합니다.")]
         [SerializeField, Min(0f)] private float segmentSpacing = 0f;
         [Tooltip("배경 조각이 유지 범위를 완전히 벗어난 뒤 재배치되기까지 허용할 여유 거리입니다.")]
@@ -61,11 +64,29 @@ namespace GGemCo2DCore
         private MapTileCommon _mapTileCommon;
 
         /// <summary>
+        /// 새로 추가하거나 Reset한 컴포넌트가 이동 방향 양쪽에 반복 배경을 하나씩 준비하도록 기본값을 설정합니다.
+        /// </summary>
+        private void Reset()
+        {
+            preloadCloneCountOppositeMoveDirection = 1;
+            preloadCloneCountMoveDirection = 1;
+        }
+
+        /// <summary>
         /// 인스펙터에서 반복 배경 설정값이 유효 범위를 벗어나지 않도록 보정합니다.
         /// </summary>
         private void OnValidate()
         {
-            preloadCloneCount = Mathf.Max(1, preloadCloneCount);
+            preloadCloneCountOppositeMoveDirection = Mathf.Max(0, preloadCloneCountOppositeMoveDirection);
+            preloadCloneCountMoveDirection = Mathf.Max(0, preloadCloneCountMoveDirection);
+            if (useInfiniteLoop &&
+                preloadCloneCountOppositeMoveDirection == 0 &&
+                preloadCloneCountMoveDirection == 0)
+            {
+                // 반복 배경에 복제본이 하나도 없으면 재배치가 동작하지 않으므로 기존 방향에 최소 한 개를 유지합니다.
+                preloadCloneCountOppositeMoveDirection = 1;
+            }
+
             segmentSpacing = Mathf.Max(0f, segmentSpacing);
             recyclePadding = Mathf.Max(0f, recyclePadding);
             cameraRelativeDirectionThreshold = Mathf.Max(0f, cameraRelativeDirectionThreshold);
@@ -172,17 +193,27 @@ namespace GGemCo2DCore
                 return;
             }
 
-            Vector3 spawnAxis = -moveAxis;
-            for (int i = 0; i < preloadCloneCount; i++)
-            {
-                CreateRuntimeClone(spawnAxis);
-            }
+            CreateRuntimeClones(-moveAxis, preloadCloneCountOppositeMoveDirection);
+            CreateRuntimeClones(moveAxis, preloadCloneCountMoveDirection);
 
             _isInfiniteLoopInitialized = true;
         }
 
         /// <summary>
-        /// 원본 오브젝트를 복사하고, 이동 방향의 반대편 끝에 붙여 다음 배경 조각으로 사용합니다.
+        /// 지정한 방향에 필요한 수만큼 반복 배경 복제본을 이어 붙입니다.
+        /// </summary>
+        /// <param name="spawnAxis">복제본을 이어 붙일 월드 방향입니다.</param>
+        /// <param name="cloneCount">생성할 복제본 수입니다.</param>
+        private void CreateRuntimeClones(Vector3 spawnAxis, int cloneCount)
+        {
+            for (int i = 0; i < cloneCount; i++)
+            {
+                CreateRuntimeClone(spawnAxis);
+            }
+        }
+
+        /// <summary>
+        /// 원본 오브젝트를 복사하고, 지정한 방향의 마지막 조각 뒤에 붙여 반복 배경으로 사용합니다.
         /// </summary>
         /// <param name="spawnAxis">새 배경 조각을 배치할 월드 방향입니다.</param>
         private void CreateRuntimeClone(Vector3 spawnAxis)
