@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -22,6 +22,230 @@ namespace GGemCo2DCore
             {
                 ItemCounts = new Dictionary<int, SaveDataIcon>(saveDataContainer.InventoryData.ItemCounts);
             }
+        }
+
+        /// <summary>
+        /// 여러 아이템 지급 항목을 모두 검증한 뒤 인벤토리에 한 번에 반영합니다.
+        /// </summary>
+        /// <remarks>
+        /// 지급 도중 일부 항목만 적용되는 상황을 방지하기 위해 복제된 슬롯 데이터에서 먼저 배치를 계산합니다.
+        /// 재화 아이템은 PlayerData를 변경하므로 인벤토리 원자성 범위에 포함하지 않고 지급을 거부합니다.
+        /// </remarks>
+        /// <param name="entries">지급할 아이템 UID와 수량 목록입니다.</param>
+        /// <returns>성공 시 변경된 슬롯 아이콘 목록을 포함한 결과입니다.</returns>
+        internal ResultCommon TryApplyGrantItems(IReadOnlyList<InventoryGrantEntry> entries)
+        {
+            if (entries == null || entries.Count == 0)
+            {
+                return ResultCommon.Fail(
+                    "Inventory_GrantEmpty",
+                    "[InventoryData] 지급할 인벤토리 아이템이 없습니다.");
+            }
+
+            if (TableLoaderManager == null || MaxSlotCount <= 0)
+            {
+                return ResultCommon.Fail(
+                    "Inventory_GrantNotReady",
+                    "[InventoryData] 아이템 테이블 또는 인벤토리 슬롯이 준비되지 않았습니다.");
+            }
+
+            Dictionary<int, int> mergedCountsByUid = new Dictionary<int, int>();
+            for (int i = 0; i < entries.Count; i++)
+            {
+                InventoryGrantEntry entry = entries[i];
+                if (entry.ItemUid <= 0 || entry.Count <= 0)
+                {
+                    return ResultCommon.Fail(
+                        "Inventory_InvalidGrantItem",
+                        $"[InventoryData] 지급 항목이 올바르지 않습니다. index: {i}, itemUid: {entry.ItemUid}, count: {entry.Count}");
+                }
+
+                mergedCountsByUid.TryGetValue(entry.ItemUid, out int currentCount);
+                long mergedCount = (long)currentCount + entry.Count;
+                if (mergedCount > int.MaxValue)
+                {
+                    return ResultCommon.Fail(
+                        "Inventory_GrantCountOverflow",
+                        $"[InventoryData] 지급 수량이 허용 범위를 초과했습니다. itemUid: {entry.ItemUid}");
+                }
+
+                mergedCountsByUid[entry.ItemUid] = (int)mergedCount;
+            }
+
+            Dictionary<int, SaveDataIcon> plannedItemCounts =
+                new Dictionary<int, SaveDataIcon>(ItemCounts);
+
+            foreach (KeyValuePair<int, int> grant in mergedCountsByUid)
+            {
+                StruckTableItem itemData =
+                    TableLoaderManager.GetItemData(grant.Key, logIfMissing: false);
+                if (itemData == null || itemData.Uid <= 0)
+                {
+                    return ResultCommon.Fail(
+                        "Inventory_GrantItemNotFound",
+                        $"[InventoryData] 지급할 아이템 테이블 정보를 찾을 수 없습니다. itemUid: {grant.Key}");
+                }
+
+                if (itemData.Type == ItemConstants.Type.Currency)
+                {
+                    return ResultCommon.Fail(
+                        "Inventory_GrantCurrencyNotSupported",
+                        $"[InventoryData] 인벤토리 일괄 지급에는 재화 아이템을 사용할 수 없습니다. itemUid: {grant.Key}");
+                }
+
+                if (itemData.MaxOverlayCount <= 0)
+                {
+                    return ResultCommon.Fail(
+                        "Slot_MaxStackZero",
+                        $"[InventoryData] 최대 중첩 수량이 올바르지 않습니다. itemUid: {grant.Key}");
+                }
+
+                if (!TryPlanGrantItem(
+                        plannedItemCounts,
+                        itemData.Uid,
+                        grant.Value,
+                        itemData.MaxOverlayCount))
+                {
+                    return ResultCommon.Fail(
+                        "Inventory_NoSpace",
+                        $"[InventoryData] 시작 아이템을 지급할 인벤토리 공간이 부족합니다. itemUid: {grant.Key}, count: {grant.Value}");
+                }
+            }
+
+            List<SaveDataIcon> changedIcons = BuildChangedGrantIcons(plannedItemCounts);
+            if (changedIcons.Count == 0)
+            {
+                return ResultCommon.Fail(
+                    "Inventory_GrantNoChange",
+                    "[InventoryData] 지급 결과에 변경된 인벤토리 슬롯이 없습니다.");
+            }
+
+            // 모든 항목의 배치 계산이 성공한 뒤에만 실제 저장 데이터에 반영합니다.
+            for (int i = 0; i < changedIcons.Count; i++)
+            {
+                SaveDataIcon changedIcon = changedIcons[i];
+                ItemCounts[changedIcon.SlotIndex] = changedIcon;
+            }
+
+            TempItemCounts.Clear();
+            return ResultCommon.SuccessWithIcons(changedIcons);
+        }
+
+        /// <summary>
+        /// 복제된 인벤토리 슬롯에 단일 아이템 지급 결과를 배치합니다.
+        /// </summary>
+        /// <param name="plannedItemCounts">지급 결과를 계산할 임시 슬롯 데이터입니다.</param>
+        /// <param name="itemUid">지급할 아이템 UID입니다.</param>
+        /// <param name="itemCount">지급할 수량입니다.</param>
+        /// <param name="maxOverlayCount">슬롯 하나의 최대 중첩 수량입니다.</param>
+        /// <returns>전체 수량을 배치할 수 있으면 true입니다.</returns>
+        private bool TryPlanGrantItem(
+            Dictionary<int, SaveDataIcon> plannedItemCounts,
+            int itemUid,
+            int itemCount,
+            int maxOverlayCount)
+        {
+            int remainingCount = itemCount;
+
+            // 기존 일반 아이템 스택을 슬롯 순서대로 먼저 채웁니다.
+            for (int slotIndex = 0; slotIndex < MaxSlotCount && remainingCount > 0; slotIndex++)
+            {
+                if (!plannedItemCounts.TryGetValue(slotIndex, out SaveDataIcon currentIcon) ||
+                    currentIcon == null ||
+                    currentIcon.Uid != itemUid ||
+                    currentIcon.Count <= 0 ||
+                    currentIcon.InstanceId > 0)
+                {
+                    continue;
+                }
+
+                int availableCount = maxOverlayCount - currentIcon.Count;
+                if (availableCount <= 0)
+                {
+                    continue;
+                }
+
+                int addedCount = Math.Min(remainingCount, availableCount);
+                plannedItemCounts[slotIndex] = new SaveDataIcon(
+                    slotIndex,
+                    itemUid,
+                    currentIcon.Count + addedCount,
+                    instanceId: 0,
+                    iconType: IconTypeItem);
+                remainingCount -= addedCount;
+            }
+
+            // 남은 수량은 빈 슬롯을 순서대로 사용해 결정적인 배치 결과를 만듭니다.
+            for (int slotIndex = 0; slotIndex < MaxSlotCount && remainingCount > 0; slotIndex++)
+            {
+                if (plannedItemCounts.TryGetValue(slotIndex, out SaveDataIcon currentIcon) &&
+                    currentIcon != null &&
+                    currentIcon.Uid > 0 &&
+                    currentIcon.Count > 0)
+                {
+                    continue;
+                }
+
+                int addedCount = Math.Min(remainingCount, maxOverlayCount);
+                plannedItemCounts[slotIndex] = new SaveDataIcon(
+                    slotIndex,
+                    itemUid,
+                    addedCount,
+                    instanceId: 0,
+                    iconType: IconTypeItem);
+                remainingCount -= addedCount;
+            }
+
+            return remainingCount <= 0;
+        }
+
+        /// <summary>
+        /// 지급 전후 슬롯 데이터를 비교해 실제로 변경된 아이콘 목록을 생성합니다.
+        /// </summary>
+        /// <param name="plannedItemCounts">지급을 모두 반영한 임시 슬롯 데이터입니다.</param>
+        /// <returns>UI 갱신과 결과 전달에 사용할 변경 아이콘 목록입니다.</returns>
+        private List<SaveDataIcon> BuildChangedGrantIcons(
+            Dictionary<int, SaveDataIcon> plannedItemCounts)
+        {
+            List<SaveDataIcon> changedIcons = new List<SaveDataIcon>();
+
+            for (int slotIndex = 0; slotIndex < MaxSlotCount; slotIndex++)
+            {
+                plannedItemCounts.TryGetValue(slotIndex, out SaveDataIcon plannedIcon);
+                ItemCounts.TryGetValue(slotIndex, out SaveDataIcon currentIcon);
+
+                if (AreSameGrantIcons(currentIcon, plannedIcon))
+                {
+                    continue;
+                }
+
+                changedIcons.Add(plannedIcon ?? new SaveDataIcon(slotIndex, 0));
+            }
+
+            return changedIcons;
+        }
+
+        /// <summary>
+        /// 두 인벤토리 아이콘이 지급 관점에서 같은 상태인지 확인합니다.
+        /// </summary>
+        /// <param name="left">기존 아이콘입니다.</param>
+        /// <param name="right">지급 후 아이콘입니다.</param>
+        /// <returns>UID, 수량, 인스턴스 ID가 모두 같으면 true입니다.</returns>
+        private static bool AreSameGrantIcons(SaveDataIcon left, SaveDataIcon right)
+        {
+            if (ReferenceEquals(left, right))
+            {
+                return true;
+            }
+
+            if (left == null || right == null)
+            {
+                return false;
+            }
+
+            return left.Uid == right.Uid &&
+                   left.Count == right.Count &&
+                   left.InstanceId == right.InstanceId;
         }
 
         protected override int GetMaxSlotCount()

@@ -21,6 +21,11 @@ namespace GGemCo2DCore
         public WindowSlotActivationSaveData WindowSlotActivationSaveData;
 
         /// <summary>
+        /// 세이브 슬롯별 인벤토리 지급 완료 이력입니다.
+        /// </summary>
+        public InventoryGrantHistoryData InventoryGrantHistoryData;
+
+        /// <summary>
         /// 맵 클리어 기록, 월드맵 노드 표시 상태, 월드맵 노드 활성 상태를 저장하는 진행 데이터입니다.
         /// </summary>
         public MapProgressData MapProgressData;
@@ -58,6 +63,11 @@ namespace GGemCo2DCore
         public ShopExposureData ShopExposure { get; private set; }
         public GameTimeData GameTime { get; private set; }
         public WindowSlotActivationSaveData WindowSlotActivation { get; private set; }
+
+        /// <summary>
+        /// 세이브 슬롯별 인벤토리 지급 완료 이력입니다.
+        /// </summary>
+        public InventoryGrantHistoryData InventoryGrantHistory { get; private set; }
 
         /// <summary>
         /// 실제 게임 맵 진행도와 월드맵 노드 표시/활성 상태를 보관하는 저장 데이터입니다.
@@ -108,6 +118,7 @@ namespace GGemCo2DCore
             ShopExposure = new ShopExposureData();
             GameTime = new GameTimeData();
             WindowSlotActivation = new WindowSlotActivationSaveData();
+            InventoryGrantHistory = new InventoryGrantHistoryData();
             MapProgress = new MapProgressData();
             MapProgressController = new MapProgressController(this);
             License = new LicenseData();
@@ -129,6 +140,7 @@ namespace GGemCo2DCore
             ShopExposure.Initialize(tableLoaderManager, saveDataContainer);
             GameTime.Initialize(tableLoaderManager, saveDataContainer);
             WindowSlotActivation.Initialize(tableLoaderManager, saveDataContainer);
+            InventoryGrantHistory.Initialize(saveDataContainer);
             MapProgress.Initialize(tableLoaderManager, saveDataContainer);
             License.Initialize(tableLoaderManager, saveDataContainer);
             SceneGame.Instance?.uIWindowManager?.RefreshWindowSlotActivationStates();
@@ -190,6 +202,7 @@ namespace GGemCo2DCore
                 ShopPurchaseData = ShopPurchase,
                 ShopExposureData = ShopExposure,
                 WindowSlotActivationSaveData = WindowSlotActivation,
+                InventoryGrantHistoryData = InventoryGrantHistory,
                 MapProgressData = MapProgress,
                 LicenseData = License,
                 ItemInstanceStoreData = ItemInstances?.Capture(),
