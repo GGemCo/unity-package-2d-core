@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Localization;
@@ -23,6 +23,10 @@ namespace GGemCo2DCore
         [SerializeField] private Slider sliderVolumeBgm;
         [Tooltip("효과음 볼륨 조절 슬라이더")]
         [SerializeField] private Slider sliderVolumeSfx;
+
+        [Header("모바일 햅틱")]
+        [Tooltip("사용자가 모바일 햅틱 사용 여부를 선택하는 토글입니다.")]
+        [SerializeField] private Toggle toggleHaptic;
         
         [Header("% 텍스트 오브젝트")]
         [SerializeField] private TMP_Text textPercentMaster;
@@ -73,6 +77,7 @@ namespace GGemCo2DCore
             sliderVolumeMaster?.onValueChanged.AddListener(OnMasterVolumeChanged);
             sliderVolumeBgm?.onValueChanged.AddListener(OnBgmVolumeChanged);
             sliderVolumeSfx?.onValueChanged.AddListener(OnSfxVolumeChanged);
+            toggleHaptic?.onValueChanged.AddListener(OnHapticEnabledChanged);
             
             buttonSave?.onClick.AddListener(OnGameSave);
             buttonGoIntro?.onClick.AddListener(OnGoIntroScene);
@@ -101,6 +106,7 @@ namespace GGemCo2DCore
             sliderVolumeMaster?.onValueChanged.RemoveAllListeners();
             sliderVolumeBgm?.onValueChanged.RemoveAllListeners();
             sliderVolumeSfx?.onValueChanged.RemoveAllListeners();
+            toggleHaptic?.onValueChanged.RemoveAllListeners();
 
             if (_localizationManager)
             {
@@ -199,6 +205,7 @@ namespace GGemCo2DCore
             sliderVolumeMaster?.SetValueWithoutNotify(PlayerPrefsManager.LoadSoundVolumeMaster());
             sliderVolumeBgm?.SetValueWithoutNotify(PlayerPrefsManager.LoadSoundVolumeBGM());
             sliderVolumeSfx?.SetValueWithoutNotify(PlayerPrefsManager.LoadSoundVolumeSfx());
+            toggleHaptic?.SetIsOnWithoutNotify(MobileHapticService.IsUserEnabled());
 
             SetTextPercentMaster();
             SetTextPercentBgm();
@@ -219,6 +226,10 @@ namespace GGemCo2DCore
             soundManager?.SetMasterVolume(sliderVolumeMaster.value);
             soundManager?.SetBgmVolume(sliderVolumeBgm.value);
             soundManager?.SetSfxVolume(sliderVolumeSfx.value);
+            if (toggleHaptic != null)
+            {
+                MobileHapticService.SetEnabled(toggleHaptic.isOn);
+            }
             return true;
         }
 
@@ -251,6 +262,8 @@ namespace GGemCo2DCore
                 sliderVolumeBgm.value = _optionSettings.volumeBGM;
             if (sliderVolumeSfx)
                 sliderVolumeSfx.value = _optionSettings.volumeSfx;
+            if (toggleHaptic)
+                toggleHaptic.isOn = _optionSettings.hapticEnabledByDefault;
         }
 
         /// <summary>
@@ -283,6 +296,16 @@ namespace GGemCo2DCore
         {
             soundManager?.SetSfxVolume(value, false);
             SetTextPercentSfx();
+            MarkDirty(true);
+        }
+
+        /// <summary>
+        /// 사용자가 모바일 햅틱 토글을 변경했을 때 옵션 패널을 변경 상태로 표시합니다.
+        /// 실제 저장과 서비스 반영은 확인 버튼을 누를 때 수행합니다.
+        /// </summary>
+        /// <param name="enabled">토글에서 선택한 햅틱 활성화 여부입니다.</param>
+        private void OnHapticEnabledChanged(bool enabled)
+        {
             MarkDirty(true);
         }
 

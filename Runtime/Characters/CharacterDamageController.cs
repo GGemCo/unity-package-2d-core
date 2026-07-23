@@ -586,6 +586,9 @@ namespace GGemCo2DCore
                         _characterBase,
                         metadataDamage,
                         ResolveCombatOutcomeByGuardResult(guardResult));
+                    CombatHapticFeedbackRouter.NotifyGuardResolved(
+                        _characterBase,
+                        in guardResult);
 
                     hasRequestedPlayerHudStaminaFeedback =
                         TryPlayPlayerHudGuardSuccessFeedback(metadataDamage, guardResult);
@@ -653,6 +656,9 @@ namespace GGemCo2DCore
                 AffectRuntimeBridge.NotifyOnHit(attacker, _characterBase.gameObject);
             }
 
+            CombatHapticFeedbackRouter.NotifyMonsterHitConfirmed(
+                _characterBase,
+                metadataDamage);
             CombatHitFeedbackNotifier.NotifyIncoming(
                 _characterBase,
                 metadataDamage,

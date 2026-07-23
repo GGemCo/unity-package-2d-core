@@ -13,6 +13,7 @@ namespace GGemCo2DCore
             KeySoundVolumeBGM,
             KeySoundVolumeSfx,
             KeySoundVolumeMaster,
+            KeyHapticEnabled,
             KeyControlKeyBinding,
             KeyToolPreviewAlwaysShow,
             KeyToolPreviewHideWhenMoving
@@ -26,6 +27,7 @@ namespace GGemCo2DCore
             { KeyIndex.KeySoundVolumeMaster, "GGEMCO_KEY_SOUND_VOLUME_MASTER" },
             { KeyIndex.KeySoundVolumeBGM, "GGEMCO_KEY_SOUND_VOLUME_BGM" },
             { KeyIndex.KeySoundVolumeSfx, "GGEMCO_KEY_SOUND_VOLUME_SFX" },
+            { KeyIndex.KeyHapticEnabled, "GGEMCO_KEY_HAPTIC_ENABLED" },
             { KeyIndex.KeyControlKeyBinding, "GGEMCO_KEY_CONTROL_KEY_BINDING" },
             { KeyIndex.KeyToolPreviewAlwaysShow, "GGEMCO_KEY_TOOL_PREVIEW_ALWAYS_SHOW" },
             { KeyIndex.KeyToolPreviewHideWhenMoving, "GGEMCO_KEY_TOOL_PREVIEW_HIDE_WHEN_MOVING" },
@@ -137,10 +139,12 @@ namespace GGemCo2DCore
                 KeyIndex.KeySoundVolumeMaster,
                 KeyIndex.KeySoundVolumeBGM,
                 KeyIndex.KeySoundVolumeSfx,
+                KeyIndex.KeyHapticEnabled,
                 KeyIndex.KeyControlKeyBinding,
                 KeyIndex.KeyToolPreviewAlwaysShow,
                 KeyIndex.KeyToolPreviewHideWhenMoving,
             });
+            MobileHapticService.ResetRuntimeState();
         }
 
         /// <summary>
@@ -254,6 +258,25 @@ namespace GGemCo2DCore
             if (!AddressableLoaderSettings.Instance) return 1;
             return PlayerPrefsLoadFloat(KeyIndex.KeySoundVolumeMaster,
                 $"{AddressableLoaderSettings.Instance.optionSettings.volumeMaster}");
+        }
+
+        /// <summary>
+        /// 사용자의 모바일 햅틱 활성화 여부를 저장합니다.
+        /// </summary>
+        /// <param name="enabled">햅틱을 활성화하려면 <c>true</c>입니다.</param>
+        public static void SaveHapticEnabled(bool enabled)
+        {
+            PlayerPrefsSave(KeyIndex.KeyHapticEnabled, enabled.ToString());
+        }
+
+        /// <summary>
+        /// 저장된 모바일 햅틱 활성화 여부를 반환합니다.
+        /// </summary>
+        /// <param name="defaultValue">저장값이 없을 때 사용할 기본값입니다.</param>
+        /// <returns>사용자가 선택한 햅틱 활성화 여부입니다.</returns>
+        public static bool LoadHapticEnabled(bool defaultValue)
+        {
+            return PlayerPrefsLoadBool(KeyIndex.KeyHapticEnabled, defaultValue);
         }
 
         /// <summary>
