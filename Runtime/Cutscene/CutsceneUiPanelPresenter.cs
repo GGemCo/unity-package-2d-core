@@ -22,6 +22,9 @@ namespace GGemCo2DCore
             public CanvasGroup CanvasGroup;
             public Image Image;
             public Canvas Canvas;
+            public UiPanelLayoutMode LayoutMode;
+            public Vector2 StretchOffsetMin;
+            public Vector2 StretchOffsetMax;
         }
 
         private readonly Dictionary<string, PanelHandle> _panels = new();
@@ -151,6 +154,9 @@ namespace GGemCo2DCore
         /// <param name="sizeDelta">패널의 SizeDelta 값입니다.</param>
         /// <param name="color">패널 이미지의 표시 색상입니다.</param>
         /// <param name="alpha">패널의 알파값입니다. 0~1 범위로 보정됩니다.</param>
+        /// <remarks>
+        /// Stretch가 활성화된 축은 anchoredPosition과 sizeDelta 대신 ConfigurePanel에서 저장한 부모 경계 여백을 사용합니다.
+        /// </remarks>
         public void ApplyState(string panelId, Vec2 anchoredPosition, Vec2 sizeDelta, Color color, float alpha)
         {
             if (!TryGetHandle(panelId, out var handle))
@@ -160,6 +166,7 @@ namespace GGemCo2DCore
 
             handle.RectTransform.anchoredPosition = anchoredPosition.ToVector2();
             handle.RectTransform.sizeDelta = sizeDelta.ToVector2();
+            ApplyStretchOffsets(handle);
             handle.Image.color = new Color(color.r, color.g, color.b, 1f);
             handle.CanvasGroup.alpha = Mathf.Clamp01(alpha);
             handle.GameObject.SetActive(true);
@@ -288,7 +295,7 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 패널의 앵커, 피벗 및 형제 인덱스를 적용합니다.
+        /// 패널의 레이아웃 모드, 앵커, 피벗, Stretch 여백 및 형제 인덱스를 적용합니다.
         /// </summary>
         /// <param name="handle">레이아웃을 적용할 패널 핸들입니다.</param>
         /// <param name="data">레이아웃 설정 데이터입니다.</param>
@@ -299,14 +306,97 @@ namespace GGemCo2DCore
                 return;
             }
 
-            handle.RectTransform.anchorMin = data.anchorMin.ToVector2();
-            handle.RectTransform.anchorMax = data.anchorMax.ToVector2();
-            handle.RectTransform.pivot = data.pivot.ToVector2();
+            Vector2 anchorMin = data.anchorMin.ToVector2();
+            Vector2 anchorMax = data.anchorMax.ToVector2();
+            Vector2 pivot = data.pivot.ToVector2();
+
+            // Stretch하지 않는 축은 pivot 위치에 고정하여 기존 위치와 크기 보간이 그대로 동작하게 합니다.
+            switch (data.layoutMode)
+            {
+                case UiPanelLayoutMode.StretchHorizontal:
+                    anchorMin = new Vector2(0f, pivot.y);
+                    anchorMax = new Vector2(1f, pivot.y);
+                    break;
+
+                case UiPanelLayoutMode.StretchVertical:
+                    anchorMin = new Vector2(pivot.x, 0f);
+                    anchorMax = new Vector2(pivot.x, 1f);
+                    break;
+
+                case UiPanelLayoutMode.StretchBoth:
+                    anchorMin = Vector2.zero;
+                    anchorMax = Vector2.one;
+                    break;
+            }
+
+            handle.LayoutMode = data.layoutMode;
+            handle.StretchOffsetMin = data.stretchOffsetMin.ToVector2();
+            handle.StretchOffsetMax = data.stretchOffsetMax.ToVector2();
+            handle.RectTransform.anchorMin = anchorMin;
+            handle.RectTransform.anchorMax = anchorMax;
+            handle.RectTransform.pivot = pivot;
 
             if (data.siblingIndex >= 0)
             {
                 handle.RectTransform.SetSiblingIndex(data.siblingIndex);
             }
+        }
+
+        /// <summary>
+        /// Stretch가 활성화된 축에 부모 경계 기준 안쪽 여백을 적용합니다.
+        /// </summary>
+        /// <param name="handle">레이아웃 상태와 대상 RectTransform을 보관한 패널 핸들입니다.</param>
+        /// <remarks>
+        /// 비-Stretch 축에는 앞서 적용한 anchoredPosition과 sizeDelta를 그대로 유지합니다.
+        /// offsetMax는 Unity RectTransform 규칙에 따라 오른쪽과 위쪽 안쪽 여백을 음수로 적용합니다.
+        /// </remarks>
+        private static void ApplyStretchOffsets(PanelHandle handle)
+        {
+            if (handle?.RectTransform == null)
+            {
+                return;
+            }
+
+            RectTransform rectTransform = handle.RectTransform;
+            Vector2 offsetMin = rectTransform.offsetMin;
+            Vector2 offsetMax = rectTransform.offsetMax;
+
+            if (IsHorizontalStretch(handle.LayoutMode))
+            {
+                offsetMin.x = handle.StretchOffsetMin.x;
+                offsetMax.x = -handle.StretchOffsetMax.x;
+            }
+
+            if (IsVerticalStretch(handle.LayoutMode))
+            {
+                offsetMin.y = handle.StretchOffsetMin.y;
+                offsetMax.y = -handle.StretchOffsetMax.y;
+            }
+
+            rectTransform.offsetMin = offsetMin;
+            rectTransform.offsetMax = offsetMax;
+        }
+
+        /// <summary>
+        /// 지정한 레이아웃 모드가 가로 Stretch를 사용하는지 확인합니다.
+        /// </summary>
+        /// <param name="layoutMode">확인할 UI Panel 레이아웃 모드입니다.</param>
+        /// <returns>가로축을 부모 너비에 맞춰 늘리면 <see langword="true"/>입니다.</returns>
+        private static bool IsHorizontalStretch(UiPanelLayoutMode layoutMode)
+        {
+            return layoutMode == UiPanelLayoutMode.StretchHorizontal ||
+                   layoutMode == UiPanelLayoutMode.StretchBoth;
+        }
+
+        /// <summary>
+        /// 지정한 레이아웃 모드가 세로 Stretch를 사용하는지 확인합니다.
+        /// </summary>
+        /// <param name="layoutMode">확인할 UI Panel 레이아웃 모드입니다.</param>
+        /// <returns>세로축을 부모 높이에 맞춰 늘리면 <see langword="true"/>입니다.</returns>
+        private static bool IsVerticalStretch(UiPanelLayoutMode layoutMode)
+        {
+            return layoutMode == UiPanelLayoutMode.StretchVertical ||
+                   layoutMode == UiPanelLayoutMode.StretchBoth;
         }
 
         /// <summary>

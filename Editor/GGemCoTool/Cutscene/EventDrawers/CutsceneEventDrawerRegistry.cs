@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using GGemCo2DCore;
 
 namespace GGemCo2DCoreEditor
@@ -39,7 +39,7 @@ namespace GGemCo2DCoreEditor
             // 커스텀 Drawer
             Register(new CutsceneOverlayTextEventTypeDrawer());
             Register(new CutsceneCharacterWhiteOverlayEventTypeDrawer());
-            Register(new CutsceneDefaultEventTypeDrawer(CutsceneEventType.UiPanel, "uiPanel"));
+            Register(new CutsceneUiPanelEventTypeDrawer());
             Register(new CutsceneDefaultEventTypeDrawer(CutsceneEventType.UiWindowVisibility, "uiWindowVisibility"));
             Register(new CutsceneTimeScaleEventTypeDrawer());
             Register(new CutsceneDefaultEventTypeDrawer(CutsceneEventType.WorldObjectVisibility, "worldObjectVisibility"));

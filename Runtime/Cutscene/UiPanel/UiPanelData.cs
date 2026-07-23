@@ -3,6 +3,35 @@ using UnityEngine;
 
 namespace GGemCo2DCore
 {
+    /// <summary>
+    /// 컷신 UI Panel이 부모 RectTransform 크기에 대응하는 레이아웃 방식을 정의합니다.
+    /// </summary>
+    public enum UiPanelLayoutMode
+    {
+        /// <summary>
+        /// 기존 anchorMin, anchorMax, anchoredPosition, sizeDelta 값을 그대로 사용합니다.
+        /// </summary>
+        Custom = 0,
+
+        /// <summary>
+        /// 부모 너비에 맞춰 가로축을 늘리고 세로축은 기존 위치와 크기를 사용합니다.
+        /// </summary>
+        StretchHorizontal = 1,
+
+        /// <summary>
+        /// 부모 높이에 맞춰 세로축을 늘리고 가로축은 기존 위치와 크기를 사용합니다.
+        /// </summary>
+        StretchVertical = 2,
+
+        /// <summary>
+        /// 부모의 가로축과 세로축 전체에 맞춰 늘립니다.
+        /// </summary>
+        StretchBoth = 3,
+    }
+
+    /// <summary>
+    /// 컷신 UI Panel의 생성, 레이아웃, 렌더링 및 재생 설정을 보관합니다.
+    /// </summary>
     [Serializable]
     public class UiPanelData
     {
@@ -17,6 +46,12 @@ namespace GGemCo2DCore
         public bool hideOnStop;
 
         [Header("Layout")]
+        [Tooltip("패널이 부모 RectTransform 크기에 대응하는 레이아웃 방식입니다. Custom은 기존 앵커 설정을 유지합니다.")]
+        public UiPanelLayoutMode layoutMode = UiPanelLayoutMode.Custom;
+        [Tooltip("Stretch 축에서 부모 경계로부터 적용할 왼쪽(X), 아래쪽(Y) 안쪽 여백입니다.")]
+        public Vec2 stretchOffsetMin;
+        [Tooltip("Stretch 축에서 부모 경계로부터 적용할 오른쪽(X), 위쪽(Y) 안쪽 여백입니다.")]
+        public Vec2 stretchOffsetMax;
         [Tooltip("RectTransform.anchorMin 값입니다.")]
         public Vec2 anchorMin = new Vec2(new Vector2(0.5f, 0.5f));
         [Tooltip("RectTransform.anchorMax 값입니다.")]
