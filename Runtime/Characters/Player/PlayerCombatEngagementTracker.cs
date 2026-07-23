@@ -18,6 +18,7 @@ namespace GGemCo2DCore
         private readonly List<int> _invalidMonsterIds = new();
 
         private Player _owner;
+        private PlayerAttackAreaState _attackAreaState;
 
         /// <summary>
         /// 전투 참여 목록이 변경된 뒤 호출됩니다.
@@ -61,7 +62,58 @@ namespace GGemCo2DCore
             }
 
             _owner = owner;
+            BindAttackAreaState();
             SynchronizeOwnerBattleStatus();
+        }
+
+        /// <summary>
+        /// 플레이어 공격 영역 상태를 찾아 전투 종료 조건 변경 이벤트를 구독합니다.
+        /// </summary>
+        private void BindAttackAreaState()
+        {
+            PlayerAttackAreaState nextState = _owner != null
+                ? _owner.GetComponent<PlayerAttackAreaState>()
+                : null;
+            if (_attackAreaState == nextState)
+            {
+                return;
+            }
+
+            UnbindAttackAreaState();
+            _attackAreaState = nextState;
+            if (_attackAreaState != null)
+            {
+                _attackAreaState.Changed += OnAttackAreaStateChanged;
+            }
+        }
+
+        /// <summary>
+        /// 현재 구독 중인 플레이어 공격 영역 상태 이벤트를 해제합니다.
+        /// </summary>
+        private void UnbindAttackAreaState()
+        {
+            if (_attackAreaState != null)
+            {
+                _attackAreaState.Changed -= OnAttackAreaStateChanged;
+                _attackAreaState = null;
+            }
+        }
+
+        /// <summary>
+        /// 공격 영역의 생존 몬스터 유무가 변경되면 현재 교전 목록과 함께 전투 종료 여부를 다시 평가합니다.
+        /// </summary>
+        /// <param name="isInAttackArea">공격 영역에 살아 있는 몬스터가 남아 있는지 여부입니다.</param>
+        private void OnAttackAreaStateChanged(bool isInAttackArea)
+        {
+            SynchronizeOwnerBattleStatus();
+        }
+
+        /// <summary>
+        /// 컴포넌트가 파괴될 때 공격 영역 상태 이벤트 구독을 해제합니다.
+        /// </summary>
+        private void OnDestroy()
+        {
+            UnbindAttackAreaState();
         }
 
         /// <summary>
@@ -260,7 +312,8 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 참여 중인 몬스터가 하나 이상이면 플레이어를 전투 상태로, 없으면 비전투 상태로 동기화합니다.
+        /// 참여 중인 몬스터가 하나 이상이면 플레이어를 전투 상태로 동기화합니다.
+        /// 기존 전투가 끝나는 시점에는 공격 영역에서도 살아 있는 몬스터가 사라진 경우에만 비전투 상태로 전환합니다.
         /// </summary>
         private void SynchronizeOwnerBattleStatus()
         {
@@ -272,6 +325,16 @@ namespace GGemCo2DCore
             if (_engagedMonsters.Count > 0 && !_owner.IsStatusDead())
             {
                 _owner.SetBattleStatusInBattle();
+                return;
+            }
+
+            // 공격 영역은 전투 시작 조건이 아니라 기존 전투의 종료를 잠시 보류하는 조건으로만 사용합니다.
+            // 따라서 비전투 상태에서 몬스터가 공격 영역에 들어온 것만으로는 전투 상태를 새로 시작하지 않습니다.
+            if (!_owner.IsStatusDead() &&
+                _owner.IsInBattle() &&
+                _attackAreaState != null &&
+                _attackAreaState.IsInAttackArea)
+            {
                 return;
             }
 

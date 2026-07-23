@@ -423,6 +423,7 @@ namespace GGemCo2DCore
                 scenarioRuntime.Data.ScenarioUid,
                 groupRuntime.Data.GroupUid,
                 groupRuntime.InstanceId));
+            _mapManager?.NotifyWaveMonsterSpawned(monster);
             LogDebug($"웨이브 몬스터 스폰. scenarioUid:{scenarioRuntime.Data.ScenarioUid}, groupUid:{groupRuntime.Data.GroupUid}, instanceId:{groupRuntime.InstanceId}, monsterUid:{spawnData.MonsterUid}, vid:{monster.vid}, alive:{groupRuntime.AliveCount}");
         }
 

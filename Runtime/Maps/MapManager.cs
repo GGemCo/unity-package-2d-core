@@ -56,6 +56,14 @@ namespace GGemCo2DCore
         /// </summary>
         public static event Action<MapWaveTransitionContext> OnWaveTransitionRequested;
 
+        /// <summary>
+        /// 웨이브 몬스터가 생성되고 그룹 런타임과 소유권 등록까지 완료된 직후 발생합니다.
+        /// </summary>
+        /// <remarks>
+        /// Core는 생성 완료된 몬스터만 전달하며, 해당 몬스터를 향한 자동 이동 여부는 상위 게임 계층에서 결정합니다.
+        /// </remarks>
+        public static event Action<Monster> OnWaveMonsterSpawned;
+
         // 현재 맵 테이블 데이터
         private StruckTableMap _currentMapTableData;
 
@@ -761,6 +769,20 @@ namespace GGemCo2DCore
             }
 
             OnWaveTransitionRequested?.Invoke(context);
+        }
+
+        /// <summary>
+        /// 웨이브 몬스터의 런타임 등록이 완료되었음을 상위 게임 계층에 전달합니다.
+        /// </summary>
+        /// <param name="monster">생성 및 웨이브 소유권 등록이 완료된 몬스터입니다.</param>
+        internal void NotifyWaveMonsterSpawned(Monster monster)
+        {
+            if (monster == null)
+            {
+                return;
+            }
+
+            OnWaveMonsterSpawned?.Invoke(monster);
         }
 
         /// <summary>
