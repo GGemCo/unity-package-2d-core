@@ -204,8 +204,7 @@ namespace GGemCo2DCore
                 "core.localization",
                 order: 220,
                 localizedKey: LocalizationConstants.Keys.Loading.TextTypeLocalization(),
-                localizationManager: loc,
-                localeCode: PlayerPrefsManager.LoadLocalizationLocaleCode()
+                localizationManager: loc
             ));
 
             Register(new TablePackLoadStep(
@@ -298,8 +297,7 @@ namespace GGemCo2DCore
                 "core.localization",
                 order: 220,
                 localizedKey: LocalizationConstants.Keys.Loading.TextTypeLocalization(),
-                localizationManager: loc,
-                localeCode: PlayerPrefsManager.LoadLocalizationLocaleCode()
+                localizationManager: loc
             ));
 
             Register(new TableLoadStep(

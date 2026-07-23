@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace GGemCo2DCore
@@ -144,14 +144,59 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 언어 선택 
+        /// 선택한 언어 코드를 저장합니다.
         /// </summary>
-        /// <param name="code"></param>
+        /// <param name="code">저장할 Locale 코드입니다.</param>
         public static void SaveLocalizationLocaleCode(string code)
         {
             PlayerPrefsSave(KeyIndex.KeyIndexLocalizationLocale, code);
         }
 
+        /// <summary>
+        /// 사용자가 선택한 언어 코드가 저장되어 있는지 확인합니다.
+        /// </summary>
+        /// <returns>언어 코드가 저장되어 있으면 <c>true</c>입니다.</returns>
+        public static bool HasLocalizationLocaleCode()
+        {
+            string keyName = Keys.GetValueOrDefault(KeyIndex.KeyIndexLocalizationLocale);
+            return !string.IsNullOrEmpty(keyName) && PlayerPrefs.HasKey(keyName);
+        }
+
+        /// <summary>
+        /// 저장된 언어 코드를 조회합니다.
+        /// 저장값이 없을 때 기본 언어를 대신 반환하지 않으므로 최초 실행 여부를 구분할 수 있습니다.
+        /// </summary>
+        /// <param name="code">저장된 Locale 코드입니다.</param>
+        /// <returns>유효한 저장값을 조회했으면 <c>true</c>입니다.</returns>
+        public static bool TryLoadLocalizationLocaleCode(out string code)
+        {
+            code = string.Empty;
+            if (!HasLocalizationLocaleCode())
+            {
+                return false;
+            }
+
+            code = PlayerPrefsLoad(KeyIndex.KeyIndexLocalizationLocale);
+            return !string.IsNullOrWhiteSpace(code);
+        }
+
+        /// <summary>
+        /// 저장된 언어 코드를 삭제합니다.
+        /// 다음 실행 시 시스템 언어를 다시 선택해야 할 때 사용합니다.
+        /// </summary>
+        public static void DeleteLocalizationLocaleCode()
+        {
+            PlayerPrefsDelete(KeyIndex.KeyIndexLocalizationLocale);
+        }
+
+        /// <summary>
+        /// 저장된 언어 코드를 반환하고, 저장값이 없으면 프로젝트 기본 언어 코드를 반환합니다.
+        /// </summary>
+        /// <returns>저장된 Locale 코드 또는 프로젝트 기본 Locale 코드입니다.</returns>
+        /// <remarks>
+        /// 기존 호출부와의 하위 호환성을 위한 API입니다.
+        /// 최초 실행 여부를 구분해야 하는 경우 <see cref="TryLoadLocalizationLocaleCode"/>를 사용합니다.
+        /// </remarks>
         public static string LoadLocalizationLocaleCode()
         {
             var locale = PlayerPrefsLoad(KeyIndex.KeyIndexLocalizationLocale);

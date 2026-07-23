@@ -281,9 +281,9 @@ namespace GGemCo2DCore
 #endif
         }
         /// <summary>
-        /// 프리 인트로 씬에서 사용하는 텍스트용 GGemCo_PreIntro String Table 불러오기
+        /// 초기 Locale을 결정하고 프리 인트로 씬에서 사용하는 문자열 테이블을 불러옵니다.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>Locale 초기화와 문자열 테이블 로딩을 순차 실행하는 코루틴입니다.</returns>
         private IEnumerator SwapToLocalizedWhenReady()
         {
             // 1) 초기화 대기
@@ -291,9 +291,15 @@ namespace GGemCo2DCore
 
             // (선택) 2) 필요한 테이블만 프리로드
             var refs = new System.Collections.Generic.List<TableReference> { (TableReference)TableName };
-            
-            string code = PlayerPrefsManager.LoadLocalizationLocaleCode();
-            Locale locale = _localizationManager.GetLocaleByCode(code);
+
+            // 저장된 사용자 언어가 없으면 Unity의 System Locale Selector 결과를 그대로 사용합니다.
+            Locale locale = _localizationManager.ResolveStartupLocale();
+            if (locale == null)
+            {
+                GcLogger.LogError("PreIntro 텍스트에 적용할 Locale을 찾을 수 없습니다.");
+                yield break;
+            }
+
             LocalizationSettings.SelectedLocale = locale;
             var preload = LocalizationSettings.StringDatabase.PreloadTables(refs, locale);
             yield return preload; // AssetTable이라면 연관 에셋도 동시에 로드

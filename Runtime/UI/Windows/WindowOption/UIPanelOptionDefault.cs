@@ -2,6 +2,7 @@
 using TMPro;
 using UnityEngine;
 using UnityEngine.Localization;
+using UnityEngine.Localization.Settings;
 using UnityEngine.UI;
 
 namespace GGemCo2DCore
@@ -179,21 +180,18 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 현재 저장되어있는 값으로 다시 셋팅하기
+        /// 현재 적용된 Locale과 저장된 옵션 값으로 UI를 갱신합니다.
         /// </summary>
         protected override void RefreshFromModel()
         {
             if (!_localizationManager) return;
 
-            // 현재 설정된 언어로 dropdownLanguage 셋팅하기
-            string code = PlayerPrefsManager.LoadLocalizationLocaleCode();
-            Locale locale = !string.IsNullOrEmpty(code)
-                ? _localizationManager.GetLocaleByCode(code)
-                : LocalizationConstants.GetDefaultLocale();
+            // 최초 실행 시에도 시스템 언어가 표시되도록 현재 실제 적용된 Locale을 우선 사용합니다.
+            Locale locale = LocalizationSettings.SelectedLocale;
 
             if (locale == null)
             {
-                locale = LocalizationConstants.GetDefaultLocale();
+                locale = _localizationManager.ResolveStartupLocale();
             }
 
             languageSelectionPolicy?.SetSelectedLocaleWithoutNotify(locale);

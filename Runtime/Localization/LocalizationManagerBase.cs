@@ -25,6 +25,8 @@ namespace GGemCo2DCore
 
         private static string CurrentLanguageCode { get; set; }
 
+        private const string FallbackLocaleCode = "en";
+
         protected LocalizedStringDatabase StringDatabase;
 
         /// <summary>
@@ -50,6 +52,8 @@ namespace GGemCo2DCore
         private void InitializeAvailableLocale()
         {
             var locales = LocalizationSettings.AvailableLocales.Locales;
+            Locales.Clear();
+
             if (locales.Count == 0)
             {
                 Debug.LogWarning("Localization Settings에 등록된 Locale이 없습니다.");
@@ -57,6 +61,11 @@ namespace GGemCo2DCore
 
             foreach (var locale in locales)
             {
+                if (locale == null)
+                {
+                    continue;
+                }
+
                 Locales.TryAdd(locale.Identifier.Code, locale);
             }
         }
@@ -102,7 +111,80 @@ namespace GGemCo2DCore
         public IEnumerator ChangeLocaleRoutine(string code, bool isSave = true)
         {
             Locale locale = GetLocaleByCode(code);
+            if (locale == null)
+            {
+                GcLogger.LogWarning($"등록되지 않은 Locale 코드입니다. code={code}");
+                yield break;
+            }
+
             yield return StartCoroutine(ChangeLocaleRoutine(locale, isSave));
+        }
+
+        /// <summary>
+        /// 저장된 사용자 언어를 우선 적용하고, 저장값이 없으면 기기의 시스템 Locale을 적용합니다.
+        /// 시스템 Locale도 사용할 수 없으면 영어, 프로젝트 기본 Locale 순서로 대체합니다.
+        /// </summary>
+        /// <returns>초기 Locale 적용과 사용자 테이블 확인을 순차 실행하는 코루틴입니다.</returns>
+        public IEnumerator InitializeLocaleRoutine()
+        {
+            yield return LocalizationSettings.InitializationOperation;
+
+            // 초기화 완료 뒤 Locale 에셋 목록을 다시 읽어 Addressables 로딩 전의 빈 캐시를 보완합니다.
+            InitializeAvailableLocale();
+
+            Locale locale = ResolveStartupLocale();
+            if (locale == null)
+            {
+                GcLogger.LogError("초기 언어로 적용할 Locale을 찾을 수 없습니다.");
+                yield break;
+            }
+
+            yield return StartCoroutine(ChangeLocaleRoutine(locale));
+        }
+
+        /// <summary>
+        /// 저장된 사용자 언어와 Unity Startup Locale Selector 결과를 기준으로 초기 Locale을 결정합니다.
+        /// Localization 초기화가 끝난 뒤 호출해야 합니다.
+        /// </summary>
+        /// <returns>초기 적용 대상 Locale이며, 사용할 Locale이 전혀 없으면 <c>null</c>입니다.</returns>
+        public Locale ResolveStartupLocale()
+        {
+            if (Locales.Count == 0)
+            {
+                // Localization 초기화 이후 처음 호출된 경우 Addressables에서 로드된 Locale 목록을 반영합니다.
+                InitializeAvailableLocale();
+            }
+
+            if (PlayerPrefsManager.TryLoadLocalizationLocaleCode(out string savedCode))
+            {
+                if (TryGetLocaleByCode(savedCode, out Locale savedLocale))
+                {
+                    return savedLocale;
+                }
+
+                // 더 이상 지원하지 않는 언어 코드가 남아 있으면 다음 실행에서도 반복되지 않도록 정리합니다.
+                GcLogger.LogWarning($"저장된 Locale을 사용할 수 없어 시스템 언어를 적용합니다. code={savedCode}");
+                PlayerPrefsManager.DeleteLocalizationLocaleCode();
+            }
+
+            Locale selectedLocale = LocalizationSettings.SelectedLocale;
+            if (IsAvailableLocale(selectedLocale))
+            {
+                return selectedLocale;
+            }
+
+            if (TryGetLocaleByCode(FallbackLocaleCode, out Locale fallbackLocale))
+            {
+                return fallbackLocale;
+            }
+
+            Locale projectLocale = LocalizationSettings.ProjectLocale;
+            if (IsAvailableLocale(projectLocale))
+            {
+                return projectLocale;
+            }
+
+            return Locales.Count > 0 ? Locales.First().Value : null;
         }
 
         /// <summary>
@@ -113,6 +195,12 @@ namespace GGemCo2DCore
         /// <returns>Locale 변경과 사용자 테이블 확인을 순차 실행하는 코루틴입니다.</returns>
         private IEnumerator ChangeLocaleRoutine(Locale locale, bool isSave = true)
         {
+            if (locale == null)
+            {
+                GcLogger.LogWarning("변경할 Locale이 없어 언어 변경을 취소합니다.");
+                yield break;
+            }
+
             _isChanging = true;
 
             yield return LocalizationSettings.InitializationOperation;
@@ -342,7 +430,7 @@ namespace GGemCo2DCore
 
         /// <summary>
         /// 언어 코드와 일치하는 Locale을 반환합니다.
-        /// 일치하는 코드가 없으면 등록된 첫 번째 Locale을 반환합니다.
+        /// 일치하는 코드가 없으면 기존 API 호환성을 위해 등록된 첫 번째 Locale을 반환합니다.
         /// </summary>
         /// <param name="code">찾을 Locale의 언어 코드입니다.</param>
         /// <returns>일치하는 Locale 또는 기본으로 사용할 첫 번째 Locale입니다.</returns>
@@ -350,10 +438,34 @@ namespace GGemCo2DCore
         {
             if (string.IsNullOrEmpty(code) || Locales == null) return null;
 
-            var exact = Locales.FirstOrDefault(l => l.Key == code);
-            if (exact.Value != null) return exact.Value;
+            return TryGetLocaleByCode(code, out Locale locale)
+                ? locale
+                : Locales.FirstOrDefault().Value;
+        }
 
-            return Locales.FirstOrDefault().Value;
+        /// <summary>
+        /// 언어 코드와 정확히 일치하는 Locale을 조회합니다.
+        /// 암묵적인 기본 Locale 대체가 허용되지 않는 초기화와 저장값 검증에서 사용합니다.
+        /// </summary>
+        /// <param name="code">조회할 Locale 코드입니다.</param>
+        /// <param name="locale">정확히 일치하는 Locale입니다.</param>
+        /// <returns>일치하는 Locale이 등록되어 있으면 <c>true</c>입니다.</returns>
+        public bool TryGetLocaleByCode(string code, out Locale locale)
+        {
+            locale = null;
+            return !string.IsNullOrEmpty(code) &&
+                   Locales.TryGetValue(code, out locale);
+        }
+
+        /// <summary>
+        /// 지정한 Locale이 현재 프로젝트에서 사용할 수 있는 Locale 목록에 포함되는지 확인합니다.
+        /// </summary>
+        /// <param name="locale">확인할 Locale입니다.</param>
+        /// <returns>동일한 Locale 코드가 등록되어 있으면 <c>true</c>입니다.</returns>
+        private static bool IsAvailableLocale(Locale locale)
+        {
+            return locale != null &&
+                   Locales.ContainsKey(locale.Identifier.Code);
         }
 
         /// <summary>
