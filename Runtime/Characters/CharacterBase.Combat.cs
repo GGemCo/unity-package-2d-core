@@ -167,6 +167,9 @@ namespace GGemCo2DCore
             if (IsStatusDead())
                 return;
 
+            // 사망 애니메이션이 정상 속도로 시작하고, 남아 있던 Hit Stop이 이후 과거 상태를 복원하지 않도록 먼저 종료합니다.
+            _hitStopController?.TerminateForDeath();
+
             // 사망 이후에는 Update가 중단되므로 예약된 슈퍼아머 복구를 사전에 정리합니다.
             _characterDamageController?.CancelPendingSuperArmorRestore();
             _isDeathPending = false;

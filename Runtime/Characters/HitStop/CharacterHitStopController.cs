@@ -108,8 +108,36 @@ namespace GGemCo2DCore
             }
         }
 
-        private void EndInternal()
+        /// <summary>
+        /// 사망 진입 전에 활성 Hit Stop을 종료하고, 사망 이후 적용되면 안 되는 이전 상태와 이동 정보를 폐기합니다.
+        /// </summary>
+        /// <remarks>
+        /// 애니메이션 재생 속도와 Rigidbody 제약은 Hit Stop 적용 전 값으로 되돌리되,
+        /// 이전 캐릭터 상태와 속도는 복원하지 않습니다. 이를 통해 사망 애니메이션이 정지된 재생 속도로 시작하거나
+        /// Hit Stop 종료 시 Dead 상태가 Idle 등의 과거 상태로 덮어써지는 문제를 방지합니다.
+        /// </remarks>
+        public void TerminateForDeath()
         {
+            if (!_isActive)
+                return;
+
+            EndInternal(restorePreviousState: false);
+        }
+
+        /// <summary>
+        /// 활성 Hit Stop을 종료하고 일시 정지했던 애니메이션과 물리 상태를 정리합니다.
+        /// </summary>
+        /// <param name="restorePreviousState">
+        /// <see langword="true"/>이면 Hit Stop 시작 전 캐릭터 상태와 이동 속도를 복원하고,
+        /// <see langword="false"/>이면 사망 전환을 위해 해당 정보를 폐기합니다.
+        /// </param>
+        private void EndInternal(bool restorePreviousState = true)
+        {
+            bool canRestorePreviousState = restorePreviousState &&
+                                           _character != null &&
+                                           !_character.IsStatusDead() &&
+                                           !_character.IsDeathPending;
+
             if (_savedAnimationSpeedValid && _animationController != null)
             {
                 _animationController.SetPlaybackTimeScale(_savedAnimationSpeed);
@@ -118,11 +146,20 @@ namespace GGemCo2DCore
             if (_savedPhysicsValid && _rigidbody2D != null)
             {
                 _rigidbody2D.constraints = _savedConstraints;
-                _rigidbody2D.SetLinearVelocity(_savedVelocity);
-                _rigidbody2D.angularVelocity = _savedAngularVelocity;
+                if (canRestorePreviousState)
+                {
+                    _rigidbody2D.SetLinearVelocity(_savedVelocity);
+                    _rigidbody2D.angularVelocity = _savedAngularVelocity;
+                }
+                else
+                {
+                    // 사망 전환 중에는 Hit Stop 이전의 이동량이 다시 적용되어 시체가 튀거나 이동하지 않도록 정지합니다.
+                    _rigidbody2D.SetLinearVelocity(Vector2.zero);
+                    _rigidbody2D.angularVelocity = 0f;
+                }
             }
 
-            if (_savedStatusValid && _character != null)
+            if (_savedStatusValid && canRestorePreviousState)
             {
                 RestoreStatus(_savedStatus);
             }
