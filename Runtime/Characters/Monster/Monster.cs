@@ -27,6 +27,7 @@ namespace GGemCo2DCore
 
         // 공격 범위 안에 트리거/연출/보조 Collider가 함께 들어와도 HitArea가 잘리지 않도록 여유 있게 확보한다.
         private const int CountCollider = 32;
+        private const float CombatEngagementFallbackThreat = 1f;
         private Collider2D[] _collider2Ds;
         
         private MonsterUIController _monsterUIController;
@@ -48,6 +49,7 @@ namespace GGemCo2DCore
         private MonsterEncounterProfile _encounterProfile;
         private MonsterAttackSlotController _attackSlotController;
         private MonsterAttackSlotProfile _attackSlotProfile;
+        private Player _registeredCombatEngagementPlayer;
         private int _currentLevel = 1;
 
         /// <summary>
@@ -720,6 +722,7 @@ namespace GGemCo2DCore
             }
 
             _threatController?.AddDamageThreat(target, confirmedDamage: 1L);
+            TryBeginPlayerCombatEngagement(target);
         }
 
         /// <summary>
@@ -736,6 +739,7 @@ namespace GGemCo2DCore
             }
 
             _threatController?.AddDamageThreat(target, metadataDamage.damage);
+            TryBeginPlayerCombatEngagement(target);
         }
 
         /// <summary>
@@ -977,27 +981,101 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// Threat 목록에 플레이어가 처음 등록되면 플레이어의 전투 참여 목록에도 이 몬스터를 등록합니다.
+        /// Threat 목록에 대상이 처음 등록되면 Encounter 전파에 필요한 감지 상태만 갱신합니다.
+        /// 플레이어 교전 등록은 실제 공격 행동 또는 유효 타격이 발생한 시점에 별도로 처리합니다.
         /// </summary>
         private void OnThreatTargetRegistered(CharacterBase target)
         {
-            if (target is Player player)
-            {
-                player.RegisterCombatEngagement(this);
-            }
-
             _encounterMember?.NotifyOwnerEngaged(target);
         }
 
         /// <summary>
-        /// 플레이어의 모든 Threat 원인이 제거되면 플레이어 전투 참여 목록에서 이 몬스터를 해제합니다.
+        /// 플레이어의 모든 Threat 원인이 제거되면 실제로 등록했던 전투 참여 관계를 해제합니다.
         /// </summary>
         private void OnThreatTargetUnregistered(CharacterBase target)
         {
             if (target is Player player)
             {
-                player.UnregisterCombatEngagement(this);
+                EndPlayerCombatEngagement(player);
             }
+        }
+
+        /// <summary>
+        /// 실제 공격 행동 또는 유효 타격이 발생한 대상이 플레이어이면 전투 참여 관계를 시작합니다.
+        /// </summary>
+        /// <param name="target">현재 공격하거나 공격받은 대상 캐릭터입니다.</param>
+        /// <returns>새로운 플레이어 교전 관계를 등록했으면 <see langword="true"/>입니다.</returns>
+        internal bool TryBeginPlayerCombatEngagement(CharacterBase target)
+        {
+            if (target is not Player player ||
+                IsStatusDead() ||
+                player.IsStatusDead())
+            {
+                return false;
+            }
+
+            if (_threatController == null)
+            {
+                return false;
+            }
+
+            // 감지 없이 투사체 등에 먼저 피격된 경우에도 교전 종료 수명주기가 동작하도록 최소 Threat를 보장합니다.
+            if (!_threatController.ContainsTarget(player) &&
+                !_threatController.AddThreat(
+                    player,
+                    CombatEngagementFallbackThreat,
+                    MonsterThreatSource.External))
+            {
+                return false;
+            }
+
+            if (_registeredCombatEngagementPlayer != null &&
+                _registeredCombatEngagementPlayer != player)
+            {
+                EndPlayerCombatEngagement(_registeredCombatEngagementPlayer);
+            }
+
+            // 외부 초기화로 플레이어 교전 목록만 먼저 정리된 경우에도 다음 실제 공격에서 관계를 복구합니다.
+            if (player.IsEngagedWith(this))
+            {
+                _registeredCombatEngagementPlayer = player;
+                return false;
+            }
+
+            if (!player.RegisterCombatEngagement(this))
+            {
+                return false;
+            }
+
+            _registeredCombatEngagementPlayer = player;
+            return true;
+        }
+
+        /// <summary>
+        /// 지정 플레이어와 이 몬스터 사이에 실제로 시작된 전투 참여 관계를 종료합니다.
+        /// </summary>
+        /// <param name="player">교전 관계를 해제할 플레이어입니다.</param>
+        /// <returns>플레이어 교전 목록에서 몬스터를 제거했으면 <see langword="true"/>입니다.</returns>
+        private bool EndPlayerCombatEngagement(Player player)
+        {
+            if (player == null)
+            {
+                if (_registeredCombatEngagementPlayer == null)
+                {
+                    return false;
+                }
+
+                _registeredCombatEngagementPlayer = null;
+                return false;
+            }
+
+            bool removed = player.UnregisterCombatEngagement(this);
+            if (_registeredCombatEngagementPlayer == player)
+            {
+                _registeredCombatEngagementPlayer = null;
+            }
+
+            return removed;
         }
 
         /// <summary>

@@ -112,6 +112,24 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 몬스터가 실제 타격을 발생시킨 경우 공격 행동 시작 통지가 누락된 경로에서도 교전 관계를 보완합니다.
+        /// </summary>
+        /// <param name="attacker">피격을 발생시킨 공격자 오브젝트입니다.</param>
+        public override void OnDamage(GameObject attacker)
+        {
+            base.OnDamage(attacker);
+
+            if (attacker == null)
+            {
+                return;
+            }
+
+            Monster monster = attacker.GetComponent<Monster>() ??
+                              attacker.GetComponentInParent<Monster>();
+            monster?.TryBeginPlayerCombatEngagement(this);
+        }
+
+        /// <summary>
         /// 현재 전투 참여 목록에서 플레이어와 가장 가까운 몬스터를 자동 이동 타겟으로 다시 선택합니다.
         /// </summary>
         /// <returns>유효한 자동 이동 타겟을 선택했으면 <see langword="true"/>입니다.</returns>

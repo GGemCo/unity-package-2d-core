@@ -139,6 +139,12 @@ namespace GGemCo2DCore
         /// <param name="waitForExplicitCompletion">스킬 완료 이벤트처럼 명시적 완료 통지까지 예약을 유지할지 여부입니다.</param>
         public void NotifyCombatActionStarted(bool waitForExplicitCompletion = false)
         {
+            // 공격 슬롯 사용 여부와 무관하게 실제 공격 행동을 시작한 순간부터 플레이어 교전으로 처리합니다.
+            if (TryResolveCurrentTarget(out CharacterBase combatTarget))
+            {
+                _owner.TryBeginPlayerCombatEngagement(combatTarget);
+            }
+
             if (!_profile.IsEnabled)
             {
                 return;
