@@ -188,16 +188,19 @@ namespace GGemCo2DCore
         /// <summary>
         /// 현재 HP와 최대 HP를 기준으로 HUD의 HP 표시를 갱신합니다.
         /// </summary>
+        /// <remarks>
+        /// 사망 시 현재 HP가 0이더라도 HUD에 전달하여 남아 있는 HP 표시가 모두 소진되도록 합니다.
+        /// </remarks>
         private void SetWindowHudHp()
         {
-            if (_uiWindowHud == null)
+            if (_uiWindowHud == null || _player == null)
             {
                 return;
             }
 
-            if (_player.CurrentHp.Value <= 0) return;
-            
-            _uiWindowHud.SetHp(_player.CurrentHp.Value, _player.MaxHp.Value);
+            long currentHp = Math.Max(0, _player.CurrentHp.Value);
+            long maxHp = Math.Max(0, _player.MaxHp.Value);
+            _uiWindowHud.SetHp(currentHp, maxHp);
         }
 
         /// <summary>
