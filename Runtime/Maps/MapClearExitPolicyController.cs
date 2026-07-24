@@ -15,6 +15,7 @@ namespace GGemCo2DCore
         private bool _hasInitialMonsters;
         private bool _isExecuting;
         private bool _isEventRegistered;
+        private bool _ignoreAliveMonstersForExecution;
         private Coroutine _executeRoutine;
 
         /// <summary>
@@ -42,6 +43,39 @@ namespace GGemCo2DCore
             }
 
             return _currentMapUid > 0 && _currentMapUid == mapUid;
+        }
+
+        /// <summary>
+        /// 저장 데이터에 클리어된 현재 맵의 종료 연출을 명시적으로 요청합니다.
+        /// 영역 도달이나 시나리오 완료처럼 몬스터 전멸 이외의 규칙으로 맵을 종료할 때 사용합니다.
+        /// </summary>
+        /// <param name="mapUid">종료 연출을 실행할 현재 맵 UID입니다.</param>
+        /// <returns>종료 연출 루틴을 시작했으면 <see langword="true"/>를 반환합니다.</returns>
+        public bool TryRequestClearedMapExit(int mapUid)
+        {
+            MapClearExitPolicySettings policy = GetPolicy();
+            if (policy == null || !policy.enabled || _isExecuting)
+            {
+                return false;
+            }
+
+            if (mapUid <= 0 || _currentMapUid != mapUid || !IsPlayerAliveForMapClear())
+            {
+                return false;
+            }
+
+            MapProgressController progressController =
+                _sceneGame?.saveDataManager?.MapProgressController;
+            if (progressController == null || !progressController.IsMapCleared(mapUid))
+            {
+                GcLogger.LogWarning(
+                    $"[MapClearExitPolicyController] 클리어되지 않은 맵의 종료 연출 요청을 거부했습니다. mapUid:{mapUid}");
+                return false;
+            }
+
+            _ignoreAliveMonstersForExecution = true;
+            BeginMapClearExit();
+            return true;
         }
 
         /// <summary>
@@ -100,6 +134,7 @@ namespace GGemCo2DCore
 
             _currentMapUid = eventData.MapUid;
             _isExecuting = false;
+            _ignoreAliveMonstersForExecution = false;
             _hasInitialMonsters = CountAliveMonsters() > 0;
 
             MapClearExitPolicySettings policy = GetPolicy();
@@ -166,6 +201,15 @@ namespace GGemCo2DCore
                 return;
             }
 
+            _ignoreAliveMonstersForExecution = false;
+            BeginMapClearExit();
+        }
+
+        /// <summary>
+        /// 중복 검증이 끝난 현재 맵의 종료 연출 루틴을 시작합니다.
+        /// </summary>
+        private void BeginMapClearExit()
+        {
             _isExecuting = true;
             CancelPlayerControlOnMapClear(GetPolicy());
             _executeRoutine = StartCoroutine(ExecuteMapClearExitRoutine(_currentMapUid));
@@ -218,6 +262,7 @@ namespace GGemCo2DCore
             if (policy == null || !policy.enabled)
             {
                 _isExecuting = false;
+                _ignoreAliveMonstersForExecution = false;
                 yield break;
             }
 
@@ -229,6 +274,7 @@ namespace GGemCo2DCore
             if (!IsStillValidForExecution(mapUid, policy))
             {
                 _isExecuting = false;
+                _ignoreAliveMonstersForExecution = false;
                 yield break;
             }
 
@@ -242,6 +288,7 @@ namespace GGemCo2DCore
             {
                 ClearMapExitFade(policy, forceClear: true);
                 _isExecuting = false;
+                _ignoreAliveMonstersForExecution = false;
                 yield break;
             }
 
@@ -265,6 +312,7 @@ namespace GGemCo2DCore
             }
 
             _executeRoutine = null;
+            _ignoreAliveMonstersForExecution = false;
         }
 
         /// <summary>
@@ -285,7 +333,8 @@ namespace GGemCo2DCore
                 return false;
             }
 
-            return IsPlayerAliveForMapClear() && CountAliveMonsters() <= 0;
+            return IsPlayerAliveForMapClear() &&
+                   (_ignoreAliveMonstersForExecution || CountAliveMonsters() <= 0);
         }
 
         /// <summary>
@@ -439,11 +488,13 @@ namespace GGemCo2DCore
         {
             if (_executeRoutine == null)
             {
+                _ignoreAliveMonstersForExecution = false;
                 return;
             }
 
             StopCoroutine(_executeRoutine);
             _executeRoutine = null;
+            _ignoreAliveMonstersForExecution = false;
         }
 
         /// <summary>
