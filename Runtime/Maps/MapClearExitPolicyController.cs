@@ -17,6 +17,7 @@ namespace GGemCo2DCore
         private bool _isEventRegistered;
         private bool _ignoreAliveMonstersForExecution;
         private Coroutine _executeRoutine;
+        private readonly MapClearMonsterSuspensionScope _monsterSuspensionScope = new();
 
         /// <summary>
         /// 컨트롤러가 사용할 게임 씬 참조를 설정하고 맵/몬스터 이벤트를 구독합니다.
@@ -210,9 +211,32 @@ namespace GGemCo2DCore
         /// </summary>
         private void BeginMapClearExit()
         {
+            MapClearExitPolicySettings policy = GetPolicy();
             _isExecuting = true;
-            CancelPlayerControlOnMapClear(GetPolicy());
+
+            // 종료 지연과 Fade 연출 중에도 생존 몬스터가 플레이어를 추적하지 않도록
+            // 플레이어 조작 취소보다 먼저 몬스터 Brain 및 이동 잠금을 적용합니다.
+            SuspendActiveMonstersOnMapClear(policy);
+            CancelPlayerControlOnMapClear(policy);
             _executeRoutine = StartCoroutine(ExecuteMapClearExitRoutine(_currentMapUid));
+        }
+
+        /// <summary>
+        /// 설정에 따라 현재 맵에서 활성화된 생존 몬스터의 Brain과 이동을 중단합니다.
+        /// </summary>
+        /// <param name="policy">현재 맵 종료 정책 설정입니다.</param>
+        private void SuspendActiveMonstersOnMapClear(MapClearExitPolicySettings policy)
+        {
+            if (policy == null || !policy.suspendActiveMonstersOnClear)
+            {
+                return;
+            }
+
+            _monsterSuspensionScope.Suspend(
+                _sceneGame?.mapManager,
+                this,
+                policy.cancelMonsterSkillsOnClear,
+                policy.switchMonstersToIdleOnClear);
         }
 
         /// <summary>
@@ -261,8 +285,7 @@ namespace GGemCo2DCore
             MapClearExitPolicySettings policy = GetPolicy();
             if (policy == null || !policy.enabled)
             {
-                _isExecuting = false;
-                _ignoreAliveMonstersForExecution = false;
+                AbortMapClearExitExecution();
                 yield break;
             }
 
@@ -273,8 +296,7 @@ namespace GGemCo2DCore
 
             if (!IsStillValidForExecution(mapUid, policy))
             {
-                _isExecuting = false;
-                _ignoreAliveMonstersForExecution = false;
+                AbortMapClearExitExecution();
                 yield break;
             }
 
@@ -287,8 +309,7 @@ namespace GGemCo2DCore
             if (!IsStillValidForExecution(mapUid, policy))
             {
                 ClearMapExitFade(policy, forceClear: true);
-                _isExecuting = false;
-                _ignoreAliveMonstersForExecution = false;
+                AbortMapClearExitExecution();
                 yield break;
             }
 
@@ -313,6 +334,17 @@ namespace GGemCo2DCore
 
             _executeRoutine = null;
             _ignoreAliveMonstersForExecution = false;
+        }
+
+        /// <summary>
+        /// 유효성 검증에 실패한 맵 종료 실행 상태와 몬스터 잠금을 함께 정리합니다.
+        /// </summary>
+        private void AbortMapClearExitExecution()
+        {
+            _executeRoutine = null;
+            _isExecuting = false;
+            _ignoreAliveMonstersForExecution = false;
+            _monsterSuspensionScope.Release();
         }
 
         /// <summary>
@@ -486,15 +518,15 @@ namespace GGemCo2DCore
         /// </summary>
         private void StopExecuteRoutine()
         {
-            if (_executeRoutine == null)
+            if (_executeRoutine != null)
             {
-                _ignoreAliveMonstersForExecution = false;
-                return;
+                StopCoroutine(_executeRoutine);
             }
 
-            StopCoroutine(_executeRoutine);
             _executeRoutine = null;
+            _isExecuting = false;
             _ignoreAliveMonstersForExecution = false;
+            _monsterSuspensionScope.Release();
         }
 
         /// <summary>

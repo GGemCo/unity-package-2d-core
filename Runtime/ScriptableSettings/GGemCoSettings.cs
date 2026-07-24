@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using UnityEngine;
 
 namespace GGemCo2DCore
@@ -33,6 +33,15 @@ namespace GGemCo2DCore
 
         [Tooltip("맵 클리어가 확정되었을 때 플레이어의 자동 이동 요청과 잔여 조작 액션을 취소할지 여부입니다.")]
         public bool cancelAutoMoveOnClear = true;
+
+        [Tooltip("맵 클리어가 확정되었을 때 현재 맵에서 활성화된 생존 몬스터의 Brain과 이동을 중단할지 여부입니다.")]
+        public bool suspendActiveMonstersOnClear = true;
+
+        [Tooltip("맵 클리어로 몬스터를 중단할 때 실행 중인 스킬과 스킬 이동 모션도 함께 취소할지 여부입니다.")]
+        public bool cancelMonsterSkillsOnClear = true;
+
+        [Tooltip("맵 클리어로 몬스터를 중단할 때 대기 애니메이션으로 전환할지 여부입니다.")]
+        public bool switchMonstersToIdleOnClear = true;
 
         [Tooltip("맵 입장 시 살아있는 몬스터가 없는 맵은 자동 종료 정책에서 제외할지 여부입니다.")]
         public bool ignoreMapWithoutInitialMonsters = true;
@@ -78,6 +87,9 @@ namespace GGemCo2DCore
                 suppressMonsterRespawn = true,
                 requirePlayerKill = false,
                 cancelAutoMoveOnClear = true,
+                suspendActiveMonstersOnClear = true,
+                cancelMonsterSkillsOnClear = true,
+                switchMonstersToIdleOnClear = true,
                 ignoreMapWithoutInitialMonsters = true,
                 exitDelaySeconds = 0.5f,
                 fadeOutDurationSeconds = 0.3f,
