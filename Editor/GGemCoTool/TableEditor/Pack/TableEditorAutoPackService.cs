@@ -7,11 +7,131 @@ using UnityEngine;
 namespace GGemCo2DCoreEditor
 {
     /// <summary>
+    /// 조건부 Auto Pack 요청의 처리 상태입니다.
+    /// </summary>
+    public enum TableEditorAutoPackStatus
+    {
+        /// <summary>원본 테이블이 변경되지 않아 실행하지 않았습니다.</summary>
+        SkippedUnchanged = 0,
+
+        /// <summary>Auto Pack 설정이 비활성화되어 실행하지 않았습니다.</summary>
+        SkippedDisabled = 1,
+
+        /// <summary>런타임 테이블 pack 생성에 성공했습니다.</summary>
+        Built = 2,
+
+        /// <summary>런타임 테이블 pack 생성에 실패했습니다.</summary>
+        Failed = 3,
+    }
+
+    /// <summary>
+    /// 조건부 Auto Pack 요청의 상태와 사용자 안내 메시지를 제공합니다.
+    /// </summary>
+    public sealed class TableEditorAutoPackResult
+    {
+        /// <summary>
+        /// Auto Pack 처리 상태입니다.
+        /// </summary>
+        public TableEditorAutoPackStatus Status { get; }
+
+        /// <summary>
+        /// 처리 결과를 설명하는 메시지입니다.
+        /// </summary>
+        public string Message { get; }
+
+        /// <summary>
+        /// 실제 pack 빌드를 시도했는지 여부입니다.
+        /// </summary>
+        public bool WasAttempted =>
+            Status == TableEditorAutoPackStatus.Built ||
+            Status == TableEditorAutoPackStatus.Failed;
+
+        /// <summary>
+        /// 실제 pack 빌드에 성공했는지 여부입니다.
+        /// </summary>
+        public bool BuildSucceeded =>
+            Status == TableEditorAutoPackStatus.Built;
+
+        /// <summary>
+        /// 조건부 Auto Pack 결과를 생성합니다.
+        /// </summary>
+        /// <param name="status">처리 상태입니다.</param>
+        /// <param name="message">사용자 안내 메시지입니다.</param>
+        public TableEditorAutoPackResult(
+            TableEditorAutoPackStatus status,
+            string message)
+        {
+            Status = status;
+            Message = message ?? string.Empty;
+        }
+    }
+
+    /// <summary>
     /// TableEditor 저장 후 선택된 테이블이 속한 패키지의 런타임 테이블 pack 생성을 중계합니다.
     /// </summary>
     public static class TableEditorAutoPackService
     {
         private static List<ITableEditorPackBuildProvider> _providers;
+
+        /// <summary>
+        /// 원본 변경 여부와 공유 Auto Pack 설정을 확인한 후 Table Key에 맞는 pack을 재생성합니다.
+        /// </summary>
+        /// <param name="tableKey">TableEditorRegistry에 등록된 테이블 키입니다.</param>
+        /// <param name="sourceChanged">원본 테이블 파일이 실제로 변경되었는지 여부입니다.</param>
+        /// <returns>실행 생략, 성공 또는 실패 상태를 포함하는 결과입니다.</returns>
+        public static TableEditorAutoPackResult TryBuildIfEnabled(
+            string tableKey,
+            bool sourceChanged)
+        {
+            if (!sourceChanged)
+            {
+                return new TableEditorAutoPackResult(
+                    TableEditorAutoPackStatus.SkippedUnchanged,
+                    "원본 테이블 변경사항이 없어 Auto Pack을 실행하지 않았습니다.");
+            }
+
+            if (!TableEditorAutoPackSettings.IsEnabled)
+            {
+                return new TableEditorAutoPackResult(
+                    TableEditorAutoPackStatus.SkippedDisabled,
+                    "Auto Pack 설정이 비활성화되어 pack을 생성하지 않았습니다.");
+            }
+
+            if (string.IsNullOrWhiteSpace(tableKey))
+            {
+                return new TableEditorAutoPackResult(
+                    TableEditorAutoPackStatus.Failed,
+                    "Auto Pack 대상 테이블 키가 없습니다.");
+            }
+
+            try
+            {
+                TableEditorTableDefinition tableDefinition =
+                    TableEditorRegistry.FindByKey(tableKey);
+                if (tableDefinition == null)
+                {
+                    return new TableEditorAutoPackResult(
+                        TableEditorAutoPackStatus.Failed,
+                        $"Auto Pack 대상 테이블 정의를 찾지 못했습니다. table={tableKey}");
+                }
+
+                bool built = TryBuildForTable(
+                    tableDefinition,
+                    out string message);
+                return new TableEditorAutoPackResult(
+                    built
+                        ? TableEditorAutoPackStatus.Built
+                        : TableEditorAutoPackStatus.Failed,
+                    message);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
+                return new TableEditorAutoPackResult(
+                    TableEditorAutoPackStatus.Failed,
+                    $"Auto Pack 처리 중 예외가 발생했습니다. table={tableKey}, error={ex.Message}");
+            }
+        }
 
         /// <summary>
         /// 지정한 테이블 정의를 처리할 수 있는 Provider를 찾아 런타임 테이블 pack을 재생성합니다.

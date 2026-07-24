@@ -13,7 +13,6 @@ namespace GGemCo2DCoreEditor
     public sealed class TableEditorWindow : EditorWindow
     {
         private const string Title = "데이터 테이블 에디터";
-        private const string EditorPrefsKeyAutoPackOnSave = "GGemCo.TableEditor.AutoPackOnSave";
 
         private sealed class PendingOpenRequest
         {
@@ -93,7 +92,7 @@ namespace GGemCo2DCoreEditor
         {
             _tables = TableEditorRegistry.GetAll();
             BuildPackageChoices();
-            _autoPackOnSave = EditorPrefs.GetBool(EditorPrefsKeyAutoPackOnSave, false);
+            _autoPackOnSave = TableEditorAutoPackSettings.IsEnabled;
             _undoController ??= new TableEditorUndoController(HandleUndoRedoRestore);
         }
 
@@ -161,7 +160,7 @@ namespace GGemCo2DCoreEditor
             toggle.RegisterValueChangedCallback(evt =>
             {
                 _autoPackOnSave = evt.newValue;
-                EditorPrefs.SetBool(EditorPrefsKeyAutoPackOnSave, _autoPackOnSave);
+                TableEditorAutoPackSettings.IsEnabled = _autoPackOnSave;
             });
 
             return toggle;
@@ -512,17 +511,23 @@ namespace GGemCo2DCoreEditor
         /// <param name="context">현재 저장 작업 컨텍스트입니다.</param>
         private void TryAutoPackAfterSave(TableEditorSaveContext context)
         {
-            if (!_autoPackOnSave || context == null || !context.HasDocumentChanges)
+            TableEditorAutoPackResult result =
+                TableEditorAutoPackService.TryBuildIfEnabled(
+                    context?.TableDefinition?.TableKey,
+                    context?.HasDocumentChanges ?? false);
+            if (!result.WasAttempted)
                 return;
 
-            bool built = TableEditorAutoPackService.TryBuildForTable(context.TableDefinition, out string message);
             if (_statusLabel != null)
-                _statusLabel.text = built ? "Packed" : "Pack Failed";
+            {
+                _statusLabel.text =
+                    result.BuildSucceeded ? "Packed" : "Pack Failed";
+            }
 
-            if (built)
-                Debug.Log($"[TableEditor] {message}");
+            if (result.BuildSucceeded)
+                Debug.Log($"[TableEditor] {result.Message}");
             else
-                Debug.LogWarning($"[TableEditor] {message}");
+                Debug.LogWarning($"[TableEditor] {result.Message}");
         }
 
         /// <summary>
