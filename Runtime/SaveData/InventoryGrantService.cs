@@ -40,6 +40,7 @@ namespace GGemCo2DCore
         /// <remarks>
         /// 지급 항목 중 하나라도 유효하지 않거나 공간이 부족하면 인벤토리를 변경하지 않습니다.
         /// 인벤토리와 지급 이력을 같은 Core 저장 파일에 기록하기 위해 지급 성공 직후 즉시 저장합니다.
+        /// 인벤토리 UI는 직접 갱신하지 않으며, 창이 열릴 때 저장 데이터를 기준으로 표시를 구성합니다.
         /// </remarks>
         /// <param name="saveDataManager">Core 저장 데이터 관리자입니다.</param>
         /// <param name="grantKey">지급 작업을 구분하는 고유 식별자입니다.</param>
@@ -91,11 +92,8 @@ namespace GGemCo2DCore
                 normalizedGrantKey,
                 grantVersion);
 
-            // 지급 데이터는 이미 반영되어 있으므로 열린 인벤토리는 저장 데이터를 기준으로 다시 표시합니다.
-            SceneGame.Instance?.uIWindowManager
-                ?.GetUIWindowByUid<UIWindowInventory>(UIWindowConstants.WindowUid.Inventory)
-                ?.LoadIcons();
-
+            // 지급 서비스는 UI 수명주기에 의존하지 않고 데이터와 지급 이력을 먼저 영속화합니다.
+            // 인벤토리 창은 실제로 열릴 때 저장 데이터를 기준으로 아이콘을 다시 구성합니다.
             if (!saveDataManager.SaveData())
             {
                 return ResultCommon.Fail(

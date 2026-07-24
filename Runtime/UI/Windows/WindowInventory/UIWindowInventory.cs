@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 #if GGEMCO_USE_NEW_INPUT
@@ -349,13 +349,26 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 저장되어있는 아이템 정보로 아이콘 셋팅하기
-        /// 인벤토리가 열려있지 않으면 업데이트 하지 않음
+        /// 저장된 인벤토리 데이터를 기준으로 아이콘 표시를 갱신합니다.
         /// </summary>
+        /// <remarks>
+        /// 인벤토리 창이 열려 있지 않거나 UI 및 저장 데이터 초기화가 완료되지 않은 경우에는 갱신하지 않습니다.
+        /// 초기화가 완료된 뒤 창이 열리면 <see cref="OnShow(bool)"/>에서 다시 갱신합니다.
+        /// </remarks>
         public void LoadIcons()
         {
-            if (!gameObject.activeSelf) return;
-            var datas = SceneGame.saveDataManager.Inventory.GetAllItemCounts();
+            if (!gameObject.activeSelf ||
+                SceneGame == null ||
+                SceneGame.saveDataManager == null ||
+                SceneGame.saveDataManager.Inventory == null ||
+                TableItem == null ||
+                icons == null)
+            {
+                return;
+            }
+
+            InventoryData ??= SceneGame.saveDataManager.Inventory;
+            var datas = InventoryData.GetAllItemCounts();
             bool contextActive = _selectionContext is { IsActive: true };
             int defaultItemUid = 0;
             long defaultItemInstanceId = 0;
