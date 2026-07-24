@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using UnityEngine;
 
@@ -35,6 +36,7 @@ namespace GGemCo2DCore
         private bool _useGameTime;
         private bool _isResetInProgress;
         private bool _isInitialized;
+        private int _saveSuppressionCount;
 
         /// <summary>
         /// 저장 데이터 매니저 초기화 순서입니다.
@@ -46,6 +48,11 @@ namespace GGemCo2DCore
         /// 저장 데이터 매니저가 초기화되었는지 확인합니다.
         /// </summary>
         public bool IsInitialized => _isInitialized;
+
+        /// <summary>
+        /// 외부 시스템의 저장 억제 요청으로 현재 저장이 차단되어 있는지 확인합니다.
+        /// </summary>
+        public bool IsSaveSuppressed => _saveSuppressionCount > 0;
 
         /// <summary>
         /// 로더 캐시를 정리하기 전에 모든 저장 예약을 중단하도록 초기화 순서를 반환합니다.
@@ -165,11 +172,43 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 저장하기 시작
+        /// 외부 시스템이 사용자 선택이나 초기 연출을 완료할 때까지 저장을 억제합니다.
+        /// 반환된 토큰을 해제하기 전에는 예약 저장과 직접 저장을 모두 수행하지 않습니다.
+        /// </summary>
+        /// <returns>저장 억제 상태를 해제하는 토큰입니다.</returns>
+        public IDisposable AcquireSaveSuppression()
+        {
+            _saveSuppressionCount++;
+
+            // 이미 예약된 지연 저장과 강제 저장이 억제 구간 중 실행되지 않도록 함께 취소합니다.
+            StopScheduledSaveInvokes();
+            return new SaveSuppressionToken(this);
+        }
+
+        /// <summary>
+        /// 저장 억제 토큰 하나를 해제하고, 모든 억제가 해제되면 주기 저장 예약을 복원합니다.
+        /// 억제 해제 자체로 즉시 저장하지 않으며, 저장 시점은 호출자가 명시적으로 결정합니다.
+        /// </summary>
+        private void ReleaseSaveSuppression()
+        {
+            if (_saveSuppressionCount <= 0)
+            {
+                return;
+            }
+
+            _saveSuppressionCount--;
+            if (_saveSuppressionCount == 0)
+            {
+                ScheduleForceSaveInvoke();
+            }
+        }
+
+        /// <summary>
+        /// 저장 변경 요청을 받아 설정된 지연 정책에 따라 저장을 시작합니다.
         /// </summary>
         public void StartSaveData()
         {
-            if (_isResetInProgress || SaveDataResetParticipantRegistry.IsResetInProgress)
+            if (IsSaveBlocked())
             {
                 return;
             }
@@ -198,7 +237,7 @@ namespace GGemCo2DCore
         /// </summary>
         private void ForceSave()
         {
-            if (_isResetInProgress || SaveDataResetParticipantRegistry.IsResetInProgress)
+            if (IsSaveBlocked())
             {
                 return;
             }
@@ -215,6 +254,11 @@ namespace GGemCo2DCore
         /// </summary>
         public virtual bool SaveData()
         {
+            if (IsSaveSuppressed)
+            {
+                return false;
+            }
+
             if (_isResetInProgress || SaveDataResetParticipantRegistry.IsResetInProgress)
             {
                 GcLogger.LogWarning("저장 데이터 초기화 중에는 저장할 수 없습니다.");
@@ -316,6 +360,17 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 저장 억제 또는 로컬 데이터 초기화로 현재 저장 요청을 처리할 수 없는지 확인합니다.
+        /// </summary>
+        /// <returns>저장을 차단해야 하면 true입니다.</returns>
+        private bool IsSaveBlocked()
+        {
+            return IsSaveSuppressed ||
+                   _isResetInProgress ||
+                   SaveDataResetParticipantRegistry.IsResetInProgress;
+        }
+
+        /// <summary>
         /// 저장 매니저가 파괴될 때 전역 초기화 참여자 등록을 해제합니다.
         /// </summary>
         protected virtual void OnDestroy()
@@ -328,7 +383,8 @@ namespace GGemCo2DCore
         /// </summary>
         private void ScheduleForceSaveInvoke()
         {
-            if (!_isResetInProgress &&
+            if (!IsSaveSuppressed &&
+                !_isResetInProgress &&
                 !SaveDataResetParticipantRegistry.IsResetInProgress &&
                 isActiveAndEnabled &&
                 _useSaveData &&
@@ -345,6 +401,37 @@ namespace GGemCo2DCore
             var list = SaveRegistry.All;
             for (int i = 0; i < list.Count; i++) list[i].Capture(env);
             return env;
+        }
+
+        /// <summary>
+        /// 저장 억제 요청의 수명을 관리하고 중복 해제를 방지합니다.
+        /// </summary>
+        private sealed class SaveSuppressionToken : IDisposable
+        {
+            private SaveDataManagerBase _owner;
+
+            /// <summary>
+            /// 지정한 저장 매니저에 연결된 억제 토큰을 생성합니다.
+            /// </summary>
+            /// <param name="owner">저장 억제를 소유한 저장 매니저입니다.</param>
+            public SaveSuppressionToken(SaveDataManagerBase owner)
+            {
+                _owner = owner;
+            }
+
+            /// <summary>
+            /// 저장 억제를 한 번만 해제합니다.
+            /// </summary>
+            public void Dispose()
+            {
+                SaveDataManagerBase owner = _owner;
+                _owner = null;
+
+                if (owner != null)
+                {
+                    owner.ReleaseSaveSuppression();
+                }
+            }
         }
     }
 }
