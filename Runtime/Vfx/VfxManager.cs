@@ -141,6 +141,9 @@ namespace GGemCo2DCore
                 request.ColorOverride = resolved.ColorOverride;
         }
 
+        /// <summary>
+        /// 테이블에 설정된 모든 VFX 풀을 사전 생성하고, 미로딩 프리팹이 있으면 완료 처리를 보류합니다.
+        /// </summary>
         private void TryPrewarmAllConfiguredVfx()
         {
             if (_didInitialPrewarm)
@@ -161,6 +164,7 @@ namespace GGemCo2DCore
                 return;
             }
 
+            bool hasPendingPrefab = false;
             foreach (var pair in allVfxData)
             {
                 var info = pair.Value;
@@ -169,12 +173,18 @@ namespace GGemCo2DCore
 
                 var prefab = ResolvePrefab(info);
                 if (prefab == null)
+                {
+                    // 프리팹 비동기 로드가 끝나기 전에 완료로 확정하면 이후 재시도 기회가 사라집니다.
+                    hasPendingPrefab = true;
                     continue;
+                }
 
                 _poolService.Configure(info, prefab);
             }
 
-            _didInitialPrewarm = true;
+            // SceneGame.Initialize 시점에 아직 로딩 중인 프리팹이 있으면
+            // SceneGame.Activate에서 한 번 더 프리워밍할 수 있도록 완료 처리를 보류합니다.
+            _didInitialPrewarm = !hasPendingPrefab;
         }
 
         private static GameObject ResolvePrefab(VfxRuntimeData info)

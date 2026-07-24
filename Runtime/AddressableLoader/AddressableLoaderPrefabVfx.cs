@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -49,9 +49,12 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// VFX 라벨의 Addressables 종속성만 미리 다운로드합니다.
+        /// VFX 라벨의 Addressables 종속성을 준비하고, 요청된 경우 실제 프리팹 캐시 구성까지 완료합니다.
         /// </summary>
-        /// <param name="loadObjectsInBackground">워밍 완료 후 실제 프리팹 캐시를 백그라운드에서 구성할지 여부입니다.</param>
+        /// <param name="loadObjectsInBackground">
+        /// <see langword="true"/>이면 종속성 준비 후 실제 프리팹을 비동기로 로드하고 완료까지 기다립니다.
+        /// 기존 호출부 호환성을 위해 매개변수 이름은 유지합니다.
+        /// </param>
         public async Task PrepareDependenciesAsync(bool loadObjectsInBackground = true)
         {
             _prefabLoadProgress = 0f;
@@ -69,8 +72,9 @@ namespace GGemCo2DCore
 
             if (loadObjectsInBackground && task.Status == TaskStatus.RanToCompletion && task.Result)
             {
-                // 기존 동기 getter 사용부를 보호하기 위해 실제 객체 캐시는 로딩 화면 밖에서 비동기로 구성합니다.
-                _ = LoadPrefabsAsync();
+                // 로딩 단계가 끝나기 전에 실제 프리팹 캐시까지 구성해야
+                // 첫 VFX 재생 프레임에서 Addressables 역직렬화가 발생하지 않습니다.
+                await LoadPrefabsAsync();
             }
         }
 
@@ -140,15 +144,26 @@ namespace GGemCo2DCore
             return _preLoadGamePrefabs.TryGetValue(prefabName, out prefab);
         }
 
+        /// <summary>
+        /// VFX 라벨에 등록된 모든 프리팹을 순차적으로 로드하여 동기 조회용 캐시를 구성합니다.
+        /// 이미 같은 작업이 진행 중이면 중복 로드하지 않고 기존 작업이 끝날 때까지 기다립니다.
+        /// </summary>
+        /// <returns>전체 VFX 프리팹 캐시 구성이 끝나면 완료되는 작업입니다.</returns>
         public async Task LoadPrefabsAsync()
         {
             if (_isLoadingPrefabs)
+            {
+                // Unity Addressables 에셋 완료 처리는 메인 스레드에서 진행될 수 있으므로,
+                // 중복 요청은 별도 로드를 시작하지 않고 기존 작업의 완료를 기다립니다.
+                while (_isLoadingPrefabs)
+                    await Task.Yield();
+
                 return;
+            }
 
             try
             {
                 _isLoadingPrefabs = true;
-                _preLoadGamePrefabs.Clear();
                 var locationHandle = Addressables.LoadResourceLocationsAsync(ConfigAddressableLabel.Vfx);
                 await locationHandle.Task;
 
