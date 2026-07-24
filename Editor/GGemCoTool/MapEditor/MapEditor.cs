@@ -29,6 +29,7 @@ namespace GGemCo2DCoreEditor
         private readonly MonsterExporter _monsterExporter = new MonsterExporter();
         private readonly WarpExporter _warpExporter = new WarpExporter();
         private readonly WaveExporter _waveExporter = new WaveExporter();
+        private readonly List<IMapEditorExtension> _extensions = new List<IMapEditorExtension>();
         // private readonly PatrolExporter _patrolExporter = new PatrolExporter();
 
         // ---- UI State ----
@@ -107,6 +108,7 @@ namespace GGemCo2DCoreEditor
             LoadTables();
             SetupServices();
             InitializeExporters();
+            InitializeExtensions();
             RebuildPopupCaches();
             RegisterWaveSceneGizmos();
 
@@ -123,8 +125,70 @@ namespace GGemCo2DCoreEditor
 
         private void OnDisable()
         {
+            DisableExtensions();
             UnregisterWaveSceneGizmos();
             // DestroyGridObjectIfExists();
+        }
+
+        /// <summary>
+        /// Unity 타입 캐시에서 맵 배치툴 확장 구현을 검색하고 실행 순서대로 초기화합니다.
+        /// 확장 구현 하나가 실패해도 다른 확장과 Core 맵 배치 기능은 계속 사용할 수 있도록 예외를 격리합니다.
+        /// </summary>
+        private void InitializeExtensions()
+        {
+            DisableExtensions();
+            _extensions.Clear();
+
+            foreach (Type type in TypeCache.GetTypesDerivedFrom<IMapEditorExtension>())
+            {
+                if (type == null || type.IsAbstract || type.IsInterface)
+                {
+                    continue;
+                }
+
+                try
+                {
+                    if (Activator.CreateInstance(type) is IMapEditorExtension extension)
+                    {
+                        _extensions.Add(extension);
+                    }
+                }
+                catch (Exception exception)
+                {
+                    Debug.LogException(exception);
+                }
+            }
+
+            _extensions.Sort((left, right) => left.Order.CompareTo(right.Order));
+            for (int i = 0; i < _extensions.Count; i++)
+            {
+                try
+                {
+                    _extensions[i].OnEnable();
+                }
+                catch (Exception exception)
+                {
+                    Debug.LogException(exception);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 맵 배치툴 확장 구현이 등록한 에디터 이벤트와 캐시를 정리합니다.
+        /// </summary>
+        private void DisableExtensions()
+        {
+            for (int i = 0; i < _extensions.Count; i++)
+            {
+                try
+                {
+                    _extensions[i]?.OnDisable();
+                }
+                catch (Exception exception)
+                {
+                    Debug.LogException(exception);
+                }
+            }
         }
 
         private void LoadTables()
@@ -309,8 +373,34 @@ namespace GGemCo2DCoreEditor
                 DrawWaveSection();
                 GUILayout.Space(12);
                 DrawWarpSection();
+                DrawExtensionSections();
             }
             EditorGUILayout.EndScrollView();
+        }
+
+        /// <summary>
+        /// 현재 선택 맵 컨텍스트를 생성하여 외부 맵 배치 확장 UI를 순서대로 그립니다.
+        /// </summary>
+        private void DrawExtensionSections()
+        {
+            if (_extensions.Count <= 0)
+            {
+                return;
+            }
+
+            MapEditorExtensionContext context = CreateExtensionContext();
+            for (int i = 0; i < _extensions.Count; i++)
+            {
+                GUILayout.Space(12);
+                try
+                {
+                    _extensions[i].OnGUI(context);
+                }
+                catch (Exception exception)
+                {
+                    Debug.LogException(exception);
+                }
+            }
         }
 
         private void DrawToolbar()
@@ -327,6 +417,7 @@ namespace GGemCo2DCoreEditor
                     LoadTables();
                     SetupServices();
                     InitializeExporters();
+                    InitializeExtensions();
                     RebuildPopupCaches();
                     Repaint();
                 }
@@ -1279,8 +1370,13 @@ namespace GGemCo2DCoreEditor
             bool ok = EditorUtility.DisplayDialog("저장하기", "현재 선택된 맵에 저장하시겠습니까?", "네", "아니요");
             if (!ok) return;
 
-            ExportDataToJsonInternal();
-            EditorUtility.DisplayDialog(Title, "Json 저장하기 완료", "OK");
+            bool exported = ExportDataToJsonInternal();
+            EditorUtility.DisplayDialog(
+                Title,
+                exported
+                    ? "Json 저장하기 완료"
+                    : "일부 확장 데이터 저장에 실패했습니다. 콘솔 로그를 확인해주세요.",
+                "OK");
         }
 
         private bool LoadJsonDataInternal()
@@ -1300,11 +1396,12 @@ namespace GGemCo2DCoreEditor
             _warpExporter.LoadWarpData(ConfigAddressableMap.GetAssetPathWarp(mapData.FolderName));
             _waveExporter.LoadWaveData(ConfigAddressableMap.GetAssetPathWaveSpawn(mapData.FolderName));
             // _patrolExporter.LoadJsonData(ConfigAddressableMap.GetAssetPathPatrol(mapData.FolderName));
+            LoadExtensionData();
 
             return true;
         }
 
-        private void ExportDataToJsonInternal()
+        private bool ExportDataToJsonInternal()
         {
             int mapUid = GetSelectedMapUid();
 
@@ -1312,14 +1409,14 @@ namespace GGemCo2DCoreEditor
             if (!mapObject)
             {
                 Debug.LogWarning("Scene에서 Map 태그 오브젝트를 찾을 수 없습니다.");
-                return;
+                return false;
             }
 
             var mapInfo = _tableMap.GetDataByUid(mapUid);
             if (mapInfo == null || mapInfo.Uid <= 0)
             {
                 Debug.LogError("맵 데이터가 없거나 유효하지 않습니다.");
-                return;
+                return false;
             }
 
             string folderName = mapInfo.FolderName;
@@ -1338,8 +1435,63 @@ namespace GGemCo2DCoreEditor
                 mapUid,
                 mapInfo);
             // _patrolExporter.ExportPatrolDataToJson(jsonFolderPath, ConfigAddressableMap.GetFileName(MapAssetType.PatrolJson), mapUid);
+            bool extensionsExported = ExportExtensionData();
 
             AssetDatabase.Refresh();
+            return extensionsExported;
+        }
+
+        /// <summary>
+        /// 현재 선택 맵의 외부 배치 데이터를 순서대로 불러옵니다.
+        /// </summary>
+        private void LoadExtensionData()
+        {
+            MapEditorExtensionContext context = CreateExtensionContext();
+            for (int i = 0; i < _extensions.Count; i++)
+            {
+                try
+                {
+                    _extensions[i].Load(context);
+                }
+                catch (Exception exception)
+                {
+                    Debug.LogException(exception);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 현재 선택 맵의 외부 배치 데이터를 순서대로 저장합니다.
+        /// </summary>
+        private bool ExportExtensionData()
+        {
+            bool succeeded = true;
+            MapEditorExtensionContext context = CreateExtensionContext();
+            for (int i = 0; i < _extensions.Count; i++)
+            {
+                try
+                {
+                    succeeded &= _extensions[i].Export(context);
+                }
+                catch (Exception exception)
+                {
+                    Debug.LogException(exception);
+                    succeeded = false;
+                }
+            }
+
+            return succeeded;
+        }
+
+        /// <summary>
+        /// 외부 맵 배치 확장에 전달할 현재 선택 맵 컨텍스트를 생성합니다.
+        /// </summary>
+        /// <returns>현재 맵 UID, 테이블 데이터와 씬 맵 루트를 포함하는 컨텍스트입니다.</returns>
+        private MapEditorExtensionContext CreateExtensionContext()
+        {
+            int mapUid = GetSelectedMapUid();
+            StruckTableMap mapData = mapUid > 0 ? _tableMap?.GetDataByUid(mapUid) : null;
+            return new MapEditorExtensionContext(mapUid, mapData, _defaultMap);
         }
 
         private void RemoveCharacterMapLabel(string labelName)
