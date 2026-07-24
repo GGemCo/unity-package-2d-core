@@ -694,6 +694,7 @@ namespace GGemCo2DCore
         {
             StopAllCoroutines();
 
+            // CurrentMapUid 변경은 PlayerData 자동 저장 요청을 발생시키므로 직접 저장보다 먼저 상태를 기록합니다.
             _sceneGame.saveDataManager.Player.CurrentMapUid = _currentMapUid;
             // 마지막으로 있었던 마을 저장
             if (_mapSettings != null && _mapSettings.useStartMapTown && _currentMapTableData.Type == _mapSettings.typeMapTown)
@@ -702,8 +703,6 @@ namespace GGemCo2DCore
             }
             _playSpawnPosition = Vector3.zero;
             // 맵 이동 후 한번 저장
-            _saveDataManager.SaveData();
-
             OnLoadCompleteMap?.Invoke(_mapTileCommon, _grid);
             GameEventManager.MapEntered(new MapEnteredEventData(_currentMapUid,
                 _mapTileCommon != null ? _mapTileCommon.gameObject : null));

@@ -37,6 +37,7 @@ namespace GGemCo2DCore
         private bool _isResetInProgress;
         private bool _isInitialized;
         private int _saveSuppressionCount;
+        private bool _hasLoggedFirstAllowedSave;
 
         /// <summary>
         /// 저장 데이터 매니저 초기화 순서입니다.
@@ -215,6 +216,9 @@ namespace GGemCo2DCore
 
             // 런타임 중 슬롯 선택이 변경될 수 있으므로 저장 시작 전에 최신 슬롯을 반영합니다.
             SyncCurrentSaveSlotFromPlayerPrefs();
+            if (!_hasLoggedFirstAllowedSave)
+            {
+            }
 
             // 로더 초기화 순서가 늦은 환경(커스텀 로더/테스트 씬)에서는 null일 수 있으므로 방어합니다.
             SaveDataLoader saveDataLoader = SaveDataLoader.Instance;
@@ -279,6 +283,11 @@ namespace GGemCo2DCore
             {
                 GcLogger.LogError("잘못된 슬롯 번호입니다.");
                 return false;
+            }
+
+            if (!_hasLoggedFirstAllowedSave)
+            {
+                _hasLoggedFirstAllowedSave = true;
             }
 
             return true;
