@@ -67,6 +67,38 @@ namespace GGemCo2DCore
             InteractionDialogueSelectionResult dialogueSelection = default(InteractionDialogueSelectionResult),
             InteractionDialogueTextContext textContext = null)
         {
+            SetInfos(
+                npc,
+                npcData,
+                interactionData,
+                externalChoices,
+                npcInteractionSettings,
+                dialogueSelection,
+                textContext,
+                firstDialogueCompleted: null);
+        }
+
+        /// <summary>
+        /// NPC 인터랙션 정보와 첫 대화 완료 콜백을 UI에 바인딩하고 대화 세션을 시작합니다.
+        /// </summary>
+        /// <param name="npc">현재 NPC입니다.</param>
+        /// <param name="npcData">NPC 테이블 데이터입니다.</param>
+        /// <param name="interactionData">인터랙션 테이블 데이터입니다.</param>
+        /// <param name="externalChoices">외부 패키지가 제공한 선택지 목록입니다.</param>
+        /// <param name="npcInteractionSettings">NPC 인터랙션 설정입니다.</param>
+        /// <param name="dialogueSelection">이번 인터랙션에서 선택된 dialogue 정보입니다.</param>
+        /// <param name="textContext">대사 포맷에 사용할 텍스트 컨텍스트입니다.</param>
+        /// <param name="firstDialogueCompleted">첫 대화 정상 완료 시 호출할 콜백입니다.</param>
+        public void SetInfos(
+            CharacterBase npc,
+            StruckTableNpc npcData,
+            StruckTableInteraction interactionData,
+            List<InteractionChoiceContribution> externalChoices,
+            GGemCoNpcInteractionSettings npcInteractionSettings,
+            InteractionDialogueSelectionResult dialogueSelection,
+            InteractionDialogueTextContext textContext,
+            Action firstDialogueCompleted)
+        {
             _dialogueLoadVersion++;
             _currentNpc = npc;
             _currentNpcData = npcData;
@@ -75,6 +107,7 @@ namespace GGemCo2DCore
                 ? dialogueSelection
                 : InteractionDialogueSelector.Select(interactionData);
             _currentTextContext = textContext ?? InteractionDialogueTextContext.Empty;
+            _firstDialogueCompleted = firstDialogueCompleted;
             _currentExternalChoices.Clear();
             if (externalChoices != null)
             {
@@ -160,6 +193,7 @@ namespace GGemCo2DCore
             _isLoadingDialogue = false;
             if (data == null)
             {
+                _firstDialogueCompleted = null;
                 BeginDefaultChoiceFlow();
                 return;
             }
@@ -258,6 +292,7 @@ namespace GGemCo2DCore
         private void HandleDialogueSequenceCompleted()
         {
             _dialogueSession.Clear();
+            InvokeFirstDialogueCompletedIfEligible();
             BindVisibleChoices(_defaultChoices);
 
             if (_currentInteractionData != null && _currentInteractionData.DialogueEndPolicy == InteractionDialogueEndPolicy.Close)
@@ -280,6 +315,27 @@ namespace GGemCo2DCore
             ClearCurrentDialogueNode();
             RefreshChoiceButtonsVisibility();
             TryCompleteDeferredInitialReveal(_dialogueLoadVersion);
+        }
+
+        /// <summary>
+        /// 유효한 대사 노드를 한 번 이상 표시한 첫 대화가 정상 종료된 경우 완료 콜백을 한 번만 호출합니다.
+        /// 로드 실패나 잘못된 시작 노드로 대사가 시작되지 않은 경우에는 완료 처리하지 않습니다.
+        /// </summary>
+        private void InvokeFirstDialogueCompletedIfEligible()
+        {
+            if (_firstDialogueCompleted == null)
+            {
+                return;
+            }
+
+            Action callback = _firstDialogueCompleted;
+            _firstDialogueCompleted = null;
+            if (_currentDialogueNode == null)
+            {
+                return;
+            }
+
+            callback.Invoke();
         }
 
         /// <summary>

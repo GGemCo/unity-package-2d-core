@@ -238,6 +238,7 @@ namespace GGemCo2DCore
             _messagePlayer.Clear(textMessage);
             _dialogueSession.Clear();
             _isExecutingChoice = false;
+            _firstDialogueCompleted = null;
             ClearPendingAutoStartChoice();
             ApplyMessageFontSize(0f);
             _lastKnownVisibleCharacters = -1;

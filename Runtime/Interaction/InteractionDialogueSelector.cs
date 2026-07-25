@@ -18,9 +18,30 @@ namespace GGemCo2DCore
         /// <returns>선택된 dialogue 정보입니다.</returns>
         public static InteractionDialogueSelectionResult Select(StruckTableInteraction interactionData)
         {
+            return Select(interactionData, preferFirstDialogue: false);
+        }
+
+        /// <summary>
+        /// 첫 대화 우선 여부를 반영하여 이번 인터랙션 세션에 사용할 dialogue를 선택합니다.
+        /// 첫 대화가 유효하지 않으면 기존 일반 또는 랜덤 dialogue 선택 규칙을 사용합니다.
+        /// </summary>
+        /// <param name="interactionData">현재 interaction 데이터입니다.</param>
+        /// <param name="preferFirstDialogue">첫 대화를 우선 선택할지 여부입니다.</param>
+        /// <returns>선택된 dialogue 정보입니다.</returns>
+        public static InteractionDialogueSelectionResult Select(
+            StruckTableInteraction interactionData,
+            bool preferFirstDialogue)
+        {
             if (interactionData == null)
             {
                 return InteractionDialogueSelectionResult.None;
+            }
+
+            if (preferFirstDialogue && interactionData.FirstDialogueUid > 0)
+            {
+                return new InteractionDialogueSelectionResult(
+                    interactionData.FirstDialogueUid,
+                    NormalizeValue(interactionData.FirstDialogueStartNodeGuid));
             }
 
             List<InteractionDialogueSelectionResult> candidates = BuildCandidates(interactionData);

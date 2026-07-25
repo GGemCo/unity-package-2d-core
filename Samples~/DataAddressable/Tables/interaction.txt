@@ -1,4 +1,4 @@
-﻿Uid	Memo	Message	Type1	Value1	Type2	Value2	Type3	Value3
+Uid	Memo	Message	Type1	Value1	Type2	Value2	Type3	Value3	CustomTypeKey1	CustomTypeKey2	CustomTypeKey3	FirstDialogueUid	FirstDialogueStartNodeGuid	DialogueUid	DialogueStartNodeGuid	DialogueEndPolicy	DialogueUidRandomList	DialogueStartNodeGuidRandomList
 101	상점1	GGemCo_NPC_Message_101	Shop	10001	ShopSale	0	None	0
 102	강화1	GGemCo_NPC_Message_102	ItemUpgrade	0	None	0	None	0
 103	상점2	GGemCo_NPC_Message_103	Shop	10002	ShopSale	0	None	0

@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 
 namespace GGemCo2DCore
 {
@@ -10,6 +10,14 @@ namespace GGemCo2DCore
         public int Uid;
         public string Memo;
         public string Message;
+        /// <summary>
+        /// NPC와 현재 Interaction 조합에서 처음 한 번 재생할 Dialogue UID입니다.
+        /// </summary>
+        public int FirstDialogueUid;
+        /// <summary>
+        /// 첫 Dialogue 진입 시 사용할 시작 노드 GUID입니다.
+        /// </summary>
+        public string FirstDialogueStartNodeGuid;
         public int DialogueUid;
         public string DialogueStartNodeGuid;
         public string DialogueUidRandomList;
@@ -47,6 +55,8 @@ namespace GGemCo2DCore
                 Uid = reader.Int("Uid"),
                 Memo = reader.String("Memo"),
                 Message = reader.String("Message"),
+                FirstDialogueUid = reader.Int("FirstDialogueUid"),
+                FirstDialogueStartNodeGuid = reader.String("FirstDialogueStartNodeGuid"),
                 DialogueUid = reader.Int("DialogueUid"),
                 DialogueStartNodeGuid = reader.String("DialogueStartNodeGuid"),
                 DialogueUidRandomList = reader.String("DialogueUidRandomList"),

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -199,6 +200,7 @@ namespace GGemCo2DCore
         private float _defaultMessageFontSize;
         private bool _isLoadingDialogue;
         private bool _isExecutingChoice;
+        private Action _firstDialogueCompleted;
         private bool _hasAutoStartedCurrentChoiceSet;
         private int _pendingAutoStartChoiceIndex = -1;
         private RectTransform _panelDialogueRectTransform;

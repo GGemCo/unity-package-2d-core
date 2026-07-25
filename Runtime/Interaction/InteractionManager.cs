@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -118,9 +119,20 @@ namespace GGemCo2DCore
                 });
             }
 
-            // dialogue 랜덤 선택 결과를 먼저 확정합니다.
+            bool shouldUseFirstDialogue = ShouldUseFirstDialogue(infoNpc, infoInteraction);
             InteractionDialogueSelectionResult dialogueSelection =
-                InteractionDialogueSelector.Select(infoInteraction);
+                InteractionDialogueSelector.Select(infoInteraction, shouldUseFirstDialogue);
+
+            Action firstDialogueCompleted = null;
+            if (shouldUseFirstDialogue &&
+                dialogueSelection.HasDialogue &&
+                dialogueSelection.DialogueUid == infoInteraction.FirstDialogueUid)
+            {
+                int npcUid = infoNpc.Uid;
+                int interactionUid = infoInteraction.Uid;
+                firstDialogueCompleted = () =>
+                    MarkFirstDialogueCompleted(npcUid, interactionUid);
+            }
 
             // 인터렉션 대화창 보여주기
             ShowDialogue(
@@ -130,7 +142,8 @@ namespace GGemCo2DCore
                 _externalChoices,
                 _npcInteractionSettings,
                 dialogueSelection,
-                textContext);
+                textContext,
+                firstDialogueCompleted);
         }
 
         /// <summary>
@@ -143,6 +156,7 @@ namespace GGemCo2DCore
         /// <param name="npcInteractionSettings">NPC 인터랙션 설정입니다.</param>
         /// <param name="dialogueSelection">이번 인터랙션에서 선택된 dialogue 정보입니다.</param>
         /// <param name="textContext">대사 포맷에 사용할 텍스트 컨텍스트입니다.</param>
+        /// <param name="firstDialogueCompleted">첫 대화 정상 완료 시 호출할 콜백입니다.</param>
         private void ShowDialogue(
             CharacterBase npc,
             StruckTableNpc struckTableNpc,
@@ -150,7 +164,8 @@ namespace GGemCo2DCore
             List<InteractionChoiceContribution> externalChoices,
             GGemCoNpcInteractionSettings npcInteractionSettings,
             InteractionDialogueSelectionResult dialogueSelection,
-            InteractionDialogueTextContext textContext)
+            InteractionDialogueTextContext textContext,
+            Action firstDialogueCompleted)
         {
             if (_uiWindowInteractionDialogue == null)
             {
@@ -166,7 +181,45 @@ namespace GGemCo2DCore
                 externalChoices,
                 npcInteractionSettings,
                 dialogueSelection,
-                textContext);
+                textContext,
+                firstDialogueCompleted);
+        }
+
+        /// <summary>
+        /// 현재 NPC와 Interaction 조합에서 첫 대화를 우선 재생해야 하는지 확인합니다.
+        /// 첫 대화 UID가 없거나 저장 데이터에 완료 기록이 있으면 기존 대화 선택 규칙을 사용합니다.
+        /// </summary>
+        /// <param name="npcData">현재 NPC 테이블 데이터입니다.</param>
+        /// <param name="interactionData">현재 Interaction 테이블 데이터입니다.</param>
+        /// <returns>첫 대화를 우선 선택해야 하면 <see langword="true"/>입니다.</returns>
+        private bool ShouldUseFirstDialogue(
+            StruckTableNpc npcData,
+            StruckTableInteraction interactionData)
+        {
+            if (npcData == null ||
+                npcData.Uid <= 0 ||
+                interactionData == null ||
+                interactionData.Uid <= 0 ||
+                interactionData.FirstDialogueUid <= 0)
+            {
+                return false;
+            }
+
+            NpcInteractionProgressData progress =
+                _sceneGame?.saveDataManager?.NpcInteractionProgress;
+            return progress == null ||
+                   !progress.IsFirstDialogueCompleted(npcData.Uid, interactionData.Uid);
+        }
+
+        /// <summary>
+        /// 첫 대화가 정상적으로 끝난 NPC와 Interaction 조합을 저장 데이터에 기록합니다.
+        /// </summary>
+        /// <param name="npcUid">첫 대화를 완료한 NPC UID입니다.</param>
+        /// <param name="interactionUid">첫 대화를 완료한 Interaction UID입니다.</param>
+        private void MarkFirstDialogueCompleted(int npcUid, int interactionUid)
+        {
+            _sceneGame?.saveDataManager?.NpcInteractionProgress
+                ?.MarkFirstDialogueCompleted(npcUid, interactionUid);
         }
 
         /// <summary>

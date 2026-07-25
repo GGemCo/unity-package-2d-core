@@ -21,6 +21,11 @@ namespace GGemCo2DCore
         public WindowSlotActivationSaveData WindowSlotActivationSaveData;
 
         /// <summary>
+        /// NPC별 첫 인터랙션 대화 완료 기록입니다.
+        /// </summary>
+        public NpcInteractionProgressData NpcInteractionProgressData;
+
+        /// <summary>
         /// 세이브 슬롯별 인벤토리 지급 완료 이력입니다.
         /// </summary>
         public InventoryGrantHistoryData InventoryGrantHistoryData;
@@ -44,7 +49,7 @@ namespace GGemCo2DCore
         /// 맵별로 남아 있는 월드 드랍 아이템 저장 데이터입니다.
         /// </summary>
         public WorldItemDropData WorldItemDropData;
-        
+
         public Dictionary<string, JToken> Extensions;
     }
     /// <summary>
@@ -63,6 +68,11 @@ namespace GGemCo2DCore
         public ShopExposureData ShopExposure { get; private set; }
         public GameTimeData GameTime { get; private set; }
         public WindowSlotActivationSaveData WindowSlotActivation { get; private set; }
+
+        /// <summary>
+        /// NPC별 첫 인터랙션 대화 완료 상태입니다.
+        /// </summary>
+        public NpcInteractionProgressData NpcInteractionProgress { get; private set; }
 
         /// <summary>
         /// 세이브 슬롯별 인벤토리 지급 완료 이력입니다.
@@ -104,7 +114,7 @@ namespace GGemCo2DCore
         /// </summary>
         protected override void InitializeData()
         {
-            // 로드한 세이브 데이터 가져오기 
+            // 로드한 세이브 데이터 가져오기
             SaveDataContainer saveDataContainer = SaveDataLoader.Instance.GetSaveDataContainer();
             // 각 데이터 클래스 초기화
             Player = new PlayerData();
@@ -118,6 +128,7 @@ namespace GGemCo2DCore
             ShopExposure = new ShopExposureData();
             GameTime = new GameTimeData();
             WindowSlotActivation = new WindowSlotActivationSaveData();
+            NpcInteractionProgress = new NpcInteractionProgressData();
             InventoryGrantHistory = new InventoryGrantHistoryData();
             MapProgress = new MapProgressData();
             MapProgressController = new MapProgressController(this);
@@ -140,6 +151,7 @@ namespace GGemCo2DCore
             ShopExposure.Initialize(tableLoaderManager, saveDataContainer);
             GameTime.Initialize(tableLoaderManager, saveDataContainer);
             WindowSlotActivation.Initialize(tableLoaderManager, saveDataContainer);
+            NpcInteractionProgress.Initialize(saveDataContainer);
             InventoryGrantHistory.Initialize(saveDataContainer);
             MapProgress.Initialize(tableLoaderManager, saveDataContainer);
             License.Initialize(tableLoaderManager, saveDataContainer);
@@ -150,7 +162,7 @@ namespace GGemCo2DCore
 
             // 인스턴스 아이템 복원
             ItemInstances.Restore(saveDataContainer?.ItemInstanceStoreData);
-            
+
             // 외부 섹션 복원
             var env = new SaveEnvelope();
             if (saveDataContainer?.Extensions != null)
@@ -170,7 +182,7 @@ namespace GGemCo2DCore
                 // 첫 저장은 실제 진행 데이터 변경 시점의 StartSaveData 호출 흐름에 위임합니다.
             }
         }
-        
+
         /// <summary>
         /// 현재 데이터를 선택한 슬롯에 저장 + 메타파일 업데이트
         /// </summary>
@@ -180,7 +192,7 @@ namespace GGemCo2DCore
 
             // 저장 직전 활성 드랍의 실제 위치와 남은 수명을 반영합니다.
             SceneGame.Instance?.ItemManager?.SyncActiveDropsToSaveData();
-            
+
             string filePath = saveFileController.GetSaveFilePath(currentSaveSlot);
             string thumbnailPath = thumbnailController.GetThumbnailPath(currentSaveSlot);
 
@@ -189,7 +201,7 @@ namespace GGemCo2DCore
 
             // 외부 기여자에게 현재 상태 캡처 요청
             var env = BuildEnvelopeForSave();
-            
+
             SaveDataContainer saveData = new SaveDataContainer
             {
                 PlayerData = Player,
@@ -202,6 +214,7 @@ namespace GGemCo2DCore
                 ShopPurchaseData = ShopPurchase,
                 ShopExposureData = ShopExposure,
                 WindowSlotActivationSaveData = WindowSlotActivation,
+                NpcInteractionProgressData = NpcInteractionProgress,
                 InventoryGrantHistoryData = InventoryGrantHistory,
                 MapProgressData = MapProgress,
                 LicenseData = License,
@@ -214,13 +227,13 @@ namespace GGemCo2DCore
             string json = JsonConvert.SerializeObject(saveData);
             saveFileController.WriteSaveJsonWithBackup(currentSaveSlot, json, SaveDataIdentity.Core(currentSaveSlot));
             // GcLogger.Log($"데이터가 저장되었습니다. 슬롯 {currentSaveSlot}");
-            
+
             // 썸네일 캡처 후 저장
             if (thumbnailWidth > 0)
             {
                 StartCoroutine(thumbnailController.CaptureThumbnail(currentSaveSlot));
             }
-            
+
             // 메타파일 업데이트
             slotMetaDatController.UpdateSlot(currentSaveSlot, thumbnailPath, true, Player.CurrentLevel, filePath);
             return true;
