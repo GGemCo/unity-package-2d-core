@@ -36,7 +36,8 @@ namespace GGemCo2DCore
                 return false;
             }
 
-            bool changed = progressData.ClearMap(mapUid);
+            bool mapCleared = progressData.ClearMap(mapUid);
+            bool changed = mapCleared;
             if (activateWorldMapNodeIds != null)
             {
                 foreach (string nodeId in activateWorldMapNodeIds)
@@ -54,6 +55,14 @@ namespace GGemCo2DCore
             }
 
             RefreshWorldMapWindow();
+            if (mapCleared)
+            {
+                GameEventManager.MapProgressChanged(
+                    new MapProgressChangedEventData(
+                        MapProgressChangeType.MapCleared,
+                        mapUid));
+            }
+
             return changed;
         }
 
@@ -75,7 +84,28 @@ namespace GGemCo2DCore
                 return false;
             }
 
-            bool changed = progressData.ClearMaps(mapUids);
+            // 입력 열거자를 한 번만 소비하고 중복 UID를 제거하여 상태 변경 이벤트도 맵별 한 번만 발행합니다.
+            var requestedMapUids = new List<int>();
+            var newlyClearedMapUids = new List<int>();
+            var uniqueMapUids = new HashSet<int>();
+            if (mapUids != null)
+            {
+                foreach (int mapUid in mapUids)
+                {
+                    if (mapUid <= 0 || !uniqueMapUids.Add(mapUid))
+                    {
+                        continue;
+                    }
+
+                    requestedMapUids.Add(mapUid);
+                    if (!progressData.IsMapCleared(mapUid))
+                    {
+                        newlyClearedMapUids.Add(mapUid);
+                    }
+                }
+            }
+
+            bool changed = progressData.ClearMaps(requestedMapUids);
             if (activateWorldMapNodeIds != null)
             {
                 foreach (string nodeId in activateWorldMapNodeIds)
@@ -93,6 +123,20 @@ namespace GGemCo2DCore
             }
 
             RefreshWorldMapWindow();
+            for (int i = 0; i < newlyClearedMapUids.Count; i++)
+            {
+                int mapUid = newlyClearedMapUids[i];
+                if (!progressData.IsMapCleared(mapUid))
+                {
+                    continue;
+                }
+
+                GameEventManager.MapProgressChanged(
+                    new MapProgressChangedEventData(
+                        MapProgressChangeType.MapCleared,
+                        mapUid));
+            }
+
             return changed;
         }
 
