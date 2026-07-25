@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using TMPro;
@@ -11,9 +11,45 @@ namespace GGemCo2DCore
     /// 런타임 대사창을 관리합니다.
     /// export 된 Dialogue json 을 읽고 페이지 단위로 대사를 재생합니다.
     /// </summary>
-    public class UIWindowDialogue : UIWindow
+    public partial class UIWindowDialogue : UIWindow
     {
+        /// <summary>
+        /// 대화창의 배치 방식을 정의합니다.
+        /// </summary>
+        private enum PositionType
+        {
+            None,
+            CharacterTop,
+        }
+
+        /// <summary>
+        /// 대화창의 시각 표현 방식을 정의합니다.
+        /// </summary>
+        private enum DialogueVisualMode
+        {
+            DialogueBox,
+            SpeechBubble,
+        }
+
         [Header(UIWindowConstants.TitleHeaderIndividual)]
+        [Tooltip("대화창의 화면 배치 방식")]
+        [SerializeField] private PositionType positionType;
+
+        [Tooltip("대화창의 시각 표현 방식")]
+        [SerializeField] private DialogueVisualMode dialogueVisualMode = DialogueVisualMode.DialogueBox;
+
+        [Tooltip("대화 박스 또는 말풍선의 루트 오브젝트")]
+        [SerializeField] private GameObject panelDialogue;
+
+        [Header("말풍선 월드 위치")]
+        [Tooltip("SpeechBubble 모드에서 화자 머리 위 기준 위치에 추가할 월드 오프셋")]
+        [SerializeField] private Vector3 speechBubbleWorldOffset = Vector3.zero;
+
+        [Tooltip("SpeechBubble 월드 오프셋 X값을 화자 방향에 따라 보정하는 정책")]
+        [SerializeField]
+        private DialogueBalloonWorldOffsetXPolicy speechBubbleWorldOffsetXPolicy =
+            DialogueBalloonWorldOffsetXPolicy.KeepOriginal;
+
         [Tooltip("말하는 캐릭터 썸네일 이미지 오브젝트")]
         [SerializeField] private Image imageThumbnail;
 
@@ -21,8 +57,50 @@ namespace GGemCo2DCore
         [SerializeField] private TextMeshProUGUI textName;
         [Tooltip("대사 텍스트 오브젝트")]
         [SerializeField] private TextMeshProUGUI textMessage;
+        [Tooltip("메시지와 입력 안내 이미지가 들어가는 패널")]
+        [SerializeField] private RectTransform panelMessage;
+        [Tooltip("썸네일 오른쪽 배치 기준 오프셋")]
+        [SerializeField] private Vector3 offsetImageThumbnailCharacter;
+        [Tooltip("썸네일 왼쪽 배치 기준 오프셋")]
+        [SerializeField] private Vector3 offsetImageThumbnailCharacterLeft;
         [Tooltip("한번에 보여줄 대사 라인 수")]
         [SerializeField] private int maxLineCount = 3;
+
+        [Header("말풍선 레이아웃")]
+        [Tooltip("노드 썸네일 위치가 None일 때 기존 오른쪽 배치를 사용할지 여부")]
+        [SerializeField] private bool useLegacyThumbnailFallbackForNone = true;
+        [Tooltip("말풍선 패널과 썸네일 사이 간격(px)")]
+        [SerializeField] private float thumbnailGapPx;
+        [Tooltip("썸네일이 없는 쪽 텍스트 패딩(px)")]
+        [SerializeField] private int textPaddingOnNonThumbnailSidePx = 7;
+        [Tooltip("썸네일이 있는 쪽 텍스트 패딩(px)")]
+        [SerializeField] private int textPaddingOnThumbnailSidePx = 3;
+        [Tooltip("말꼬리를 기준으로 좌우 대칭 배치를 사용할지 여부")]
+        [SerializeField] private bool useSymmetricLayoutByTail = true;
+        [Tooltip("말꼬리를 화자 방향 앞으로 이동할 오프셋(px)")]
+        [SerializeField] private float tailForwardOffsetPx = 3f;
+        [Tooltip("말꼬리 중심 기준 최소 반너비(px). 0 이하면 강제하지 않습니다.")]
+        [SerializeField] private float minHalfExtentByTailPx;
+        [Tooltip("말풍선 말꼬리 이미지")]
+        [SerializeField] private Image imageTail;
+
+        [Header("말풍선 입력 안내 이미지")]
+        [Tooltip("SpeechBubble 모드에서 프로젝트 공통 입력 안내 이미지 기본값을 사용할지 여부")]
+        [SerializeField] private bool useProjectEnterIndicatorDefaultsInSpeechBubble;
+        [Tooltip("입력 안내 이미지")]
+        [SerializeField] private Image imageEnter;
+        [Tooltip("프로젝트 기본값 대신 사용할 입력 안내 이미지")]
+        [SerializeField] private Sprite enterIndicatorSpriteOverride;
+        [Tooltip("대사 마지막 글자와 입력 안내 이미지 사이 간격(px)")]
+        [SerializeField]
+        private float enterIndicatorGapPx = GGemCoDialogueBalloonSettings.DefaultEnterIndicatorGapPx;
+        [Tooltip("입력 안내 이미지 깜빡임 속도(Hz)")]
+        [SerializeField]
+        private float enterIndicatorBlinkHz = GGemCoDialogueBalloonSettings.DefaultEnterIndicatorBlinkHz;
+        [Range(0f, 1f)]
+        [Tooltip("입력 안내 이미지 최소 알파값")]
+        [SerializeField]
+        private float enterIndicatorMinAlpha = GGemCoDialogueBalloonSettings.DefaultEnterIndicatorMinAlpha;
 
         [Header("선택지")]
         [Tooltip("선택지 버튼 프리팹")]
@@ -36,12 +114,40 @@ namespace GGemCo2DCore
 
         private float _originalFontSize;
         private int _indexMessage;
+        private int _dialogueLoadVersion;
         private List<string> _messages;
         private Dictionary<string, DialogueNodeData> _dialogueNodeDatas;
         private int _currentNpcUid;
         private DialogueNodeData _currentDialogue;
         private SystemMessageManager _systemMessageManager;
         private ChoiceButtonHandler _choiceButtonHandler;
+        private bool _isCurrentPageVisible;
+        private RectTransform _panelDialogueRectTransform;
+        private RectTransform _thumbnailRectTransform;
+        private RectTransform _tailRectTransform;
+        private VerticalLayoutGroup _panelMessageLayoutGroup;
+        private LayoutElement _panelMessageLayoutElement;
+        private Vector3 _thumbnailBaseScale = Vector3.one;
+        private bool _hasThumbnailBaseScale;
+        private Vector3 _tailBaseScale = Vector3.one;
+        private bool _hasTailBaseScale;
+        private bool _hasDefaultPanelMessagePadding;
+        private int _defaultPanelMessagePaddingLeft;
+        private int _defaultPanelMessagePaddingRight;
+        private float _defaultPanelMessageMinWidth = -1f;
+        private bool _hasDefaultPanelMessageMinWidth;
+        private RectTransform _enterRectTransform;
+        private bool _hasEnterBaseColor;
+        private Color _enterBaseColor = Color.white;
+        private bool _hasEnterBaseAnchoredPosition;
+        private Vector2 _enterBaseAnchoredPosition;
+        private float _resolvedEnterIndicatorGapPx = GGemCoDialogueBalloonSettings.DefaultEnterIndicatorGapPx;
+        private float _resolvedEnterIndicatorBlinkHz = GGemCoDialogueBalloonSettings.DefaultEnterIndicatorBlinkHz;
+        private float _resolvedEnterIndicatorMinAlpha = GGemCoDialogueBalloonSettings.DefaultEnterIndicatorMinAlpha;
+        private int _lastKnownEnterIndicatorVisibleCharacters = -1;
+        private CanvasGroup _panelDialogueCanvasGroup;
+        private bool _isInitialRevealPending;
+        private int _initialRevealRequestVersion = -1;
 
         /// <summary>
         /// 윈도우 초기화를 수행합니다.
@@ -72,6 +178,8 @@ namespace GGemCo2DCore
                 OnChoiceSelected = OnClickAnswer
             };
             _choiceButtonHandler.InitializeButtonChoice();
+            CacheSpeechBubbleLayoutReferences();
+            CacheInitialRevealCanvasGroupReference();
         }
 
         /// <summary>
@@ -88,12 +196,17 @@ namespace GGemCo2DCore
         /// </summary>
         private void ResetDialogue()
         {
+            _dialogueLoadVersion++;
             _messages.Clear();
             _dialogueNodeDatas.Clear();
             _currentDialogue = null;
             _indexMessage = 0;
             _currentNpcUid = 0;
+            _isCurrentPageVisible = false;
             _choiceButtonHandler.HideButtons();
+            CancelDeferredInitialReveal();
+            RestoreSpeechBubbleLayoutDefaults();
+            ResetPanelDialogueParent();
         }
 
         /// <summary>
@@ -144,6 +257,7 @@ namespace GGemCo2DCore
                 Show(true);
             }
 
+            PrepareSpeechBubbleEnterIndicatorForNewSession();
             _indexMessage = 0;
             DialogueNodeData dialogue = data.nodes[0];
             ProcessNextDialogue(dialogue.guid);
@@ -155,6 +269,7 @@ namespace GGemCo2DCore
         /// <param name="guid">표시할 노드 guid 입니다.</param>
         private async void ProcessNextDialogue(string guid)
         {
+            int requestVersion = ++_dialogueLoadVersion;
             try
             {
                 if (string.IsNullOrEmpty(guid))
@@ -178,7 +293,14 @@ namespace GGemCo2DCore
 
                 if (imageThumbnail != null)
                 {
-                    imageThumbnail.sprite = await DialogueCharacterHelper.GetThumbnail(_currentDialogue);
+                    BeginDeferredInitialReveal(requestVersion);
+                    Sprite thumbnail = await DialogueCharacterHelper.GetThumbnail(_currentDialogue);
+                    if (requestVersion != _dialogueLoadVersion || _currentDialogue == null)
+                    {
+                        return;
+                    }
+
+                    imageThumbnail.sprite = thumbnail;
                 }
 
                 if (textMessage != null)
@@ -188,10 +310,22 @@ namespace GGemCo2DCore
 
                 string resolvedDialogueText = DialogueLocalizationRuntimeResolver.ResolveNodeText(_currentDialogue);
                 _messages = DialogueTextFormatter.SplitMessage(resolvedDialogueText, maxLineCount);
+                if (dialogueVisualMode == DialogueVisualMode.SpeechBubble)
+                {
+                    ApplyThumbnailVisibilityAfterBinding();
+                    RefreshThumbnailPosition();
+                }
+
                 DisplayNextMessage();
+                TryCompleteDeferredInitialReveal(requestVersion);
             }
             catch (Exception e)
             {
+                if (requestVersion == _dialogueLoadVersion)
+                {
+                    CancelDeferredInitialReveal();
+                }
+
                 GcLogger.LogError(e.Message);
             }
         }
@@ -202,6 +336,9 @@ namespace GGemCo2DCore
         /// </summary>
         private void DisplayNextMessage()
         {
+            _isCurrentPageVisible = false;
+            SetSpeechBubbleEnterIndicatorVisible(false, 1f);
+
             if (_indexMessage >= _messages.Count)
             {
                 if (HasCurrentOptions())
@@ -217,6 +354,7 @@ namespace GGemCo2DCore
             if (textMessage != null)
             {
                 textMessage.text = _messages[_indexMessage];
+                textMessage.maxVisibleCharacters = int.MaxValue;
             }
 
             if (_indexMessage == _messages.Count - 1 && HasCurrentOptions())
@@ -225,6 +363,12 @@ namespace GGemCo2DCore
             }
 
             _indexMessage++;
+            _isCurrentPageVisible = true;
+            if (dialogueVisualMode == DialogueVisualMode.SpeechBubble)
+            {
+                RefreshThumbnailPosition();
+                RefreshSpeechBubbleEnterIndicatorPosition();
+            }
         }
 
         /// <summary>
@@ -273,6 +417,21 @@ namespace GGemCo2DCore
 
             _choiceButtonHandler.HideButtons();
             ProcessNextDialogue(option.nextNodeGuid);
+        }
+
+        /// <summary>
+        /// 활성 대화창의 화자 추적 위치와 말풍선 시각 상태를 프레임 단위로 갱신합니다.
+        /// </summary>
+        private void Update()
+        {
+            if (!gameObject.activeInHierarchy)
+            {
+                return;
+            }
+
+            RefreshPosition();
+            RefreshSpeechBubbleRuntimeVisuals();
+            UpdateSpeechBubbleEnterIndicatorRuntime();
         }
 
         /// <summary>
