@@ -75,7 +75,6 @@ namespace GGemCo2DCore
                     raycastDirectionModeOverride: metadataLaser.RaycastDirectionModeOverride,
                     useRaycastAngleOverride: metadataLaser.UseRaycastAngleOverride,
                     raycastAngleOverrideDeg: metadataLaser.RaycastAngleOverrideDeg,
-                    targetDirectionAngleOffsetDeg: metadataLaser.TargetDirectionAngleOffsetDeg,
                     useVfxAngleSyncModeOverride: metadataLaser.UseVfxAngleSyncModeOverride,
                     vfxAngleSyncModeOverride: metadataLaser.VfxAngleSyncModeOverride,
                     startPositionOverrideMode: metadataLaser.StartPositionOverrideMode,

@@ -115,33 +115,46 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 기준 방향에 각도 오프셋을 적용한 정규화 방향을 반환합니다.
-        /// 양수 각도는 반시계 방향, 음수 각도는 시계 방향으로 회전합니다.
+        /// 레이저 시작점과 타겟의 X 위치를 비교하여 좌우 수평 기준 방향을 계산하고 각도를 적용합니다.
+        /// 좌우 어느 쪽을 향하더라도 양수 각도는 위쪽, 음수 각도는 아래쪽으로 대칭 적용됩니다.
         /// </summary>
-        /// <param name="direction">회전할 기준 방향입니다.</param>
-        /// <param name="angleOffsetDeg">기준 방향에 더할 각도(도)입니다.</param>
-        /// <returns>각도 오프셋이 적용된 정규화 방향입니다.</returns>
-        public static Vector2 ApplyDirectionAngleOffset(Vector2 direction, float angleOffsetDeg)
+        /// <param name="owner">타겟과 시작점의 X 위치가 같을 때 바라보기 방향을 제공할 시전자입니다.</param>
+        /// <param name="start">레이저의 실제 시작점입니다.</param>
+        /// <param name="targetPosition">레이저가 사용하는 타겟 위치입니다.</param>
+        /// <param name="angleDeg">좌우 수평 방향을 기준으로 적용할 각도(도)입니다.</param>
+        /// <returns>좌우 대칭 각도가 적용된 정규화 방향입니다.</returns>
+        public static Vector2 ResolveHorizontalTargetDirection(
+            CharacterBase owner,
+            Vector2 start,
+            Vector2 targetPosition,
+            float angleDeg)
         {
-            if (direction.sqrMagnitude <= 1e-6f)
-                return Vector2.zero;
+            float horizontalDelta = targetPosition.x - start.x;
+            float horizontalSign;
+            if (Mathf.Abs(horizontalDelta) <= 1e-6f)
+            {
+                // 타겟과 시작점의 X 위치가 같으면 작은 좌표 오차로 방향이 흔들리지 않도록 시전자 방향을 사용합니다.
+                horizontalSign = ResolveOwnerFacingDirection(owner).x;
+            }
+            else
+            {
+                horizontalSign = horizontalDelta > 0f ? 1f : -1f;
+            }
 
-            Vector2 normalizedDirection = direction.normalized;
-            if (Mathf.Abs(angleOffsetDeg) <= 1e-6f)
-                return normalizedDirection;
-
-            float angleRad = angleOffsetDeg * Mathf.Deg2Rad;
+            float angleRad = angleDeg * Mathf.Deg2Rad;
             float cos = Mathf.Cos(angleRad);
             float sin = Mathf.Sin(angleRad);
-            return new Vector2(
-                normalizedDirection.x * cos - normalizedDirection.y * sin,
-                normalizedDirection.x * sin + normalizedDirection.y * cos).normalized;
+            Vector2 direction = new Vector2(cos * horizontalSign, sin);
+            return direction.sqrMagnitude > 1e-6f
+                ? direction.normalized
+                : new Vector2(horizontalSign, 0f);
         }
 
         /// <summary>
         /// 현재 정책에 맞춰 Raycast 방향을 계산합니다.
         /// - ByAngle이면 각도 기반 방향을 사용합니다.
-        /// - TowardTarget이면 타겟 캐릭터 또는 좌표 오버라이드 방향에 런타임 각도 오프셋을 적용합니다.
+        /// - TowardTargetHorizontal이면 타겟의 좌우만 판정하고 수평 기준 각도를 대칭 적용합니다.
+        /// - TowardTarget이면 타겟 캐릭터 또는 좌표 오버라이드 방향을 그대로 사용합니다.
         /// - 방향을 해석할 수 없으면 필요 시 시전자 기본 바라보기 방향으로 보정합니다.
         /// </summary>
         /// <param name="info">레이저 테이블 정보입니다.</param>
@@ -163,25 +176,49 @@ namespace GGemCo2DCore
             Vector2 start,
             bool allowFallbackToOwnerFacing = true)
         {
-            if (ResolveRaycastDirectionMode(info, runtime) == LaserConstants.RaycastDirectionMode.ByAngle)
+            LaserConstants.RaycastDirectionMode directionMode = ResolveRaycastDirectionMode(info, runtime);
+            if (directionMode == LaserConstants.RaycastDirectionMode.ByAngle)
+            {
                 return ResolveDirectionByConfiguredAngle(info, runtime, owner);
+            }
 
-            Vector2 direction;
+            Vector2 resolvedTargetPosition;
+            bool hasResolvedTarget;
             if (targetObject != null)
             {
-                direction = ResolveDirection(owner, start, targetObject.transform.position);
-            }
-            else if (hasTargetPoint)
-            {
-                direction = ResolveDirection(owner, start, targetPoint);
+                resolvedTargetPosition = targetObject.transform.position;
+                hasResolvedTarget = true;
             }
             else
             {
-                direction = allowFallbackToOwnerFacing ? ResolveOwnerFacingDirection(owner) : Vector2.zero;
+                resolvedTargetPosition = targetPoint;
+                hasResolvedTarget = hasTargetPoint;
             }
 
-            float angleOffsetDeg = runtime != null ? runtime.TargetDirectionAngleOffsetDeg : 0f;
-            return ApplyDirectionAngleOffset(direction, angleOffsetDeg);
+            if (directionMode == LaserConstants.RaycastDirectionMode.TowardTargetHorizontal)
+            {
+                if (hasResolvedTarget)
+                {
+                    float angleDeg = ResolveRaycastAngleDeg(info, runtime);
+                    return ResolveHorizontalTargetDirection(owner, start, resolvedTargetPosition, angleDeg);
+                }
+
+                if (!allowFallbackToOwnerFacing)
+                    return Vector2.zero;
+
+                // 타겟이 없으면 시전자 방향과 동일한 X 위치의 가상 타겟을 사용하여 동일한 각도 규칙을 적용합니다.
+                Vector2 fallbackDirection = ResolveOwnerFacingDirection(owner);
+                Vector2 fallbackTargetPosition = start + fallbackDirection;
+                float fallbackAngleDeg = ResolveRaycastAngleDeg(info, runtime);
+                return ResolveHorizontalTargetDirection(owner, start, fallbackTargetPosition, fallbackAngleDeg);
+            }
+
+            if (hasResolvedTarget)
+            {
+                return ResolveDirection(owner, start, resolvedTargetPosition);
+            }
+
+            return allowFallbackToOwnerFacing ? ResolveOwnerFacingDirection(owner) : Vector2.zero;
         }
 
         /// <summary>

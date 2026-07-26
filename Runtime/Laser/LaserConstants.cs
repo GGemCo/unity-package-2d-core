@@ -80,6 +80,11 @@ namespace GGemCo2DCore
             /// 타겟을 무시하고 설정된 각도로 계산합니다.
             /// </summary>
             ByAngle = 1,
+
+            /// <summary>
+            /// 타겟의 좌우 위치만 판정하고, 해당 수평 방향을 기준으로 설정된 각도를 적용합니다.
+            /// </summary>
+            TowardTargetHorizontal = 2,
         }
 
         /// <summary>
