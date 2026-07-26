@@ -4,9 +4,13 @@ using System.Linq;
 using System.Reflection;
 using GGemCo2DCore;
 using UnityEditor;
+using UnityEngine;
 
 namespace GGemCo2DCoreEditor
 {
+    /// <summary>
+    /// 테이블 에디터에서 표시하고 편집할 컬럼의 메타데이터를 정의합니다.
+    /// </summary>
     public sealed class TableEditorColumnDefinition
     {
         public string HeaderName;
@@ -16,6 +20,11 @@ namespace GGemCo2DCoreEditor
         public bool ExistsInFileHeader;
         public TableEditorTableDefinition ReferenceTable;
         public List<TableEditorReferenceRule> ReferenceRules;
+
+        /// <summary>
+        /// 컬럼 편집 UI에서 표시할 도움말입니다.
+        /// </summary>
+        public string Tooltip;
 
         public bool IsUidColumn => string.Equals(HeaderName, "Uid", StringComparison.OrdinalIgnoreCase);
         public bool IsReferenceCandidate => ResolveReferenceRule(null)?.ValueKind == TableEditorReferenceValueKind.Uid && ValueType == typeof(int);
@@ -49,6 +58,9 @@ namespace GGemCo2DCoreEditor
         }
     }
 
+    /// <summary>
+    /// 테이블 에디터에 등록할 단일 테이블의 로딩 및 표시 메타데이터를 정의합니다.
+    /// </summary>
     public sealed class TableEditorTableDefinition
     {
         public string ModuleName;
@@ -61,6 +73,11 @@ namespace GGemCo2DCoreEditor
         public Func<string, object> CreateTableInstanceAndLoad;
         public Action ReloadAction;
         public Func<string, TableEditorTableDefinition> ResolveReferenceTable;
+
+        /// <summary>
+        /// 컬럼 헤더와 Row 멤버를 기준으로 패키지 전용 Tooltip을 반환하는 선택적 resolver입니다.
+        /// </summary>
+        public Func<string, MemberInfo, string> ResolveColumnTooltip;
 
         public string QualifiedDisplayName => string.IsNullOrWhiteSpace(PackageName)
             ? DisplayName
@@ -129,7 +146,60 @@ namespace GGemCo2DCoreEditor
                 ExistsInRowType = memberInfo != null,
                 ReferenceTable = referenceTable,
                 ReferenceRules = referenceRules,
+                Tooltip = BuildColumnTooltip(owner, headerName, memberInfo, valueType, referenceTable),
             };
+        }
+
+        /// <summary>
+        /// 패키지별 설명, Row 멤버의 Tooltip 특성, 기본 컬럼 정보 순서로 편집 UI Tooltip을 결정합니다.
+        /// </summary>
+        /// <param name="owner">현재 컬럼을 소유한 테이블 정의입니다.</param>
+        /// <param name="headerName">테이블 파일의 컬럼 헤더명입니다.</param>
+        /// <param name="memberInfo">컬럼과 연결된 Row 멤버입니다.</param>
+        /// <param name="valueType">컬럼 값 형식입니다.</param>
+        /// <param name="referenceTable">컬럼이 참조하는 테이블 정의입니다.</param>
+        /// <returns>편집 UI에 표시할 Tooltip 문자열입니다.</returns>
+        private static string BuildColumnTooltip(
+            TableEditorTableDefinition owner,
+            string headerName,
+            MemberInfo memberInfo,
+            Type valueType,
+            TableEditorTableDefinition referenceTable)
+        {
+            string tooltip = owner.ResolveColumnTooltip?.Invoke(headerName, memberInfo);
+            if (!string.IsNullOrWhiteSpace(tooltip))
+                return tooltip.Trim();
+
+            // Row 타입에 기존 Unity Tooltip 특성이 있으면 동일한 설명을 테이블 에디터에서도 재사용합니다.
+            TooltipAttribute tooltipAttribute = memberInfo?.GetCustomAttribute<TooltipAttribute>(true);
+            if (!string.IsNullOrWhiteSpace(tooltipAttribute?.tooltip))
+                return tooltipAttribute.tooltip.Trim();
+
+            string typeName = GetFriendlyTypeName(valueType);
+            if (referenceTable != null)
+            {
+                return $"{headerName} 값을 편집합니다.\n"
+                       + $"형식: {typeName}\n"
+                       + $"참조 테이블: {referenceTable.QualifiedDisplayName}";
+            }
+
+            return $"{headerName} 값을 편집합니다.\n형식: {typeName}";
+        }
+
+        /// <summary>
+        /// Tooltip에 표시할 컬럼 값 형식명을 배열까지 포함하여 읽기 쉬운 형태로 반환합니다.
+        /// </summary>
+        /// <param name="valueType">표시할 값 형식입니다.</param>
+        /// <returns>사용자에게 표시할 형식명입니다.</returns>
+        private static string GetFriendlyTypeName(Type valueType)
+        {
+            if (valueType == null)
+                return "Unknown";
+
+            if (valueType.IsArray)
+                return $"{GetFriendlyTypeName(valueType.GetElementType())}[]";
+
+            return valueType.Name;
         }
     }
 

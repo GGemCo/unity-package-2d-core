@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using UnityEditor;
@@ -252,11 +252,7 @@ namespace GGemCo2DCoreEditor
             };
 
             bool isActive = columnRule == null || columnRule.IsActive(row);
-            Label label = new Label(column.HeaderName)
-            {
-                style = { unityFontStyleAndWeight = FontStyle.Bold, marginBottom = 4f }
-            };
-            container.Add(label);
+            container.Add(CreateFieldHeader(column));
 
             row.Values.TryGetValue(column.HeaderName, out string rawValue);
 
@@ -275,6 +271,52 @@ namespace GGemCo2DCoreEditor
 
             container.SetEnabled(isActive || columnRule == null || columnRule.InactiveDisplayMode != TableEditorInactiveDisplayMode.ShowDisabled ? true : false);
             return container;
+        }
+
+        /// <summary>
+        /// 컬럼명과 Tooltip 도움말 표시를 포함하는 편집 필드 헤더를 생성합니다.
+        /// </summary>
+        /// <param name="column">표시할 컬럼 정의입니다.</param>
+        /// <returns>편집 필드 상단에 배치할 헤더 요소입니다.</returns>
+        private static VisualElement CreateFieldHeader(TableEditorColumnDefinition column)
+        {
+            VisualElement header = new VisualElement
+            {
+                style =
+                {
+                    flexDirection = FlexDirection.Row,
+                    alignItems = Align.Center,
+                    marginBottom = 4f,
+                }
+            };
+
+            Label label = new Label(column.HeaderName)
+            {
+                tooltip = column.Tooltip,
+                style =
+                {
+                    flexGrow = 1f,
+                    unityFontStyleAndWeight = FontStyle.Bold,
+                }
+            };
+            header.Add(label);
+
+            if (!string.IsNullOrWhiteSpace(column.Tooltip))
+            {
+                Label helpIcon = new Label("?")
+                {
+                    tooltip = column.Tooltip,
+                    style =
+                    {
+                        width = 18f,
+                        unityTextAlign = TextAnchor.MiddleCenter,
+                        unityFontStyleAndWeight = FontStyle.Bold,
+                    }
+                };
+                header.Add(helpIcon);
+            }
+
+            return header;
         }
 
         private static VisualElement CreateInputField(

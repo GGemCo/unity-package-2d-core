@@ -1,6 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using GGemCo2DCore;
 using UnityEditor;
 using UnityEngine;
@@ -16,6 +17,20 @@ namespace GGemCo2DCoreEditor
 
     public static class TableEditorDefinitionFactory
     {
+        /// <summary>
+        /// 테이블 로더와 Row 타입을 기반으로 테이블 에디터 등록 정의를 생성합니다.
+        /// </summary>
+        /// <param name="moduleName">테이블을 제공하는 에디터 모듈명입니다.</param>
+        /// <param name="packageName">테이블을 소유한 패키지명입니다.</param>
+        /// <param name="tableKey">테이블을 식별하는 고유 키입니다.</param>
+        /// <param name="assetPath">편집할 원본 테이블 에셋 경로입니다.</param>
+        /// <param name="displayName">테이블 목록에 표시할 이름입니다.</param>
+        /// <param name="tableType">데이터를 파싱할 테이블 로더 타입입니다.</param>
+        /// <param name="rowType">테이블 한 행을 표현하는 타입입니다.</param>
+        /// <param name="reloadAction">저장 후 런타임 테이블 캐시를 갱신할 작업입니다.</param>
+        /// <param name="resolveReference">컬럼별 참조 테이블을 결정하는 선택적 resolver입니다.</param>
+        /// <param name="resolveColumnTooltip">컬럼별 설명을 결정하는 선택적 resolver입니다.</param>
+        /// <returns>테이블 에디터 레지스트리에 등록할 테이블 정의입니다.</returns>
         public static TableEditorTableDefinition Create(
             string moduleName,
             string packageName,
@@ -25,7 +40,8 @@ namespace GGemCo2DCoreEditor
             Type tableType,
             Type rowType,
             Action reloadAction = null,
-            Func<string, TableEditorTableDefinition> resolveReference = null)
+            Func<string, TableEditorTableDefinition> resolveReference = null,
+            Func<string, MemberInfo, string> resolveColumnTooltip = null)
         {
             return new TableEditorTableDefinition
             {
@@ -38,6 +54,7 @@ namespace GGemCo2DCoreEditor
                 RowType = rowType,
                 ReloadAction = reloadAction,
                 ResolveReferenceTable = resolveReference,
+                ResolveColumnTooltip = resolveColumnTooltip,
                 CreateTableInstanceAndLoad = content =>
                 {
                     object instance = Activator.CreateInstance(tableType);
