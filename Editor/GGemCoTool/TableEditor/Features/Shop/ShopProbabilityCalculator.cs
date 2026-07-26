@@ -12,6 +12,7 @@ namespace GGemCo2DCoreEditor
         public int SlotIndex;
         public int ItemUid;
         public int Rate;
+        public int RollPriority;
         public int UniqueGroup;
         public double BaseProbability;
         public double EstimatedProbability;
@@ -26,6 +27,7 @@ namespace GGemCo2DCoreEditor
             public int SlotIndex;
             public int ItemUid;
             public int Rate;
+            public int RollPriority;
             public int UniqueGroup;
             public int Order;
         }
@@ -154,7 +156,7 @@ namespace GGemCo2DCoreEditor
         {
             var lines = new List<string>
             {
-                "ShopItemUid\tShopUid\tSlotIndex\tItemUid\tLabel\tRate\tUniqueGroup\tBaseProbability\tEstimatedProbability"
+                "ShopItemUid\tShopUid\tSlotIndex\tItemUid\tLabel\tRate\tRollPriority\tUniqueGroup\tBaseProbability\tEstimatedProbability"
             };
 
             if (results != null)
@@ -168,6 +170,7 @@ namespace GGemCo2DCoreEditor
                         result.ItemUid.ToString(CultureInfo.InvariantCulture),
                         result.ItemUid <= 0 ? "Empty" : result.ItemUid.ToString(CultureInfo.InvariantCulture),
                         result.Rate.ToString(CultureInfo.InvariantCulture),
+                        result.RollPriority.ToString(CultureInfo.InvariantCulture),
                         result.UniqueGroup.ToString(CultureInfo.InvariantCulture),
                         FormatPercent(result.BaseProbability),
                         FormatPercent(result.EstimatedProbability)));
@@ -199,6 +202,7 @@ namespace GGemCo2DCoreEditor
                     SlotIndex = ParseInt(row, "SlotIndex", -1),
                     ItemUid = ParseInt(row, "ItemUid"),
                     Rate = ParseInt(row, "Rate", 100),
+                    RollPriority = ParseInt(row, "RollPriority"),
                     UniqueGroup = ParseInt(row, "UniqueGroup"),
                     Order = order++,
                 };
@@ -221,8 +225,9 @@ namespace GGemCo2DCoreEditor
                 foreach (var slotGroup in shopPair.Value.GroupBy(static c => c.SlotIndex))
                 {
                     var slotCandidates = slotGroup.OrderBy(static c => c.Order).ToList();
-                    int totalRate = slotCandidates.Sum(static c => Math.Max(0, c.Rate));
-                    Candidate fallback = slotCandidates.FirstOrDefault();
+                    var prioritizedCandidates = FilterHighestRollPriority(slotCandidates);
+                    int totalRate = prioritizedCandidates.Sum(static c => Math.Max(0, c.Rate));
+                    Candidate fallback = prioritizedCandidates.FirstOrDefault();
 
                     foreach (Candidate candidate in slotCandidates)
                     {
@@ -235,6 +240,7 @@ namespace GGemCo2DCoreEditor
                                 ShopUid = candidate.ShopUid,
                                 SlotIndex = candidate.SlotIndex,
                                 ItemUid = candidate.ItemUid,
+                                RollPriority = candidate.RollPriority,
                                 UniqueGroup = candidate.UniqueGroup,
                             };
                             resultByKey.Add(key, result);
@@ -245,7 +251,7 @@ namespace GGemCo2DCoreEditor
                             result.UniqueGroup = candidate.UniqueGroup;
                     }
 
-                    foreach (Candidate candidate in slotCandidates)
+                    foreach (Candidate candidate in prioritizedCandidates)
                     {
                         var key = new ResultKey(candidate.ShopItemUid, candidate.ShopUid, candidate.SlotIndex, candidate.ItemUid);
                         ShopProbabilityResult result = resultByKey[key];
@@ -279,7 +285,9 @@ namespace GGemCo2DCoreEditor
             {
                 var candidates = candidatesBySlot[slotIndex];
                 var filteredCandidates = FilterUniqueCandidates(candidates, pickedItemUidsByUniqueGroup);
-                Candidate picked = PickWeighted(filteredCandidates.Count > 0 ? filteredCandidates : candidates, rng);
+                var prioritizedCandidates = FilterHighestRollPriority(
+                    filteredCandidates.Count > 0 ? filteredCandidates : candidates);
+                Candidate picked = PickWeighted(prioritizedCandidates, rng);
                 pickedBySlot[slotIndex] = picked;
                 RegisterUniquePick(picked, pickedItemUidsByUniqueGroup);
             }
@@ -308,6 +316,38 @@ namespace GGemCo2DCoreEditor
             }
 
             return filteredCandidates;
+        }
+
+        /// <summary>
+        /// 후보 중 가장 높은 추첨 우선순위를 가진 항목만 반환합니다.
+        /// </summary>
+        /// <param name="candidates">우선순위를 비교할 후보 목록입니다.</param>
+        /// <returns>가장 높은 RollPriority 후보 목록입니다.</returns>
+        private static List<Candidate> FilterHighestRollPriority(List<Candidate> candidates)
+        {
+            var prioritizedCandidates = new List<Candidate>();
+            if (candidates == null || candidates.Count <= 0) return prioritizedCandidates;
+
+            int highestPriority = int.MinValue;
+            foreach (Candidate candidate in candidates)
+            {
+                if (candidate == null) continue;
+
+                if (candidate.RollPriority > highestPriority)
+                {
+                    highestPriority = candidate.RollPriority;
+                    prioritizedCandidates.Clear();
+                    prioritizedCandidates.Add(candidate);
+                    continue;
+                }
+
+                if (candidate.RollPriority == highestPriority)
+                {
+                    prioritizedCandidates.Add(candidate);
+                }
+            }
+
+            return prioritizedCandidates;
         }
 
         private static void RegisterUniquePick(Candidate picked, Dictionary<int, HashSet<int>> pickedItemUidsByUniqueGroup)

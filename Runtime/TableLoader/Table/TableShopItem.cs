@@ -34,6 +34,13 @@ namespace GGemCo2DCore
         public int CurrencyValue;
         public int MaxBuyCount;
         public int Rate;
+
+        /// <summary>
+        /// 동일 슬롯 후보 중 먼저 추첨할 우선순위입니다.
+        /// 가장 높은 값의 후보군만 가중치 추첨에 참여하며, 값이 같으면 <see cref="Rate"/>를 사용합니다.
+        /// </summary>
+        public int RollPriority;
+
         public int UniqueGroup;
         public int PurchaseLimitCount;
         public ShopSoldOutDisplayType SoldOutDisplayType;
@@ -58,6 +65,7 @@ namespace GGemCo2DCore
                 CurrencyValue = row.CurrencyValue,
                 MaxBuyCount = row.MaxBuyCount,
                 Rate = row.Rate,
+                RollPriority = 0,
                 UniqueGroup = row.UniqueGroup,
                 PurchaseLimitCount = 0,
                 SoldOutDisplayType = ShopSoldOutDisplayType.Disable,
@@ -123,6 +131,7 @@ namespace GGemCo2DCore
                 CurrencyValue = reader.Int("CurrencyValue"),
                 MaxBuyCount = reader.Int("MaxBuyCount", 1),
                 Rate = reader.Int("Rate", 100),
+                RollPriority = reader.Int("RollPriority"),
                 UniqueGroup = reader.Int("UniqueGroup"),
                 PurchaseLimitCount = reader.Int("PurchaseLimitCount"),
                 SoldOutDisplayType = reader.Enum<ShopSoldOutDisplayType>("SoldOutDisplayType"),

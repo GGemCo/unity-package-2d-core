@@ -144,8 +144,10 @@ namespace GGemCo2DCore
 
         /// <summary>
         /// 슬롯별 후보군에서 조건에 맞는 아이템을 랜덤으로 선택합니다.
-        /// (가중치, 유니크 그룹 제한, 숨김 필터 적용)
+        /// (숨김 필터, 유니크 그룹 제한, 우선순위, 가중치 적용)
         /// </summary>
+        /// <param name="rows">현재 상점에 등록된 전체 상품 행입니다.</param>
+        /// <returns>슬롯 인덱스를 키로 사용하는 추첨 결과입니다.</returns>
         private Dictionary<int, StruckTableShopItem> RollItemsBySlot(List<StruckTableShopItem> rows)
         {
             // 슬롯별 후보군 구성
@@ -181,8 +183,12 @@ namespace GGemCo2DCore
                 // 유니크 그룹 중복 제거
                 var filteredCandidates = FilterUniqueCandidates(candidates, pickedItemUidsByUniqueGroup);
 
+                // 가장 높은 우선순위 후보군만 가중치 추첨에 참여
+                var prioritizedCandidates = FilterHighestRollPriority(
+                    filteredCandidates.Count > 0 ? filteredCandidates : candidates);
+
                 // 가중치 기반 랜덤 선택
-                var picked = PickWeighted(filteredCandidates.Count > 0 ? filteredCandidates : candidates);
+                var picked = PickWeighted(prioritizedCandidates);
 
                 rolledItems[slotIndex] = picked;
 
@@ -196,6 +202,8 @@ namespace GGemCo2DCore
         /// <summary>
         /// 구매 불가 + 숨김 설정된 후보를 제거합니다.
         /// </summary>
+        /// <param name="candidates">구매 가능 여부를 검사할 슬롯 후보 목록입니다.</param>
+        /// <returns>숨김 조건에 해당하지 않는 후보 목록입니다.</returns>
         private List<StruckTableShopItem> FilterHiddenUnavailableCandidates(List<StruckTableShopItem> candidates)
         {
             var filteredCandidates = new List<StruckTableShopItem>();
@@ -221,6 +229,9 @@ namespace GGemCo2DCore
         /// <summary>
         /// 동일 유니크 그룹에서 이미 선택된 아이템을 제외합니다.
         /// </summary>
+        /// <param name="candidates">유니크 그룹을 검사할 슬롯 후보 목록입니다.</param>
+        /// <param name="pickedItemUidsByUniqueGroup">유니크 그룹별로 이미 선택된 아이템 UID 기록입니다.</param>
+        /// <returns>현재 상점 추첨에서 중복되지 않는 후보 목록입니다.</returns>
         private List<StruckTableShopItem> FilterUniqueCandidates(
             List<StruckTableShopItem> candidates,
             Dictionary<int, HashSet<int>> pickedItemUidsByUniqueGroup)
@@ -249,8 +260,44 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 슬롯 후보 중 가장 높은 추첨 우선순위를 가진 후보만 반환합니다.
+        /// 구매 제한 등으로 높은 우선순위 상품이 숨겨지면 다음 우선순위 후보군이 자동으로 활성화됩니다.
+        /// </summary>
+        /// <param name="candidates">우선순위를 비교할 슬롯 후보 목록입니다.</param>
+        /// <returns>가장 높은 <see cref="StruckTableShopItem.RollPriority"/>를 가진 후보 목록입니다.</returns>
+        private static List<StruckTableShopItem> FilterHighestRollPriority(List<StruckTableShopItem> candidates)
+        {
+            var prioritizedCandidates = new List<StruckTableShopItem>();
+            if (candidates == null || candidates.Count <= 0) return prioritizedCandidates;
+
+            int highestPriority = int.MinValue;
+            for (int i = 0; i < candidates.Count; i++)
+            {
+                StruckTableShopItem candidate = candidates[i];
+                if (candidate == null) continue;
+
+                if (candidate.RollPriority > highestPriority)
+                {
+                    highestPriority = candidate.RollPriority;
+                    prioritizedCandidates.Clear();
+                    prioritizedCandidates.Add(candidate);
+                    continue;
+                }
+
+                if (candidate.RollPriority == highestPriority)
+                {
+                    prioritizedCandidates.Add(candidate);
+                }
+            }
+
+            return prioritizedCandidates;
+        }
+
+        /// <summary>
         /// 선택된 아이템을 유니크 그룹 기록에 등록합니다.
         /// </summary>
+        /// <param name="picked">이번 슬롯에서 선택된 상품입니다.</param>
+        /// <param name="pickedItemUidsByUniqueGroup">유니크 그룹별 선택 기록입니다.</param>
         private void RegisterUniquePick(
             StruckTableShopItem picked,
             Dictionary<int, HashSet<int>> pickedItemUidsByUniqueGroup)
@@ -269,6 +316,8 @@ namespace GGemCo2DCore
         /// <summary>
         /// 가중치(Rate)를 기반으로 랜덤 아이템을 선택합니다.
         /// </summary>
+        /// <param name="candidates">동일한 우선순위를 가진 추첨 후보 목록입니다.</param>
+        /// <returns>가중치 추첨으로 선택된 상품입니다.</returns>
         private StruckTableShopItem PickWeighted(List<StruckTableShopItem> candidates)
         {
             if (candidates == null || candidates.Count <= 0) return null;

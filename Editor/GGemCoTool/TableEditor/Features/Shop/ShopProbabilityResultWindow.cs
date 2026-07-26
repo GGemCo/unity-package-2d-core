@@ -169,6 +169,7 @@ namespace GGemCo2DCoreEditor
             header.Add(CreateCell("SlotIndex", 70, true));
             header.Add(CreateCell("ItemUid", 100, true));
             header.Add(CreateCell("Rate", 70, true));
+            header.Add(CreateCell("RollPriority", 90, true));
             header.Add(CreateCell("UniqueGroup", 100, true));
             header.Add(CreateCell("Base %", 90, true));
             header.Add(CreateCell("Estimated %", 110, true));
@@ -182,6 +183,7 @@ namespace GGemCo2DCoreEditor
                 row.Add(CreateCell(result.SlotIndex.ToString(CultureInfo.InvariantCulture), 70));
                 row.Add(CreateCell(result.ItemUid <= 0 ? "Empty" : result.ItemUid.ToString(CultureInfo.InvariantCulture), 100));
                 row.Add(CreateCell(result.Rate.ToString(CultureInfo.InvariantCulture), 70));
+                row.Add(CreateCell(result.RollPriority.ToString(CultureInfo.InvariantCulture), 90));
                 row.Add(CreateCell(result.UniqueGroup.ToString(CultureInfo.InvariantCulture), 100));
                 row.Add(CreateCell(ShopProbabilityCalculator.FormatPercent(result.BaseProbability), 90));
                 row.Add(CreateCell(ShopProbabilityCalculator.FormatPercent(result.EstimatedProbability), 110));
