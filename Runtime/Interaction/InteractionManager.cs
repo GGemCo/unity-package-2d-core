@@ -9,11 +9,34 @@ namespace GGemCo2DCore
     /// </summary>
     public class InteractionManager
     {
+        /// <summary>
+        /// 자식 UIWindow 전환으로 일시 중단한 인터랙션 요청을 식별하는 토큰입니다.
+        /// </summary>
+        internal readonly struct InteractionSuspensionToken
+        {
+            internal readonly int Id;
+
+            /// <summary>
+            /// 유효한 일시 중단 요청인지 여부입니다.
+            /// </summary>
+            internal bool IsValid => Id > 0;
+
+            /// <summary>
+            /// 일시 중단 요청 식별자를 보관하는 토큰을 생성합니다.
+            /// </summary>
+            /// <param name="id">0보다 큰 요청 식별자입니다.</param>
+            internal InteractionSuspensionToken(int id)
+            {
+                Id = id;
+            }
+        }
+
         private SceneGame _sceneGame;
         private TableNpc _tableNpc;
         private TableInteraction _tableInteraction;
         private UIWindowInteractionDialogue _uiWindowInteractionDialogue;
         private CharacterBase _currentNpc;
+        private CharacterBase _suspendedNpc;
         private CharacterBase _interactionLockedPlayer;
         private object _interactionControlLockToken;
         private GGemCoNpcInteractionSettings _npcInteractionSettings;
@@ -21,6 +44,8 @@ namespace GGemCo2DCore
         private readonly List<InteractionChoiceContribution> _externalChoices =
             new List<InteractionChoiceContribution>();
         private int _nextInteractionBlockTokenId;
+        private int _nextSuspensionTokenId;
+        private int _activeSuspensionTokenId;
 
         public CharacterBase CurrentNpc => _currentNpc;
 
@@ -496,10 +521,133 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 자식 UIWindow를 표시하는 동안 현재 NPC 인터랙션을 재개 가능한 상태로 일시 중단합니다.
+        /// 플레이어 조작 잠금과 현재 NPC 참조는 유지하여 자식 창 종료 전까지 인터랙션 범위를 벗어나지 않게 합니다.
+        /// </summary>
+        /// <param name="npc">현재 인터랙션 중인 NPC입니다.</param>
+        /// <param name="token">성공 시 재개 또는 종료 요청에 사용할 일시 중단 토큰입니다.</param>
+        /// <returns>현재 인터랙션을 일시 중단했으면 <see langword="true"/>입니다.</returns>
+        internal bool TrySuspendCurrentInteraction(
+            CharacterBase npc,
+            out InteractionSuspensionToken token)
+        {
+            token = default;
+            if (npc == null ||
+                _currentNpc != npc ||
+                _activeSuspensionTokenId > 0)
+            {
+                return false;
+            }
+
+            _nextSuspensionTokenId =
+                _nextSuspensionTokenId >= int.MaxValue
+                    ? 1
+                    : _nextSuspensionTokenId + 1;
+
+            _suspendedNpc = npc;
+            _activeSuspensionTokenId = _nextSuspensionTokenId;
+            token = new InteractionSuspensionToken(
+                _activeSuspensionTokenId);
+            return true;
+        }
+
+        /// <summary>
+        /// 자식 UIWindow 열기에 실패한 경우 일시 중단 표시만 해제하고 현재 인터랙션은 유지합니다.
+        /// </summary>
+        /// <param name="token">취소할 일시 중단 요청 토큰입니다.</param>
+        internal void CancelCurrentInteractionSuspension(
+            InteractionSuspensionToken token)
+        {
+            if (!IsActiveSuspension(token))
+            {
+                return;
+            }
+
+            _activeSuspensionTokenId = 0;
+            _suspendedNpc = null;
+        }
+
+        /// <summary>
+        /// 일시 중단한 NPC와 플레이어의 현재 범위를 다시 검증한 뒤 인터랙션 데이터를 새로 바인딩합니다.
+        /// 동적 대사 파라미터와 외부 선택지도 현재 런타임 상태를 기준으로 다시 수집합니다.
+        /// </summary>
+        /// <param name="token">재개할 일시 중단 요청 토큰입니다.</param>
+        /// <returns>유효한 NPC 인터랙션을 다시 시작했으면 <see langword="true"/>입니다.</returns>
+        internal bool ResumeSuspendedInteraction(
+            InteractionSuspensionToken token)
+        {
+            if (!IsActiveSuspension(token))
+            {
+                return false;
+            }
+
+            CharacterBase suspendedNpc = _suspendedNpc;
+            _activeSuspensionTokenId = 0;
+            _suspendedNpc = null;
+
+            if (suspendedNpc == null ||
+                _currentNpc != suspendedNpc ||
+                IsInteractionBlocked())
+            {
+                if (_currentNpc == suspendedNpc)
+                {
+                    RemoveCurrentNpc();
+                }
+
+                return false;
+            }
+
+            Npc npc = suspendedNpc as Npc;
+            CharacterBase player = ResolvePlayer();
+            if (npc == null ||
+                player == null ||
+                !IsPlayerInsideNpcInteractionRange(
+                    npc,
+                    player.colliderHitArea))
+            {
+                RemoveCurrentNpc();
+                return false;
+            }
+
+            SetInfo(npc, npc.BuildInteractionTextContext());
+            return true;
+        }
+
+        /// <summary>
+        /// 지정한 자식 UIWindow에 연결된 일시 중단 요청이 아직 현재 세션인지 확인하고 인터랙션을 종료합니다.
+        /// 이미 범위 이탈이나 다른 종료 경로로 무효화된 토큰은 새 인터랙션에 영향을 주지 않습니다.
+        /// </summary>
+        /// <param name="token">종료할 일시 중단 요청 토큰입니다.</param>
+        internal void CompleteSuspendedInteraction(
+            InteractionSuspensionToken token)
+        {
+            if (!IsActiveSuspension(token))
+            {
+                return;
+            }
+
+            EndInteraction();
+        }
+
+        /// <summary>
+        /// 전달된 토큰이 현재 활성 일시 중단 요청과 일치하는지 확인합니다.
+        /// </summary>
+        /// <param name="token">검증할 일시 중단 요청 토큰입니다.</param>
+        /// <returns>현재 활성 토큰과 일치하면 <see langword="true"/>입니다.</returns>
+        private bool IsActiveSuspension(
+            InteractionSuspensionToken token)
+        {
+            return token.IsValid &&
+                   token.Id == _activeSuspensionTokenId;
+        }
+
+        /// <summary>
         /// 현재 상호작용 중인 NPC 참조를 제거합니다.
         /// </summary>
         public void RemoveCurrentNpc()
         {
+            _activeSuspensionTokenId = 0;
+            _suspendedNpc = null;
             _currentNpc = null;
             ReleasePlayerControlLockForInteraction();
         }
@@ -510,6 +658,8 @@ namespace GGemCo2DCore
         public void EndInteraction()
         {
             _uiWindowInteractionDialogue?.OnEndInteraction();
+            _activeSuspensionTokenId = 0;
+            _suspendedNpc = null;
             _currentNpc = null;
             ReleasePlayerControlLockForInteraction();
         }
@@ -550,6 +700,8 @@ namespace GGemCo2DCore
         public void OnDestroy()
         {
             ClearInteractionBlocks();
+            _activeSuspensionTokenId = 0;
+            _suspendedNpc = null;
             _currentNpc = null;
             ReleasePlayerControlLockForInteraction();
             _uiWindowInteractionDialogue = null;

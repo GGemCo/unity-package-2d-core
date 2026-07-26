@@ -7,6 +7,27 @@ using UnityEngine.UI;
 namespace GGemCo2DCore
 {
     /// <summary>
+    /// 스탯 초기화 UIWindow가 닫힌 이유를 정의합니다.
+    /// </summary>
+    internal enum PlayerStatResetCloseReason
+    {
+        /// <summary>
+        /// 사용자가 취소하기 버튼을 눌렀습니다.
+        /// </summary>
+        Cancelled = 0,
+
+        /// <summary>
+        /// 변경한 스탯 분배를 성공적으로 적용했습니다.
+        /// </summary>
+        Applied = 1,
+
+        /// <summary>
+        /// 다른 UIWindow 전환이나 외부 종료 요청으로 창이 닫혔습니다.
+        /// </summary>
+        Dismissed = 2,
+    }
+
+    /// <summary>
     /// 플레이어가 이미 분배한 스탯 포인트를 임시로 초기화하고, 골드 비용을 지불해 재분배를 확정하는 윈도우입니다.
     /// </summary>
     public class UIWindowPlayerStatReset : UIWindow, IStatPointDraftChangeHandler
@@ -64,6 +85,9 @@ namespace GGemCo2DCore
         private StatPointResetEditSession _editSession;
         private bool _labelsApplied;
         private string _unspentPrefix;
+        private Action<PlayerStatResetCloseReason> _closeCallback;
+        private PlayerStatResetCloseReason _pendingCloseReason;
+        private bool _hasPendingCloseReason;
 
         protected override void Awake()
         {
@@ -85,6 +109,54 @@ namespace GGemCo2DCore
         {
             if (buttonApply != null) buttonApply.onClick.RemoveListener(OnClickApply);
             if (buttonReset != null) buttonReset.onClick.RemoveListener(OnClickReset);
+
+            // 씬 종료 중에는 다른 UIWindow를 다시 열지 않도록 보류 중인 콜백을 실행하지 않고 해제합니다.
+            _closeCallback = null;
+            _hasPendingCloseReason = false;
+        }
+
+        /// <summary>
+        /// 닫기 연출과 GameObject 비활성화가 끝난 뒤 일회성 종료 결과를 전달합니다.
+        /// 대화 재개 콜백이 아직 닫히는 중인 이 Window를 다시 닫는 재진입을 방지합니다.
+        /// </summary>
+        private void OnDisable()
+        {
+            if (_closeCallback == null)
+            {
+                _hasPendingCloseReason = false;
+                return;
+            }
+
+            PlayerStatResetCloseReason closeReason =
+                _hasPendingCloseReason
+                    ? _pendingCloseReason
+                    : PlayerStatResetCloseReason.Dismissed;
+            CompleteCloseRequest(closeReason);
+        }
+
+        /// <summary>
+        /// 스탯 초기화 창을 열고 닫힘 사유를 한 번 전달받을 콜백을 등록합니다.
+        /// 이미 열려 있는 창에는 새 요청을 덮어쓰지 않습니다.
+        /// </summary>
+        /// <param name="closeCallback">취소, 적용 완료, 외부 종료 사유를 받을 일회성 콜백입니다.</param>
+        /// <returns>창을 새로 열고 콜백을 등록했으면 <see langword="true"/>입니다.</returns>
+        internal bool ShowWithCloseCallback(
+            Action<PlayerStatResetCloseReason> closeCallback)
+        {
+            if (closeCallback == null || IsOpen())
+            {
+                return false;
+            }
+
+            Show(true);
+            if (!IsOpen())
+            {
+                return false;
+            }
+
+            _closeCallback = closeCallback;
+            _hasPendingCloseReason = false;
+            return true;
         }
 
         /// <summary>
@@ -354,7 +426,7 @@ namespace GGemCo2DCore
 
             _editSession = new StatPointResetEditSession(_boundPlayer);
             RefreshValues();
-            Show(false);
+            CloseWithReason(PlayerStatResetCloseReason.Applied);
         }
 
         /// <summary>
@@ -369,7 +441,33 @@ namespace GGemCo2DCore
                 RefreshValues();
             }
 
+            CloseWithReason(PlayerStatResetCloseReason.Cancelled);
+        }
+
+        /// <summary>
+        /// 명시적인 종료 사유를 보관하고 창 닫기 전환을 시작합니다.
+        /// 실제 콜백은 닫기 연출이 끝나 GameObject가 비활성화되는 시점에 실행합니다.
+        /// </summary>
+        /// <param name="closeReason">호출자에게 전달할 종료 사유입니다.</param>
+        private void CloseWithReason(
+            PlayerStatResetCloseReason closeReason)
+        {
+            _pendingCloseReason = closeReason;
+            _hasPendingCloseReason = true;
             Show(false);
+        }
+
+        /// <summary>
+        /// 등록된 일회성 닫힘 콜백을 실행하고 요청 상태를 정리합니다.
+        /// </summary>
+        /// <param name="closeReason">창이 닫힌 최종 사유입니다.</param>
+        private void CompleteCloseRequest(
+            PlayerStatResetCloseReason closeReason)
+        {
+            Action<PlayerStatResetCloseReason> callback = _closeCallback;
+            _closeCallback = null;
+            _hasPendingCloseReason = false;
+            callback?.Invoke(closeReason);
         }
 
         private void UpdateLevelText()
@@ -527,9 +625,17 @@ namespace GGemCo2DCore
             if (!show)
             {
                 CancelResetDraft();
+                if (!_hasPendingCloseReason)
+                {
+                    _pendingCloseReason =
+                        PlayerStatResetCloseReason.Dismissed;
+                    _hasPendingCloseReason = true;
+                }
+
                 return;
             }
 
+            _hasPendingCloseReason = false;
             if (_boundPlayer != null)
             {
                 BeginResetDraft();

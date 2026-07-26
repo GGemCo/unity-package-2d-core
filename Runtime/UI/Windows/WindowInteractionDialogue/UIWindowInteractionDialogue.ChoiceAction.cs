@@ -11,6 +11,30 @@ namespace GGemCo2DCore
     public partial class UIWindowInteractionDialogue
     {
         /// <summary>
+        /// 인터랙션 선택지 실행 후 대화 세션을 처리할 방식을 정의합니다.
+        /// </summary>
+        private enum InteractionExecutionResult
+        {
+            /// <summary>
+            /// 선택지를 처리하지 못해 현재 대화를 유지합니다.
+            /// </summary>
+            NotHandled = 0,
+
+            /// <summary>
+            /// 선택지 실행을 완료하여 현재 인터랙션을 종료합니다.
+            /// </summary>
+            CompleteInteraction = 1,
+
+            /// <summary>
+            /// 자식 UIWindow 결과를 기다리기 위해 현재 인터랙션을 일시 중단합니다.
+            /// </summary>
+            SuspendForChildWindow = 2,
+        }
+
+        private InteractionManager.InteractionSuspensionToken
+            _playerStatResetSuspensionToken;
+
+        /// <summary>
         /// 선택지 버튼에 표시할 텍스트를 설정합니다.
         /// </summary>
         /// <param name="button">대상 버튼입니다.</param>
@@ -124,24 +148,39 @@ namespace GGemCo2DCore
         /// <param name="data">버튼에 연결된 interaction 데이터입니다.</param>
         private void OnClickChoiceInteraction(InteractionData data)
         {
-            bool handled = false;
+            InteractionExecutionResult result =
+                InteractionExecutionResult.NotHandled;
 
             if (data.HasBuiltInInteraction)
             {
-                handled = ExecuteBuiltInInteraction(data.InteractionType, data.Value);
+                result = ExecuteBuiltInInteraction(
+                    data.InteractionType,
+                    data.Value);
             }
             else if (data.HasCustomInteraction)
             {
-                handled = InteractionCustomHandlerRegistry.TryExecute(data.CustomTypeKey, SceneGame, _currentNpc, data.Value);
+                bool handled = InteractionCustomHandlerRegistry.TryExecute(
+                    data.CustomTypeKey,
+                    SceneGame,
+                    _currentNpc,
+                    data.Value);
+                result = handled
+                    ? InteractionExecutionResult.CompleteInteraction
+                    : InteractionExecutionResult.NotHandled;
                 if (!handled)
                 {
                     GcLogger.LogError($"커스텀 interaction 처리기가 등록되지 않았습니다. key: {data.CustomTypeKey}");
                 }
             }
 
-            if (handled)
+            switch (result)
             {
-                CloseDialogueByChoice();
+                case InteractionExecutionResult.CompleteInteraction:
+                    CloseDialogueByChoice();
+                    break;
+                case InteractionExecutionResult.SuspendForChildWindow:
+                    HideDialogueForChildWindow();
+                    break;
             }
         }
 
@@ -150,12 +189,14 @@ namespace GGemCo2DCore
         /// </summary>
         /// <param name="interactionType">실행할 interaction 타입입니다.</param>
         /// <param name="value">보조 값입니다.</param>
-        /// <returns>실행 성공 시 true입니다.</returns>
-        private bool ExecuteBuiltInInteraction(InteractionConstants.Type interactionType, int value)
+        /// <returns>실행 후 현재 대화를 종료하거나 일시 중단할 방식을 반환합니다.</returns>
+        private InteractionExecutionResult ExecuteBuiltInInteraction(
+            InteractionConstants.Type interactionType,
+            int value)
         {
             if (interactionType == InteractionConstants.Type.None)
             {
-                return false;
+                return InteractionExecutionResult.NotHandled;
             }
 
             switch (interactionType)
@@ -163,33 +204,35 @@ namespace GGemCo2DCore
                 case InteractionConstants.Type.Shop:
                     _uiWindowShop?.Show(true);
                     _uiWindowShop?.SetInfoByShopUid(value);
-                    return true;
+                    return InteractionExecutionResult.CompleteInteraction;
                 case InteractionConstants.Type.Stash:
                     _uiWindowStash?.Show(true);
-                    return true;
+                    return InteractionExecutionResult.CompleteInteraction;
                 case InteractionConstants.Type.ShopSale:
                     _uiWindowShopSale?.Show(true);
-                    return true;
+                    return InteractionExecutionResult.CompleteInteraction;
                 case InteractionConstants.Type.ItemUpgrade:
                     _uiWindowItemUpgrade?.Show(true);
-                    return true;
+                    return InteractionExecutionResult.CompleteInteraction;
                 case InteractionConstants.Type.ItemSalvage:
                     _uiWindowItemSalvage?.Show(true);
-                    return true;
+                    return InteractionExecutionResult.CompleteInteraction;
                 case InteractionConstants.Type.ItemCraft:
                     _uiWindowItemCraft?.Show(true);
                     _uiWindowItemCraft?.SetInfoByItemCraftUid(value);
-                    return true;
+                    return InteractionExecutionResult.CompleteInteraction;
                 case InteractionConstants.Type.SaveGame:
                     SaveGameBySleep();
-                    return true;
+                    return InteractionExecutionResult.CompleteInteraction;
                 case InteractionConstants.Type.StatReset:
-                    return OpenPlayerStatReset();
+                    return OpenPlayerStatReset()
+                        ? InteractionExecutionResult.SuspendForChildWindow
+                        : InteractionExecutionResult.NotHandled;
                 case InteractionConstants.Type.WorldMap:
                     _uiWindowWorldMap?.Show(true);
-                    return true;
+                    return InteractionExecutionResult.CompleteInteraction;
                 default:
-                    return false;
+                    return InteractionExecutionResult.NotHandled;
             }
         }
 
@@ -209,8 +252,58 @@ namespace GGemCo2DCore
                 }
             }
 
-            _uiWindowPlayerStatReset?.Show(true);
-            return true;
+            InteractionManager interactionManager =
+                SceneGame?.InteractionManager;
+            if (_uiWindowPlayerStatReset == null ||
+                interactionManager == null)
+            {
+                return false;
+            }
+
+            if (!interactionManager.TrySuspendCurrentInteraction(
+                    _currentNpc,
+                    out InteractionManager.InteractionSuspensionToken token))
+            {
+                return false;
+            }
+
+            if (_uiWindowPlayerStatReset.ShowWithCloseCallback(
+                    HandlePlayerStatResetClosed))
+            {
+                _playerStatResetSuspensionToken = token;
+                return true;
+            }
+
+            interactionManager.CancelCurrentInteractionSuspension(token);
+            return false;
+        }
+
+        /// <summary>
+        /// 스탯 초기화 창 종료 결과에 따라 중단한 NPC 인터랙션을 재개하거나 완전히 종료합니다.
+        /// 취소하기 버튼으로 닫힌 경우에만 선택지와 동적 대사 컨텍스트를 다시 구성합니다.
+        /// </summary>
+        /// <param name="closeReason">스탯 초기화 창이 닫힌 이유입니다.</param>
+        private void HandlePlayerStatResetClosed(
+            PlayerStatResetCloseReason closeReason)
+        {
+            InteractionManager.InteractionSuspensionToken token =
+                _playerStatResetSuspensionToken;
+            _playerStatResetSuspensionToken = default;
+
+            InteractionManager interactionManager =
+                SceneGame?.InteractionManager;
+            if (interactionManager == null)
+            {
+                return;
+            }
+
+            if (closeReason == PlayerStatResetCloseReason.Cancelled)
+            {
+                interactionManager.ResumeSuspendedInteraction(token);
+                return;
+            }
+
+            interactionManager.CompleteSuspendedInteraction(token);
         }
 
         /// <summary>
@@ -247,6 +340,15 @@ namespace GGemCo2DCore
         {
             _currentNpc = null;
             SceneGame?.InteractionManager?.RemoveCurrentNpc();
+            Show(false);
+        }
+
+        /// <summary>
+        /// 자식 UIWindow가 열려 있는 동안 현재 대화 UI만 숨깁니다.
+        /// NPC 참조와 플레이어 조작 잠금은 InteractionManager가 재개 또는 종료 결과를 받을 때까지 유지합니다.
+        /// </summary>
+        private void HideDialogueForChildWindow()
+        {
             Show(false);
         }
 
