@@ -115,9 +115,33 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 기준 방향에 각도 오프셋을 적용한 정규화 방향을 반환합니다.
+        /// 양수 각도는 반시계 방향, 음수 각도는 시계 방향으로 회전합니다.
+        /// </summary>
+        /// <param name="direction">회전할 기준 방향입니다.</param>
+        /// <param name="angleOffsetDeg">기준 방향에 더할 각도(도)입니다.</param>
+        /// <returns>각도 오프셋이 적용된 정규화 방향입니다.</returns>
+        public static Vector2 ApplyDirectionAngleOffset(Vector2 direction, float angleOffsetDeg)
+        {
+            if (direction.sqrMagnitude <= 1e-6f)
+                return Vector2.zero;
+
+            Vector2 normalizedDirection = direction.normalized;
+            if (Mathf.Abs(angleOffsetDeg) <= 1e-6f)
+                return normalizedDirection;
+
+            float angleRad = angleOffsetDeg * Mathf.Deg2Rad;
+            float cos = Mathf.Cos(angleRad);
+            float sin = Mathf.Sin(angleRad);
+            return new Vector2(
+                normalizedDirection.x * cos - normalizedDirection.y * sin,
+                normalizedDirection.x * sin + normalizedDirection.y * cos).normalized;
+        }
+
+        /// <summary>
         /// 현재 정책에 맞춰 Raycast 방향을 계산합니다.
         /// - ByAngle이면 각도 기반 방향을 사용합니다.
-        /// - TowardTarget이면 타겟 캐릭터 또는 좌표 오버라이드 방향을 사용합니다.
+        /// - TowardTarget이면 타겟 캐릭터 또는 좌표 오버라이드 방향에 런타임 각도 오프셋을 적용합니다.
         /// - 방향을 해석할 수 없으면 필요 시 시전자 기본 바라보기 방향으로 보정합니다.
         /// </summary>
         /// <param name="info">레이저 테이블 정보입니다.</param>
@@ -142,13 +166,22 @@ namespace GGemCo2DCore
             if (ResolveRaycastDirectionMode(info, runtime) == LaserConstants.RaycastDirectionMode.ByAngle)
                 return ResolveDirectionByConfiguredAngle(info, runtime, owner);
 
+            Vector2 direction;
             if (targetObject != null)
-                return ResolveDirection(owner, start, targetObject.transform.position);
+            {
+                direction = ResolveDirection(owner, start, targetObject.transform.position);
+            }
+            else if (hasTargetPoint)
+            {
+                direction = ResolveDirection(owner, start, targetPoint);
+            }
+            else
+            {
+                direction = allowFallbackToOwnerFacing ? ResolveOwnerFacingDirection(owner) : Vector2.zero;
+            }
 
-            if (hasTargetPoint)
-                return ResolveDirection(owner, start, targetPoint);
-
-            return allowFallbackToOwnerFacing ? ResolveOwnerFacingDirection(owner) : Vector2.zero;
+            float angleOffsetDeg = runtime != null ? runtime.TargetDirectionAngleOffsetDeg : 0f;
+            return ApplyDirectionAngleOffset(direction, angleOffsetDeg);
         }
 
         /// <summary>

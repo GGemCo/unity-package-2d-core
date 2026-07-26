@@ -61,6 +61,13 @@ namespace GGemCo2DCore
         public readonly LaserConstants.RaycastDirectionMode RaycastDirectionModeOverride;
         public readonly bool UseRaycastAngleOverride;
         public readonly float RaycastAngleOverrideDeg;
+
+        /// <summary>
+        /// 타겟을 향하는 기본 Raycast 방향에 더할 각도 오프셋입니다.
+        /// 양수는 반시계 방향, 음수는 시계 방향으로 회전합니다.
+        /// </summary>
+        public readonly float TargetDirectionAngleOffsetDeg;
+
         public readonly bool UseVfxAngleSyncModeOverride;
         public readonly LaserConstants.VfxAngleSyncMode VfxAngleSyncModeOverride;
         public readonly LaserConstants.StartPositionOverrideMode StartPositionOverrideMode;
@@ -109,6 +116,7 @@ namespace GGemCo2DCore
         /// <param name="startPointUpdateMode">시작점 갱신 방식입니다.</param>
         /// <param name="useCasterFlipStartOffsetX">시전자 좌우 반전 상태에 따라 시작점 오프셋 X 값을 반전할지 여부입니다.</param>
         /// <param name="damageFormulaContext">실제 적중 대상 기준 재계산에 사용할 공식 입력 스냅샷입니다.</param>
+        /// <param name="targetDirectionAngleOffsetDeg">타겟 방향에 더할 각도 오프셋(도)입니다.</param>
         public MetadataLaser(
             int uid,
             ConfigCommon.DamageType damageType,
@@ -149,7 +157,8 @@ namespace GGemCo2DCore
             bool useCasterFlipStartOffsetX = false,
             DamageFormulaRuntimeContext damageFormulaContext = null,
             int skillHitMpGain = 0,
-            bool allowMultipleSkillHitMpGainPerAttack = false)
+            bool allowMultipleSkillHitMpGainPerAttack = false,
+            float targetDirectionAngleOffsetDeg = 0f)
         {
             Uid = uid;
             DamageType = damageType;
@@ -185,6 +194,7 @@ namespace GGemCo2DCore
             RaycastDirectionModeOverride = raycastDirectionModeOverride;
             UseRaycastAngleOverride = useRaycastAngleOverride;
             RaycastAngleOverrideDeg = raycastAngleOverrideDeg;
+            TargetDirectionAngleOffsetDeg = targetDirectionAngleOffsetDeg;
             UseVfxAngleSyncModeOverride = useVfxAngleSyncModeOverride;
             VfxAngleSyncModeOverride = vfxAngleSyncModeOverride;
             StartPositionOverrideMode = startPositionOverrideMode;
