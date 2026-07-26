@@ -11,6 +11,11 @@ namespace GGemCo2DCore
         // 메타데이터 기반 이벤트
         public static event Action<MonsterKilledEventData> MonsterKilledEvent;
         public static event Action<ItemCollectedEventData> ItemCollectedEvent;
+
+        /// <summary>
+        /// 재화 차감과 아이템 지급 또는 즉시 사용이 모두 성공하면 발생합니다.
+        /// </summary>
+        public static event Action<ItemPurchasedEventData> ItemPurchasedEvent;
         public static event Action<DialogEventData> DialogStartEvent;
         public static event Action<DialogEventData> DialogEndEvent;
         public static event Action<MapEnteredEventData> MapEnteredEvent;
@@ -23,6 +28,13 @@ namespace GGemCo2DCore
 
         public static void ItemCollected(in ItemCollectedEventData data)
             => ItemCollectedEvent?.Invoke(data);
+
+        /// <summary>
+        /// 재화 차감과 아이템 지급 또는 즉시 사용이 모두 성공한 구매 완료 이벤트를 발행합니다.
+        /// </summary>
+        /// <param name="data">구매한 아이템과 상품, 수량 정보입니다.</param>
+        public static void ItemPurchased(in ItemPurchasedEventData data)
+            => ItemPurchasedEvent?.Invoke(data);
 
         public static void DialogStart(in DialogEventData data)
             => DialogStartEvent?.Invoke(data);

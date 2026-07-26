@@ -428,17 +428,42 @@ namespace GGemCo2DCore
         /// <returns>구매 처리 결과입니다.</returns>
         public ResultCommon BuyItem(ShopDisplayItem shopDisplayItem, int itemCount = 1)
         {
-            if (shopDisplayItem == null || shopDisplayItem.ItemUid <= 0)
+            if (shopDisplayItem == null ||
+                shopDisplayItem.ItemUid <= 0)
             {
                 return ResultCommon.Fail("Shop_InvalidItem");
             }
 
-            return BuyItem(
+            if (itemCount <= 0)
+            {
+                return ResultCommon.Fail(
+                    "Slot_InvalidItemCount",
+                    $"itemUid: {shopDisplayItem.ItemUid}, itemCount: {itemCount}");
+            }
+
+            ResultCommon result = ExecuteItemPurchase(
                 shopDisplayItem.ItemUid,
                 shopDisplayItem.CurrencyType,
                 shopDisplayItem.CurrencyValue,
                 itemCount,
                 shopDisplayItem.BuyUsePolicy);
+            if (result == null ||
+                result.Result == ResultCommon.ResultType.Fail)
+            {
+                return result;
+            }
+
+            // 구매 제한 기록까지 반영된 뒤 완료 이벤트를 발행해야 구독자가 확정된 구매 상태를 조회할 수 있습니다.
+            saveDataManager?.ShopPurchase?.AddBoughtCount(
+                shopDisplayItem,
+                itemCount);
+            GameEventManager.ItemPurchased(new ItemPurchasedEventData(
+                shopDisplayItem.ItemUid,
+                itemCount,
+                shopDisplayItem.Uid,
+                shopDisplayItem.ShopUid,
+                shopDisplayItem.BuyUsePolicy));
+            return result;
         }
 
         /// <summary>
@@ -463,6 +488,41 @@ namespace GGemCo2DCore
                 return ResultCommon.Fail("Slot_InvalidItemCount", $"itemUid: {itemUid}, itemCount: {itemCount}");
             }
 
+            ResultCommon result = ExecuteItemPurchase(
+                itemUid,
+                currencyType,
+                price,
+                itemCount,
+                buyUsePolicy);
+            if (result != null &&
+                result.Result == ResultCommon.ResultType.Success)
+            {
+                GameEventManager.ItemPurchased(new ItemPurchasedEventData(
+                    itemUid,
+                    itemCount,
+                    buyUsePolicy: buyUsePolicy));
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 재화 차감과 구매 후 처리 정책에 따른 아이템 지급 또는 즉시 사용을 실행합니다.
+        /// 구매 출처 기록과 완료 이벤트 발행은 호출자가 성공 결과를 확인한 뒤 처리합니다.
+        /// </summary>
+        /// <param name="itemUid">구매할 아이템 UID입니다.</param>
+        /// <param name="currencyType">구매에 사용할 재화 타입입니다.</param>
+        /// <param name="price">아이템 한 개의 가격입니다.</param>
+        /// <param name="itemCount">구매할 아이템 수량입니다.</param>
+        /// <param name="buyUsePolicy">구매 후 아이템 처리 정책입니다.</param>
+        /// <returns>구매 거래 처리 결과입니다.</returns>
+        private ResultCommon ExecuteItemPurchase(
+            int itemUid,
+            CurrencyConstants.Type currencyType,
+            int price,
+            int itemCount,
+            ShopBuyUsePolicy buyUsePolicy)
+        {
             return buyUsePolicy switch
             {
                 ShopBuyUsePolicy.UseImmediately => BuyAndUseItemImmediately(itemUid, currencyType, price, itemCount),

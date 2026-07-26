@@ -312,12 +312,7 @@ namespace GGemCo2DCore
             // 단일 구매
             else
             {
-                var result = _sceneGame.BuyItem(_shopDisplayItem);
-
-                if (result is { Result: ResultCommon.ResultType.Success })
-                {
-                    _sceneGame.saveDataManager?.ShopPurchase?.AddBoughtCount(_shopDisplayItem, 1);
-                }
+                _sceneGame.BuyItem(_shopDisplayItem);
             }
         }
 

@@ -115,16 +115,17 @@ namespace GGemCo2DCore
             }
 
             // 구매 하기
-            ResultCommon result = _shopDisplayItem != null
-                ? SceneGame.Instance.BuyItem(_shopDisplayItem, _buyItemCount)
-                : SceneGame.Instance.BuyItem(
+            if (_shopDisplayItem != null)
+            {
+                SceneGame.Instance.BuyItem(_shopDisplayItem, _buyItemCount);
+            }
+            else
+            {
+                SceneGame.Instance.BuyItem(
                     _struckTableShop.ItemUid,
                     _struckTableShop.CurrencyType,
                     _struckTableShop.CurrencyValue,
                     _buyItemCount);
-            if (result is { Result: ResultCommon.ResultType.Success })
-            {
-                SceneGame.saveDataManager?.ShopPurchase?.AddBoughtCount(_shopDisplayItem, _buyItemCount);
             }
 
             _struckTableShop = null;
