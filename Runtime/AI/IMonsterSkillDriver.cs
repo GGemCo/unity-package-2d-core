@@ -280,19 +280,27 @@ namespace GGemCo2DCore
         public readonly bool StopCrowdControlOnStart;
 
         /// <summary>
+        /// 새 스킬을 시작하기 직전에 기본 공격과 이동을 포함한 모든 플레이어 행동을 취소할지 여부입니다.
+        /// </summary>
+        public readonly bool CancelAllActionsOnStart;
+
+        /// <summary>
         /// 스킬 발동 정책을 생성합니다.
         /// </summary>
         /// <param name="allowWhileControlLocked">조작 불가 상태에서의 발동 허용 여부입니다.</param>
         /// <param name="interruptRunningSkill">실행 중 스킬의 중단 허용 여부입니다.</param>
         /// <param name="stopCrowdControlOnStart">스킬 시작 직전 Crowd Control 해제 여부입니다.</param>
+        /// <param name="cancelAllActionsOnStart">스킬 시작 직전 모든 플레이어 행동의 강제 취소 여부입니다.</param>
         public SkillActivationOptions(
             bool allowWhileControlLocked,
             bool interruptRunningSkill,
-            bool stopCrowdControlOnStart)
+            bool stopCrowdControlOnStart,
+            bool cancelAllActionsOnStart = false)
         {
             AllowWhileControlLocked = allowWhileControlLocked;
             InterruptRunningSkill = interruptRunningSkill;
             StopCrowdControlOnStart = stopCrowdControlOnStart;
+            CancelAllActionsOnStart = cancelAllActionsOnStart;
         }
     }
 

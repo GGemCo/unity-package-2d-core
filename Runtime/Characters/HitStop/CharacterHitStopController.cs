@@ -125,6 +125,21 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 강제 스킬이나 외부 행동 전환 전에 활성 Hit Stop을 즉시 종료합니다.
+        /// </summary>
+        /// <remarks>
+        /// 애니메이션 재생 속도와 Rigidbody 제약은 복원하지만, 강제 행동을 덮어쓰지 않도록
+        /// Hit Stop 이전의 캐릭터 상태와 이동 속도는 복원하지 않습니다.
+        /// </remarks>
+        public void TerminateForExternalActionOverride()
+        {
+            if (!_isActive)
+                return;
+
+            EndInternal(restorePreviousState: false);
+        }
+
+        /// <summary>
         /// 활성 Hit Stop을 종료하고 일시 정지했던 애니메이션과 물리 상태를 정리합니다.
         /// </summary>
         /// <param name="restorePreviousState">

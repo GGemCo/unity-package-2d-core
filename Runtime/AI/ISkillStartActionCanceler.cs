@@ -11,4 +11,19 @@ namespace GGemCo2DCore
         /// </summary>
         void CancelActionsOnSkillStart();
     }
+
+    /// <summary>
+    /// 강제 발동 스킬 시작 직전에 플레이어의 모든 입력 액션 상태를 정리하는 공용 인터페이스입니다.
+    /// </summary>
+    /// <remarks>
+    /// 긴급 탈출처럼 기존 행동을 완전히 덮어써야 하는 스킬만 사용합니다.
+    /// Skill 패키지는 Control 패키지의 구체 구현을 참조하지 않고 이 포트를 통해 강제 취소를 요청합니다.
+    /// </remarks>
+    public interface IForcedSkillStartActionCanceler
+    {
+        /// <summary>
+        /// 기본 공격, 이동 액션, 예약 입력과 강제 이동을 포함한 모든 플레이어 행동을 취소합니다.
+        /// </summary>
+        void CancelAllActionsOnForcedSkillStart();
+    }
 }
