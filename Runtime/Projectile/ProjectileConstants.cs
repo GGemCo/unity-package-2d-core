@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 namespace GGemCo2DCore
 {
@@ -19,6 +19,23 @@ namespace GGemCo2DCore
             Vfx = 2,
             Sprite = 3,
             Animator = 4,
+        }
+
+        /// <summary>
+        /// 프로젝타일에 부착된 VFX의 재생 및 종료 수명 정책입니다.
+        /// </summary>
+        public enum AttachedVfxPlaybackPolicy
+        {
+            /// <summary>
+            /// VFX를 프로젝타일 수명에 종속시키고 프로젝타일 종료 시 End 애니메이션을 재생합니다.
+            /// 기존 동작을 유지하기 위한 기본값입니다.
+            /// </summary>
+            OwnerLifetime = 0,
+
+            /// <summary>
+            /// VFX를 생성 시점에 한 번 재생하고 프로젝타일이 먼저 종료되면 분리하여 자연 완료시킵니다.
+            /// </summary>
+            OneShotOnSpawn = 1,
         }
 
         /// <summary>

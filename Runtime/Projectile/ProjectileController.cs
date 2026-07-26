@@ -45,6 +45,7 @@ namespace GGemCo2DCore
                     visualSprite: metadataProjectile.VisualSprite,
                     visualAnimatorController: metadataProjectile.VisualAnimatorController,
                     visualVfxUidOverride: metadataProjectile.VisualVfxUidOverride,
+                    attachedVfxPlaybackPolicy: metadataProjectile.AttachedVfxPlaybackPolicy,
                     flightSound: metadataProjectile.FlightSound,
                     flightSoundLifetimePolicy: metadataProjectile.FlightSoundLifetimePolicy,
                     impactSound: metadataProjectile.ImpactSound,

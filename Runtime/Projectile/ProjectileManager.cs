@@ -91,6 +91,11 @@ namespace GGemCo2DCore
         public readonly Sprite VisualSprite;
         public readonly RuntimeAnimatorController VisualAnimatorController;
         public readonly int VisualVfxUidOverride;
+
+        /// <summary>
+        /// 부착 VFX의 재생 및 종료 수명 정책입니다.
+        /// </summary>
+        public readonly ProjectileConstants.AttachedVfxPlaybackPolicy AttachedVfxPlaybackPolicy;
         public readonly SoundPlayRequest FlightSound;
         public readonly ProjectileFlightSoundLifetimePolicy FlightSoundLifetimePolicy;
         public readonly SoundPlayRequest ImpactSound;
@@ -116,6 +121,9 @@ namespace GGemCo2DCore
         public readonly bool UseArrivalPolicyOverride;
         public readonly ProjectileConstants.ArrivalPolicy ArrivalPolicyOverride;
 
+        /// <summary>
+        /// 프로젝타일 발사 시점에 적용할 런타임 메타데이터를 생성합니다.
+        /// </summary>
         public MetadataProjectile(
             int uid,
             ConfigCommon.DamageType damageType,
@@ -158,7 +166,9 @@ namespace GGemCo2DCore
             Vector2 hitVfxHitAreaNormalized = default,
             ProjectileDamageFormulaContext damageFormulaContext = null,
             int skillHitMpGain = 0,
-            bool allowMultipleSkillHitMpGainPerAttack = false)
+            bool allowMultipleSkillHitMpGainPerAttack = false,
+            ProjectileConstants.AttachedVfxPlaybackPolicy attachedVfxPlaybackPolicy =
+                ProjectileConstants.AttachedVfxPlaybackPolicy.OwnerLifetime)
         {
             Uid = uid;
             DamageType = damageType;
@@ -182,6 +192,7 @@ namespace GGemCo2DCore
             VisualSprite = visualSprite;
             VisualAnimatorController = visualAnimatorController;
             VisualVfxUidOverride = visualVfxUidOverride;
+            AttachedVfxPlaybackPolicy = attachedVfxPlaybackPolicy;
             FlightSound = flightSound != null && flightSound.IsValid ? flightSound.Clone() : null;
             FlightSoundLifetimePolicy = flightSoundLifetimePolicy;
             ImpactSound = impactSound != null && impactSound.IsValid ? impactSound.Clone() : null;

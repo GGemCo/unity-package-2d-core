@@ -47,6 +47,11 @@ namespace GGemCo2DCore
         public readonly Sprite VisualSprite;
         public readonly RuntimeAnimatorController VisualAnimatorController;
         public readonly int VisualVfxUidOverride;
+
+        /// <summary>
+        /// 부착 VFX의 재생 및 종료 수명 정책입니다.
+        /// </summary>
+        public readonly ProjectileConstants.AttachedVfxPlaybackPolicy AttachedVfxPlaybackPolicy;
         public readonly bool UseDurationOverride;
         public readonly float DurationOverride;
         public readonly bool UseDamageTimingOverride;
@@ -110,6 +115,7 @@ namespace GGemCo2DCore
         /// <param name="startPointUpdateMode">시작점 갱신 방식입니다.</param>
         /// <param name="useCasterFlipStartOffsetX">시전자 좌우 반전 상태에 따라 시작점 오프셋 X 값을 반전할지 여부입니다.</param>
         /// <param name="damageFormulaContext">실제 적중 대상 기준 재계산에 사용할 공식 입력 스냅샷입니다.</param>
+        /// <param name="attachedVfxPlaybackPolicy">부착 VFX의 재생 및 종료 수명 정책입니다.</param>
         public MetadataLaser(
             int uid,
             ConfigCommon.DamageType damageType,
@@ -150,7 +156,9 @@ namespace GGemCo2DCore
             bool useCasterFlipStartOffsetX = false,
             DamageFormulaRuntimeContext damageFormulaContext = null,
             int skillHitMpGain = 0,
-            bool allowMultipleSkillHitMpGainPerAttack = false)
+            bool allowMultipleSkillHitMpGainPerAttack = false,
+            ProjectileConstants.AttachedVfxPlaybackPolicy attachedVfxPlaybackPolicy =
+                ProjectileConstants.AttachedVfxPlaybackPolicy.OwnerLifetime)
         {
             Uid = uid;
             DamageType = damageType;
@@ -163,6 +171,7 @@ namespace GGemCo2DCore
             VisualSprite = visualSprite;
             VisualAnimatorController = visualAnimatorController;
             VisualVfxUidOverride = visualVfxUidOverride;
+            AttachedVfxPlaybackPolicy = attachedVfxPlaybackPolicy;
             UseTargetPositionOverride = useTargetPositionOverride;
             TargetPositionOverride = targetPositionOverride;
             SkillUid = skillUid;
@@ -212,6 +221,7 @@ namespace GGemCo2DCore
                 visualSprite: VisualSprite,
                 visualAnimatorController: VisualAnimatorController,
                 visualVfxUidOverride: VisualVfxUidOverride,
+                attachedVfxPlaybackPolicy: AttachedVfxPlaybackPolicy,
                 useTargetPositionOverride: UseTargetPositionOverride,
                 targetPositionOverride: TargetPositionOverride,
                 skillUid: SkillUid,

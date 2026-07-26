@@ -52,6 +52,7 @@ namespace GGemCo2DCore
                     visualSprite: metadataLaser.VisualSprite,
                     visualAnimatorController: metadataLaser.VisualAnimatorController,
                     visualVfxUidOverride: metadataLaser.VisualVfxUidOverride,
+                    attachedVfxPlaybackPolicy: metadataLaser.AttachedVfxPlaybackPolicy,
                     useTargetPositionOverride: metadataLaser.UseTargetPositionOverride,
                     targetPositionOverride: metadataLaser.TargetPositionOverride,
                     skillUid: metadataLaser.SkillUid,

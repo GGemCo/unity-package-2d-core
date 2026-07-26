@@ -71,6 +71,7 @@ namespace GGemCo2DCoreEditor
         [SerializeField, Tooltip("VFX 각도 동기화 모드를 직접 덮어쓸 값입니다.")] private LaserConstants.VfxAngleSyncMode vfxAngleSyncModeOverride = LaserConstants.VfxAngleSyncMode.FollowRaycast;
         [SerializeField, Tooltip("테스트 발사 시 사용할 비주얼 출력 타입입니다.")] private ProjectileConstants.ProjectileVisualType visualType = ProjectileConstants.ProjectileVisualType.Default;
         [SerializeField, Tooltip("테이블 VFX 대신 사용할 비주얼 VFX Uid입니다. 0이면 기본값을 사용합니다.")] private int visualVfxUidOverride;
+        [SerializeField, Tooltip("레이저에 부착된 VFX의 재생 및 종료 수명 정책입니다.")] private ProjectileConstants.AttachedVfxPlaybackPolicy attachedVfxPlaybackPolicy = ProjectileConstants.AttachedVfxPlaybackPolicy.OwnerLifetime;
         [SerializeField, Tooltip("Sprite 비주얼 타입에서 사용할 스프라이트입니다.")] private Sprite visualSprite;
         [SerializeField, Tooltip("Animator 비주얼 타입에서 사용할 컨트롤러입니다.")] private RuntimeAnimatorController visualAnimatorController;
         [SerializeField, Tooltip("레이저의 목표 지점을 어떤 방식으로 선택할지 결정합니다.")] private TargetSelectMode targetMode = TargetSelectMode.NearMonster;
@@ -529,6 +530,9 @@ namespace GGemCo2DCoreEditor
             {
                 visualType = (ProjectileConstants.ProjectileVisualType)EditorGUILayout.EnumPopup(new GUIContent("VisualType"), visualType);
                 visualVfxUidOverride = EditorGUILayout.IntField(new GUIContent("VisualVfxUidOverride"), visualVfxUidOverride);
+                attachedVfxPlaybackPolicy = (ProjectileConstants.AttachedVfxPlaybackPolicy)EditorGUILayout.EnumPopup(
+                    new GUIContent("VfxPlaybackPolicy"),
+                    attachedVfxPlaybackPolicy);
                 visualSprite = (Sprite)EditorGUILayout.ObjectField(new GUIContent("VisualSprite"), visualSprite, typeof(Sprite), false);
                 visualAnimatorController = (RuntimeAnimatorController)EditorGUILayout.ObjectField(new GUIContent("AnimatorController"), visualAnimatorController, typeof(RuntimeAnimatorController), false);
             }
@@ -643,6 +647,7 @@ namespace GGemCo2DCoreEditor
                     visualSprite: visualSprite,
                     visualAnimatorController: visualAnimatorController,
                     visualVfxUidOverride: visualVfxUidOverride,
+                    attachedVfxPlaybackPolicy: attachedVfxPlaybackPolicy,
                     useTargetPositionOverride: useTargetPositionOverride,
                     targetPositionOverride: targetPositionOverride,
                     useDurationOverride: useDurationOverride,

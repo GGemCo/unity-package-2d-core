@@ -54,6 +54,8 @@ namespace GGemCo2DCore
                 if (scale > 0f)
                     _vfx.SetScale(scale);
             }
+
+            SubscribeOneShotCompletion();
         }
 
         /// <summary>
@@ -134,6 +136,10 @@ namespace GGemCo2DCore
             if (_vfx == null)
                 return false;
 
+            // 생성 즉시 재생되는 VFX는 자체 수명주기로 종료되므로 프로젝타일 종료 시 End를 다시 재생하지 않습니다.
+            if (IsOneShotOnSpawn())
+                return false;
+
             var targetVfx = _vfx;
             if (!CanPlayEndAnimation(targetVfx))
                 return false;
@@ -209,14 +215,44 @@ namespace GGemCo2DCore
         /// <returns>레이저 정책이 반영된 VFX 생성 요청입니다.</returns>
         private VfxSpawnRequest CreateVfxSpawnRequest(int vfxUid)
         {
+            bool isOneShotOnSpawn = IsOneShotOnSpawn();
             return new VfxSpawnRequest
             {
                 VfxUid = vfxUid,
-                DurationOverride = -1f,
+                // OwnerLifetime은 종료 요청까지 유지하고, OneShotOnSpawn은 VFX 자체 길이로 즉시 재생합니다.
+                DurationOverride = isOneShotOnSpawn ? 0f : -1f,
+                ForceOneShot = isOneShotOnSpawn,
+                LifecycleTypeOverride = isOneShotOnSpawn
+                    ? VfxConstants.LifecycleType.AutoRelease
+                    : (VfxConstants.LifecycleType?)null,
                 // 비행 시간이 글로벌 Fade-in보다 짧아 alpha가 0인 채 종료되지 않도록 즉시 표시합니다.
                 DisableFadeIn = true,
                 ForceLaserEffectBehaviour = ShouldStretchLaserVfx(),
             };
+        }
+
+        /// <summary>
+        /// 현재 VFX가 생성 즉시 한 번 재생되는 독립 수명 정책인지 확인합니다.
+        /// </summary>
+        /// <returns>OneShotOnSpawn 정책이면 <see langword="true"/>를 반환합니다.</returns>
+        private bool IsOneShotOnSpawn()
+        {
+            return _runtime != null
+                   && _runtime.AttachedVfxPlaybackPolicy ==
+                   ProjectileConstants.AttachedVfxPlaybackPolicy.OneShotOnSpawn;
+        }
+
+        /// <summary>
+        /// OneShotOnSpawn VFX가 자연 완료되어 풀로 반환될 때 현재 시각 표현의 보유 참조를 해제합니다.
+        /// </summary>
+        private void SubscribeOneShotCompletion()
+        {
+            if (!IsOneShotOnSpawn() || _vfx == null)
+                return;
+
+            ClearEndDestroyHandler(_vfx);
+            _handleVfxDestroy = HandleVfxDestroy;
+            _vfx.OnVfxDestroy += _handleVfxDestroy;
         }
 
         /// <summary>
@@ -296,6 +332,10 @@ namespace GGemCo2DCore
 
             bool wasOwnedByProjectile = IsVfxOwnedByProjectile(targetVfx);
             DetachVfxIfOwned(targetVfx);
+
+            // OneShotOnSpawn VFX는 프로젝타일보다 오래 재생될 수 있으므로 분리한 뒤 자체 AutoRelease에 맡깁니다.
+            if (IsOneShotOnSpawn())
+                return;
 
             if (wasEndAnimationPlaying)
                 return;
