@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -9,6 +10,8 @@ namespace GGemCo2DCore
     public class TableLoaderBase : MonoBehaviour
     {
         protected TableRegistry registry;
+        private readonly HashSet<string> _loadedTableKeys =
+            new(StringComparer.OrdinalIgnoreCase);
 
         private bool EnsureInitialized()
         {
@@ -44,7 +47,23 @@ namespace GGemCo2DCore
             if (!EnsureInitialized())
                 return false;
 
-            return registry.TryLoad(key, content);
+            bool loaded = registry.TryLoad(key, content);
+            if (loaded && !string.IsNullOrWhiteSpace(key))
+            {
+                _loadedTableKeys.Add(key);
+            }
+
+            return loaded;
+        }
+
+        /// <summary>
+        /// 현재 로더 수명 동안 지정한 논리 테이블이 한 번 이상 정상 주입되었는지 확인합니다.
+        /// </summary>
+        /// <param name="key">확인할 논리 테이블 이름입니다.</param>
+        /// <returns>팩 또는 개별 파일에서 테이블을 정상 로드했으면 <see langword="true"/>입니다.</returns>
+        public bool IsTableLoaded(string key)
+        {
+            return !string.IsNullOrWhiteSpace(key) && _loadedTableKeys.Contains(key);
         }
 
         /// <summary>

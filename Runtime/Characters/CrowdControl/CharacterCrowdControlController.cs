@@ -922,14 +922,25 @@ namespace GGemCo2DCore
         /// </remarks>
         public bool TryStopCrowdControl(CrowdControlStopReason reason, bool isEndCharacterStop = false)
         {
-            bool hasActiveCrowdControl = _isActive || _activeCrowdControl != null || _stopRoutine != null;
-            bool hasQueuedCrowdControl = _isSequenceRunning || _queuedCrowdControls.Count > 0;
-            if (!hasActiveCrowdControl && !hasQueuedCrowdControl)
+            if (!HasActiveOrQueuedCrowdControl)
                 return false;
 
             ForceStopInternal(clearSequence: true, isEndCharacterStop);
             return true;
         }
+
+        /// <summary>
+        /// 현재 실행 중이거나 예약된 Crowd Control이 하나라도 있는지 확인합니다.
+        /// </summary>
+        /// <remarks>
+        /// 긴급 회복 스킬은 단순 컷신·UI 입력 잠금을 CC로 오인하지 않도록 이 상태를 사용합니다.
+        /// </remarks>
+        public bool HasActiveOrQueuedCrowdControl =>
+            _isActive ||
+            _activeCrowdControl != null ||
+            _stopRoutine != null ||
+            _isSequenceRunning ||
+            _queuedCrowdControls.Count > 0;
 
         /// <summary>
         /// 진행 중인 CC를 즉시 중단하고, 모션/코루틴/상태를 강제 정리합니다.

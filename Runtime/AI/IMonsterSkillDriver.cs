@@ -251,6 +251,52 @@ namespace GGemCo2DCore
     }
 
     /// <summary>
+    /// 일반 스킬 사용 제한을 선택적으로 완화하는 발동 정책입니다.
+    /// </summary>
+    /// <remarks>
+    /// 기본값은 모든 완화 옵션이 꺼진 상태입니다.
+    /// 긴급 회복기처럼 명시적으로 허용된 요청만 이 값을 설정해야 합니다.
+    /// </remarks>
+    public readonly struct SkillActivationOptions
+    {
+        /// <summary>
+        /// 일반 스킬과 동일한 제한을 사용하는 기본 발동 정책입니다.
+        /// </summary>
+        public static SkillActivationOptions None => default;
+
+        /// <summary>
+        /// 캐릭터가 조작 불가 상태여도 요청을 계속 검증할지 여부입니다.
+        /// </summary>
+        public readonly bool AllowWhileControlLocked;
+
+        /// <summary>
+        /// 실행 중인 스킬을 중단하고 새 스킬로 교체할지 여부입니다.
+        /// </summary>
+        public readonly bool InterruptRunningSkill;
+
+        /// <summary>
+        /// 새 스킬을 시작하기 직전에 현재 및 예약된 Crowd Control을 해제할지 여부입니다.
+        /// </summary>
+        public readonly bool StopCrowdControlOnStart;
+
+        /// <summary>
+        /// 스킬 발동 정책을 생성합니다.
+        /// </summary>
+        /// <param name="allowWhileControlLocked">조작 불가 상태에서의 발동 허용 여부입니다.</param>
+        /// <param name="interruptRunningSkill">실행 중 스킬의 중단 허용 여부입니다.</param>
+        /// <param name="stopCrowdControlOnStart">스킬 시작 직전 Crowd Control 해제 여부입니다.</param>
+        public SkillActivationOptions(
+            bool allowWhileControlLocked,
+            bool interruptRunningSkill,
+            bool stopCrowdControlOnStart)
+        {
+            AllowWhileControlLocked = allowWhileControlLocked;
+            InterruptRunningSkill = interruptRunningSkill;
+            StopCrowdControlOnStart = stopCrowdControlOnStart;
+        }
+    }
+
+    /// <summary>
     /// 공용 스킬 드라이버가 스킬 실행 계층으로 전달하는 최소 요청 컨텍스트입니다.
     /// </summary>
     public readonly struct SkillDriverRequest
@@ -260,13 +306,20 @@ namespace GGemCo2DCore
         public readonly Vector2 Forward;
         public readonly ConfigCommon.SkillTableSource Source;
         public readonly SkillExecutionOptions ExecutionOptions;
+        public readonly SkillActivationOptions ActivationOptions;
 
         public SkillDriverRequest(
             Transform lockedTarget,
             Vector3 groundPoint,
             Vector2 forward,
             ConfigCommon.SkillTableSource source)
-            : this(lockedTarget, groundPoint, forward, source, SkillExecutionOptions.None)
+            : this(
+                lockedTarget,
+                groundPoint,
+                forward,
+                source,
+                SkillExecutionOptions.None,
+                SkillActivationOptions.None)
         {
         }
 
@@ -284,12 +337,39 @@ namespace GGemCo2DCore
             Vector2 forward,
             ConfigCommon.SkillTableSource source,
             SkillExecutionOptions executionOptions)
+            : this(
+                lockedTarget,
+                groundPoint,
+                forward,
+                source,
+                executionOptions,
+                SkillActivationOptions.None)
+        {
+        }
+
+        /// <summary>
+        /// 실행 옵션과 발동 정책을 포함한 스킬 요청 컨텍스트를 생성합니다.
+        /// </summary>
+        /// <param name="lockedTarget">락온 대상입니다.</param>
+        /// <param name="groundPoint">지면 대상 좌표입니다.</param>
+        /// <param name="forward">전방 방향입니다.</param>
+        /// <param name="source">스킬 테이블 출처입니다.</param>
+        /// <param name="executionOptions">이번 스킬 실행에만 적용할 옵션 스냅샷입니다.</param>
+        /// <param name="activationOptions">이번 요청에만 적용할 발동 제한 완화 정책입니다.</param>
+        public SkillDriverRequest(
+            Transform lockedTarget,
+            Vector3 groundPoint,
+            Vector2 forward,
+            ConfigCommon.SkillTableSource source,
+            SkillExecutionOptions executionOptions,
+            SkillActivationOptions activationOptions)
         {
             LockedTarget = lockedTarget;
             GroundPoint = groundPoint;
             Forward = forward.sqrMagnitude < 1e-6f ? Vector2.right : forward.normalized;
             Source = source;
             ExecutionOptions = executionOptions;
+            ActivationOptions = activationOptions;
         }
 
         public SkillDriverRequest(in MonsterSkillTarget target, ConfigCommon.SkillTableSource source)
@@ -304,7 +384,29 @@ namespace GGemCo2DCore
         /// <returns>실행 옵션이 교체된 요청입니다.</returns>
         public SkillDriverRequest WithExecutionOptions(in SkillExecutionOptions executionOptions)
         {
-            return new SkillDriverRequest(LockedTarget, GroundPoint, Forward, Source, executionOptions);
+            return new SkillDriverRequest(
+                LockedTarget,
+                GroundPoint,
+                Forward,
+                Source,
+                executionOptions,
+                ActivationOptions);
+        }
+
+        /// <summary>
+        /// 기존 타겟팅과 실행 옵션은 유지하고 발동 정책만 교체한 요청을 반환합니다.
+        /// </summary>
+        /// <param name="activationOptions">새로 적용할 발동 정책입니다.</param>
+        /// <returns>발동 정책이 교체된 요청입니다.</returns>
+        public SkillDriverRequest WithActivationOptions(in SkillActivationOptions activationOptions)
+        {
+            return new SkillDriverRequest(
+                LockedTarget,
+                GroundPoint,
+                Forward,
+                Source,
+                ExecutionOptions,
+                activationOptions);
         }
     }
 

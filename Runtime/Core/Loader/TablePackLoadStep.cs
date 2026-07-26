@@ -84,6 +84,9 @@ namespace GGemCo2DCore
 
             if (packLoaded)
             {
+                // 기존 팩이 새로 추가된 선택 테이블을 아직 포함하지 않을 수 있으므로,
+                // 팩에서 주입되지 않은 항목만 개별 Addressables로 보완합니다.
+                yield return LoadFallbackTables(onlyMissing: true);
                 progress = 1f;
                 yield break;
             }
@@ -95,20 +98,36 @@ namespace GGemCo2DCore
             }
 
             GcLogger.LogWarning($"[TablePackLoadStep] 테이블 팩을 사용할 수 없어 개별 테이블 로딩으로 전환합니다. pack={_tablePack?.Key}");
-            yield return LoadFallbackTables();
+            yield return LoadFallbackTables(onlyMissing: false);
             progress = 1f;
         }
 
         /// <summary>
         /// 기존 개별 txt 테이블 목록을 순차 로드합니다.
         /// </summary>
+        /// <param name="onlyMissing">이미 팩에서 로드된 테이블을 건너뛸지 여부입니다.</param>
         /// <returns>Unity 코루틴 실행자에 전달할 열거자입니다.</returns>
-        private IEnumerator LoadFallbackTables()
+        private IEnumerator LoadFallbackTables(bool onlyMissing)
         {
             int fileCount = _fallbackTables.Count;
             for (int i = 0; i < fileCount; i++)
             {
                 AddressableAssetInfo info = _fallbackTables[i];
+                if (info == null)
+                {
+                    progress = CalculateFallbackProgress(i + 1, fileCount);
+                    continue;
+                }
+
+                string tableKey = !string.IsNullOrWhiteSpace(info.Etc1)
+                    ? info.Etc1
+                    : info.Key;
+                if (onlyMissing && _tableLoader.IsTableLoaded(tableKey))
+                {
+                    progress = CalculateFallbackProgress(i + 1, fileCount);
+                    continue;
+                }
+
                 Task task = _tableLoader.LoadDataFile(info);
 
                 while (!task.IsCompleted)

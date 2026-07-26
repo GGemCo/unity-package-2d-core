@@ -506,5 +506,15 @@ namespace GGemCo2DCore
 
             return _crowdControlController.TryStopCrowdControl(reason, isEndCharacterStop);
         }
+
+        /// <summary>
+        /// 현재 실행 중이거나 예약된 Crowd Control이 존재하는지 확인합니다.
+        /// </summary>
+        /// <returns>해제 가능한 Crowd Control 상태가 하나라도 있으면 <see langword="true"/>입니다.</returns>
+        public bool HasActiveOrQueuedCrowdControl()
+        {
+            return _crowdControlController != null &&
+                   _crowdControlController.HasActiveOrQueuedCrowdControl;
+        }
     }
 }
