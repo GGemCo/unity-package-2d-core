@@ -55,6 +55,13 @@ namespace GGemCo2DCore
                     _vfx.SetScale(scale);
             }
 
+            // VfxLifecycleDiagnostics.Log(
+            //     _vfx.gameObject,
+            //     "Spawn",
+            //     $"policy={_runtime?.AttachedVfxPlaybackPolicy}, " +
+            //     $"visualType={_vfx.GetType().Name}, " +
+            //     $"animationController={ResolveAnimationControllerName(_vfx)}");
+
             SubscribeOneShotCompletion();
         }
 
@@ -253,6 +260,11 @@ namespace GGemCo2DCore
             ClearEndDestroyHandler(_vfx);
             _handleVfxDestroy = HandleVfxDestroy;
             _vfx.OnVfxDestroy += _handleVfxDestroy;
+
+            // VfxLifecycleDiagnostics.Log(
+            //     _vfx.gameObject,
+            //     "SubscribeComplete",
+            //     $"isOneShot={IsOneShotOnSpawn()}, handlerRegistered={_handleVfxDestroy != null}");
         }
 
         /// <summary>
@@ -322,6 +334,16 @@ namespace GGemCo2DCore
 
             var targetVfx = _vfx;
             bool wasEndAnimationPlaying = _isEndAnimationPlaying;
+            bool isOneShotOnSpawn = IsOneShotOnSpawn();
+            bool wasOwnedByProjectile = IsVfxOwnedByProjectile(targetVfx);
+
+            // VfxLifecycleDiagnostics.Log(
+            //     targetVfx.gameObject,
+            //     "OwnerDespawn",
+            //     $"projectileInstanceId={gameObject.GetInstanceID()}, " +
+            //     $"isOneShot={isOneShotOnSpawn}, " +
+            //     $"wasOwnedByProjectile={wasOwnedByProjectile}, " +
+            //     $"wasEndAnimationPlaying={wasEndAnimationPlaying}");
 
             ClearEndDestroyHandler(targetVfx);
             _vfx = null;
@@ -330,11 +352,15 @@ namespace GGemCo2DCore
             if (targetVfx == null || targetVfx.gameObject == null)
                 return;
 
-            bool wasOwnedByProjectile = IsVfxOwnedByProjectile(targetVfx);
             DetachVfxIfOwned(targetVfx);
 
+            // VfxLifecycleDiagnostics.Log(
+            //     targetVfx.gameObject,
+            //     "Detached",
+            //     $"isOneShot={isOneShotOnSpawn}, action=WaitNaturalCompletion");
+
             // OneShotOnSpawn VFX는 프로젝타일보다 오래 재생될 수 있으므로 분리한 뒤 자체 AutoRelease에 맡깁니다.
-            if (IsOneShotOnSpawn())
+            if (isOneShotOnSpawn)
                 return;
 
             if (wasEndAnimationPlaying)
@@ -372,6 +398,14 @@ namespace GGemCo2DCore
         /// </summary>
         private void HandleVfxDestroy()
         {
+            if (_vfx != null)
+            {
+                // VfxLifecycleDiagnostics.Log(
+                //     _vfx.gameObject,
+                //     "VisualDestroyCallback",
+                //     $"hasEndCompleteCallback={_endCompleteCallback != null}");
+            }
+
             Action callback = _endCompleteCallback;
             ClearEndDestroyHandler();
             _vfx = null;
@@ -406,6 +440,19 @@ namespace GGemCo2DCore
                 return runtimeData.VisualVfxUidOverride;
 
             return staticData != null ? staticData.VfxUid : 0;
+        }
+
+        /// <summary>
+        /// 생성된 VFX에 연결된 애니메이션 컨트롤러 타입 이름을 반환합니다.
+        /// </summary>
+        /// <param name="vfx">확인할 VFX 동작 컴포넌트입니다.</param>
+        /// <returns>애니메이션 컨트롤러 타입 이름이며, 확인할 수 없으면 None입니다.</returns>
+        private static string ResolveAnimationControllerName(VfxBehaviourBase vfx)
+        {
+            if (vfx is not VfxBehaviourEffect effect || effect.VfxAnimationController == null)
+                return "None";
+
+            return effect.VfxAnimationController.GetType().Name;
         }
     }
 }

@@ -109,14 +109,26 @@ namespace GGemCo2DCore
             int maxSize = bucket.MaxSize;
             if (maxSize > 0 && bucket.Available.Count >= maxSize)
             {
+                // VfxLifecycleDiagnostics.Log(
+                //     instance,
+                //     "PoolRelease",
+                //     $"poolKey={poolKey}, action=DestroyOverflow, availableCount={bucket.Available.Count}");
+
                 bucket.TotalCount = Mathf.Max(0, bucket.TotalCount - 1);
                 Object.Destroy(instance);
                 return;
             }
 
+            int availableCountBefore = bucket.Available.Count;
             instance.SetActive(false);
             instance.transform.SetParent(_poolRoot, false);
             bucket.Available.Push(instance);
+
+            // VfxLifecycleDiagnostics.Log(
+            //     instance,
+            //     "PoolRelease",
+            //     $"poolKey={poolKey}, action=ReturnToPool, " +
+            //     $"availableCountBefore={availableCountBefore}, availableCountAfter={bucket.Available.Count}");
         }
 
         /// <summary>

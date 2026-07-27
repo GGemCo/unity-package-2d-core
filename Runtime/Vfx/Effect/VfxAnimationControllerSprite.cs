@@ -51,17 +51,36 @@ namespace GGemCo2DCore
         {
             EnsureInitialized();
 
-            if (GetClipByName(IVfxAnimationController.KeyClipNameEnd) == null)
+            bool hasEndClip = GetClipByName(IVfxAnimationController.KeyClipNameEnd) != null;
+            if (!hasEndClip)
             {
+                // VfxLifecycleDiagnostics.Log(
+                //     gameObject,
+                //     "AnimationCompleteCheck",
+                //     "hasEndClip=False, reason=EndClipMissing, action=DestroyForce");
                 _defaultEffect?.DestroyForce();
                 return;
             }
 
             if (Animator == null)
+            {
+                // VfxLifecycleDiagnostics.Log(
+                //     gameObject,
+                //     "AnimationCompleteCheck",
+                //     "hasEndClip=True, animatorNull=True, reason=AnimatorNull");
                 return;
+            }
 
             AnimatorStateInfo state = Animator.GetCurrentAnimatorStateInfo(0);
-            if (!state.IsName(IVfxAnimationController.KeyClipNameEnd))
+            bool stateMatchesEnd = state.IsName(IVfxAnimationController.KeyClipNameEnd);
+
+            // VfxLifecycleDiagnostics.Log(
+            //     gameObject,
+            //     "AnimationCompleteCheck",
+            //     $"hasEndClip=True, animatorNull=False, stateMatchesEnd={stateMatchesEnd}, " +
+            //     $"normalizedTime={state.normalizedTime:F3}");
+
+            if (!stateMatchesEnd)
                 return;
 
             _defaultEffect?.OnEndAnimationComplete();

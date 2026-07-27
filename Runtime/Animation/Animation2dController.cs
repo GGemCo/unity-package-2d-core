@@ -391,6 +391,11 @@ namespace GGemCo2DCore
         /// </remarks>
         public void GGemCoAniEventComplete(string json)
         {
+            // VfxLifecycleDiagnostics.Log(
+            //     gameObject,
+            //     "AnimationEventRaised",
+            //     $"eventListenerNull={EventListener == null}, json={json ?? "<null>"}");
+
             EventListener?.OnAnimationEventComplete(json, gameObject);
         }
 

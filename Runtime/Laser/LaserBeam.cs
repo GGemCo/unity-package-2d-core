@@ -46,6 +46,7 @@ namespace GGemCo2DCore
         private readonly Dictionary<CharacterBase, float> _lastTickDamageTimes = new();
         private IProjectileVisual _visual;
         private IProjectileLaserVisual _laserVisual;
+        private bool _visualDespawned;
 
         /// <summary>
         /// 레이저를 초기화합니다.
@@ -78,6 +79,7 @@ namespace GGemCo2DCore
             _maxDistance = ResolveConfiguredMaxDistance(info, metadata);
             _hasCachedStartPoint = false;
             _cachedStartPoint = default;
+            _visualDespawned = false;
 
             if (_owner != null)
                 gameObject.layer = _owner.gameObject.layer;
@@ -153,6 +155,9 @@ namespace GGemCo2DCore
                 if (TryPlayEndAndDestroy())
                     return;
 
+                // 부모 레이저가 파괴되면서 자식 VFX가 먼저 비활성화되면 풀 반환 코루틴이 중단될 수 있습니다.
+                // 따라서 즉시 제거 경로에서는 레이저가 아직 활성 상태일 때 비주얼을 먼저 분리하고 정리합니다.
+                DespawnVisualOnce();
                 Destroy(gameObject);
             }
         }
@@ -921,6 +926,7 @@ namespace GGemCo2DCore
             if (this == null || gameObject == null)
                 return;
 
+            DespawnVisualOnce();
             Destroy(gameObject);
         }
 
@@ -1048,11 +1054,24 @@ namespace GGemCo2DCore
 
 
         /// <summary>
-        /// 레이저가 제거될 때 비주얼 정리를 수행합니다.
+        /// 레이저가 제거되기 전에 비주얼 정리를 한 번만 수행합니다.
+        /// OneShot VFX는 부모 레이저가 활성 상태일 때 먼저 분리하여 진행 중인 해제 코루틴이 중단되지 않도록 합니다.
+        /// </summary>
+        private void DespawnVisualOnce()
+        {
+            if (_visualDespawned)
+                return;
+
+            _visualDespawned = true;
+            _visual?.OnDespawn();
+        }
+
+        /// <summary>
+        /// 외부 파괴 경로에서도 비주얼 정리가 누락되지 않도록 최종 정리를 수행합니다.
         /// </summary>
         private void OnDestroy()
         {
-            _visual?.OnDespawn();
+            DespawnVisualOnce();
         }
     }
 }

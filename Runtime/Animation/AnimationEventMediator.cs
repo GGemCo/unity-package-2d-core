@@ -27,12 +27,25 @@ namespace GGemCo2DCore
             try
             {
                 var data = JsonConvert.DeserializeObject<StruckAnimationEventComplete>(json);
+
+                // VfxLifecycleDiagnostics.Log(
+                //     fromObject,
+                //     "AnimationEventMediated",
+                //     $"parseSucceeded=True, " +
+                //     $"dataNull={data == null}, " +
+                //     $"hasVfxBehaviourEffect={fromObject != null && fromObject.GetComponent<VfxBehaviourEffect>() != null}");
+
                 fromObject.GetComponent<CharacterBase>()?.AnimationEventComplete(data);
                 fromObject.GetComponent<VfxBehaviourEffect>()?.AnimationEventComplete(data);
                 fromObject.GetComponent<DefaultObjectTrap>()?.AnimationEventComplete(data);
             }
             catch (Exception e)
             {
+                // VfxLifecycleDiagnostics.Log(
+                //     fromObject,
+                //     "AnimationEventMediated",
+                //     $"parseSucceeded=False, exception={e.GetType().Name}, message={e.Message}");
+
                 GcLogger.LogError($"animation complete event, json parsing error: {e.Message} / json: {json}");
             }
         }

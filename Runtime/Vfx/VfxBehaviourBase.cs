@@ -53,6 +53,17 @@ namespace GGemCo2DCore
         protected VfxSpawnPolicy SpawnPolicy => _spawnPolicy;
         protected virtual bool UseTimelineFadeOutAlpha => true;
 
+        /// <summary>
+        /// 현재 VFX 런타임 UID입니다.
+        /// </summary>
+        internal int RuntimeUid => _runtimeData?.Uid ?? 0;
+
+        /// <summary>
+        /// 현재 생성 요청에 적용된 VFX 수명주기 정책입니다.
+        /// </summary>
+        internal VfxConstants.LifecycleType RuntimeLifecycleType =>
+            _spawnPolicy?.LifecycleType ?? VfxConstants.LifecycleType.AutoRelease;
+
         protected virtual void Awake()
         {
             CaptureDefaultTransformIfNeeded();
@@ -288,6 +299,13 @@ namespace GGemCo2DCore
 
         public virtual void OnEndAnimationComplete()
         {
+            // VfxLifecycleDiagnostics.Log(
+            //     gameObject,
+            //     "EndComplete",
+            //     $"releaseOnAnimationComplete={_releaseOnAnimationComplete}, " +
+            //     $"lifecycle={RuntimeLifecycleType}, " +
+            //     $"shouldAutoRelease={ShouldAutoReleaseOnNaturalComplete()}");
+
             if (!_releaseOnAnimationComplete && !ShouldAutoReleaseOnNaturalComplete())
                 return;
 
@@ -369,6 +387,13 @@ namespace GGemCo2DCore
             StopManagedCoroutines();
             var callback = OnVfxDestroy;
             OnVfxDestroy = null;
+
+            // VfxLifecycleDiagnostics.Log(
+            //     gameObject,
+            //     "ReleaseImmediate",
+            //     $"poolKey={_poolKey}, releaseActionNull={_releaseAction == null}, " +
+            //     $"hasDestroySubscriber={callback != null}");
+
             callback?.Invoke();
             ReleaseOrDestroy();
         }
@@ -786,6 +811,59 @@ namespace GGemCo2DCore
         private float GetDeltaTime()
         {
             return UseUnscaledTime() ? Time.unscaledDeltaTime : Time.deltaTime;
+        }
+    }
+
+    /// <summary>
+    /// 피어스 샷 레이저 VFX의 생성부터 풀 반환까지 수명주기를 추적하는 에디터 전용 진단 도구입니다.
+    /// 지정된 VFX UID만 기록하여 일반 전투 로그와 프레임당 할당을 최소화합니다.
+    /// </summary>
+    internal static class VfxLifecycleDiagnostics
+    {
+        private const int TargetVfxUid = 300106;
+
+        /// <summary>
+        /// 대상 GameObject가 진단 대상 VFX일 때 현재 수명주기 상태를 콘솔에 기록합니다.
+        /// 플레이어 빌드에서는 호출과 인수 평가가 모두 제거됩니다.
+        /// </summary>
+        /// <param name="target">진단할 VFX GameObject입니다.</param>
+        /// <param name="stage">현재 수명주기 단계입니다.</param>
+        /// <param name="details">단계별 추가 상태 정보입니다.</param>
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        internal static void Log(GameObject target, string stage, string details = null)
+        {
+            if (!target)
+                return;
+
+            VfxBehaviourBase behaviour = target.GetComponent<VfxBehaviourBase>();
+            if (behaviour == null || behaviour.RuntimeUid != TargetVfxUid)
+                return;
+
+            Transform parent = target.transform.parent;
+            string parentName = parent != null ? parent.name : "<null>";
+            string suffix = string.IsNullOrWhiteSpace(details) ? string.Empty : $", {details}";
+            Animator animator = target.GetComponent<Animator>();
+            string animatorState = ResolveAnimatorState(animator);
+        }
+
+        /// <summary>
+        /// Animator의 활성 상태와 현재 상태 해시 및 정규화 시간을 진단 문자열로 변환합니다.
+        /// </summary>
+        /// <param name="animator">확인할 Animator입니다.</param>
+        /// <returns>Animator가 없으면 animatorNull=True이며, 있으면 현재 상태 정보가 포함된 문자열입니다.</returns>
+        private static string ResolveAnimatorState(Animator animator)
+        {
+            if (animator == null)
+                return "animatorNull=True";
+
+            AnimatorStateInfo state = animator.GetCurrentAnimatorStateInfo(0);
+            string controllerName = animator.runtimeAnimatorController != null
+                ? animator.runtimeAnimatorController.name
+                : "None";
+
+            return $"animatorNull=False, animatorEnabled={animator.enabled}, " +
+                   $"controller={controllerName}, stateShortHash={state.shortNameHash}, " +
+                   $"stateFullHash={state.fullPathHash}, normalizedTime={state.normalizedTime:F3}";
         }
     }
 }
