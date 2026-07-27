@@ -604,7 +604,26 @@ namespace GGemCo2DCore
                 metadataDamage.ResolvedOnHitCrowdControls = resolvedOnHitCrowdControls;
             }
 
-            if (damage <= 0)
+            bool wasDamageConsumed = IncomingHitExtensionResolver.TryConsumeIncomingDamage(
+                _characterBase,
+                metadataDamage,
+                damage,
+                out IncomingHitDamageConsumptionResult damageConsumptionResult);
+            if (wasDamageConsumed)
+            {
+                // 외부 처리기가 원래 피해보다 큰 값이나 음수를 반환해도
+                // 이번 피격이 회복 또는 추가 피해로 변하지 않도록 입력 피해 범위로 제한합니다.
+                damage = Math.Clamp(damageConsumptionResult.RemainingDamage, 0L, damage);
+                metadataDamage.damage = damage;
+                metadataDamage.DamageBreakdown =
+                    CharacterDamageCalculationUtility.ScaleFinalDamage(
+                        metadataDamage.DamageBreakdown,
+                        damage);
+            }
+
+            bool preserveHitFeedbackByDamageConsumption =
+                wasDamageConsumed && damageConsumptionResult.PreserveHitFeedback;
+            if (damage <= 0 && !preserveHitFeedbackByDamageConsumption)
             {
                 ApplyZeroDamageGuardCrowdControls(
                     metadataDamage,
@@ -618,11 +637,15 @@ namespace GGemCo2DCore
 
             // Item Bonus HP(소모형 추가 최대 HP)부터 먼저 차감
             //  - 0이 되면 즉시 소멸(외부에서 UI/저장 갱신 처리)
-            long remainingDamage = _characterBase.ConsumeHpTempItem(damage);
-            // 런타임 스킬 Temp HP(비저장 보호막) 소모
-            remainingDamage = _characterBase.ConsumeHpTempRuntime(remainingDamage);
-            // 패시브 임시 HP 소모
-            remainingDamage = _characterBase.ConsumeHpTempPassive(remainingDamage);
+            long remainingDamage = damage;
+            if (remainingDamage > 0L)
+            {
+                remainingDamage = _characterBase.ConsumeHpTempItem(remainingDamage);
+                // 런타임 스킬 Temp HP(비저장 보호막) 소모
+                remainingDamage = _characterBase.ConsumeHpTempRuntime(remainingDamage);
+                // 패시브 임시 HP 소모
+                remainingDamage = _characterBase.ConsumeHpTempPassive(remainingDamage);
+            }
 
             // 남은 데미지를 Base HP에서 차감
             long remainHp = _characterBase.CurrentHp.Value - remainingDamage;
@@ -682,7 +705,8 @@ namespace GGemCo2DCore
                 MonsterSkillCombatOutcome.Hit);
             TryPlayDamageCameraShake(metadataDamage);
 
-            if (!hasGuardFeedback)
+            if (!hasGuardFeedback &&
+                (!wasDamageConsumed || damage > 0L))
             {
                 MetadataDamageText metadataDamageText2 = new MetadataDamageText
                 {
@@ -726,10 +750,15 @@ namespace GGemCo2DCore
                     wasLethalProtected && lethalProtectionResult.SuppressActionCancel;
                 bool suppressDamageReactionByLethalProtection =
                     wasLethalProtected && lethalProtectionResult.SuppressDamageReaction;
+                bool suppressActionCancelByDamageConsumption =
+                    wasDamageConsumed && damageConsumptionResult.SuppressActionCancel;
+                bool suppressDamageReactionByDamageConsumption =
+                    wasDamageConsumed && damageConsumptionResult.SuppressDamageReaction;
                 bool shouldPlayDamageReaction =
                     !suppressHitReactionByGuard &&
                     !metadataDamage.SuppressDamageReaction &&
-                    !suppressDamageReactionByLethalProtection;
+                    !suppressDamageReactionByLethalProtection &&
+                    !suppressDamageReactionByDamageConsumption;
                 CharacterConstants.HitReactionType hitReactionType = CharacterConstants.HitReactionType.None;
                 
                 // StaggerResistanceController가 있고, 이번 타격이 스태거 판정에 관여하는 경우에만
@@ -755,7 +784,8 @@ namespace GGemCo2DCore
                 if (shouldPlayDamageReaction)
                 {
                     // 피격 상태/CC 적용 전에 입력 액션을 먼저 정리해 가드/점프/대시 상태가 남지 않도록 합니다.
-                    if (!suppressActionCancelByLethalProtection)
+                    if (!suppressActionCancelByLethalProtection &&
+                        !suppressActionCancelByDamageConsumption)
                     {
                         IncomingHitExtensionResolver.NotifyActionCancelers(
                             _characterBase,

@@ -8,6 +8,36 @@ namespace GGemCo2DCore
     internal static class IncomingHitExtensionResolver
     {
         /// <summary>
+        /// 방어 판정 이후의 피해를 HP 계층에 적용하기 전에 외부 자원으로 소비합니다.
+        /// </summary>
+        /// <param name="target">피해 소비 처리기를 검색할 캐릭터입니다.</param>
+        /// <param name="metadataDamage">현재 피격 메타데이터입니다.</param>
+        /// <param name="incomingDamage">HP 계층에 적용될 피해량입니다.</param>
+        /// <param name="result">처리 성공 시 남은 피해와 후속 피격 반응 정책입니다.</param>
+        /// <returns>등록된 처리기가 피해를 소비했으면 <see langword="true"/>입니다.</returns>
+        public static bool TryConsumeIncomingDamage(
+            CharacterBase target,
+            MetadataDamage metadataDamage,
+            long incomingDamage,
+            out IncomingHitDamageConsumptionResult result)
+        {
+            result = default;
+            if (target == null || incomingDamage <= 0L)
+                return false;
+
+            MonoBehaviour[] behaviours = target.GetComponents<MonoBehaviour>();
+            for (int i = 0; i < behaviours.Length; i++)
+            {
+                if (behaviours[i] is not IIncomingHitDamageConsumptionResolver resolver)
+                    continue;
+                if (resolver.TryConsumeIncomingDamage(incomingDamage, metadataDamage, out result))
+                    return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
         /// 피격 대상의 액션 취소 수신자에게 인터럽트 사유를 전달합니다.
         /// </summary>
         /// <param name="target">액션 취소 수신자를 검색할 캐릭터입니다.</param>
