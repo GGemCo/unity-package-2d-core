@@ -112,7 +112,6 @@ namespace GGemCo2DCore
         private bool _hasBaseline;
         private bool _hasPreviousCameraPosition;
         private bool _hasLoggedMissingRenderer;
-        private bool _hasLoggedLegacyConflict;
 
         /// <summary>
         /// 무한 반복 과정에서 생성된 표시 전용 복제본인지 여부입니다.
@@ -256,7 +255,6 @@ namespace GGemCo2DCore
                 return;
             }
 
-            DisableLegacyPositionWriters();
             _segments.Clear();
             _segments.Add(CreateSegmentState(gameObject));
 
@@ -268,42 +266,6 @@ namespace GGemCo2DCore
             }
 
             _isInitialized = true;
-        }
-
-        /// <summary>
-        /// 동일 레이어에 남아 있는 레거시 위치 제어 컴포넌트를 중지하여 Transform 덮어쓰기를 방지합니다.
-        /// </summary>
-        private void DisableLegacyPositionWriters()
-        {
-            bool hasConflict = false;
-
-            if (TryGetComponent(out ParallaxDefault legacyAutoScroll) && legacyAutoScroll.enabled)
-            {
-                legacyAutoScroll.enabled = false;
-                hasConflict = true;
-            }
-
-            ParallaxRig2D legacyParallaxRig = GetComponentInParent<ParallaxRig2D>();
-            if (legacyParallaxRig != null && legacyParallaxRig.enabled)
-            {
-                legacyParallaxRig.enabled = false;
-                hasConflict = true;
-            }
-
-            InfiniteScrollingBackgroundController legacyInfiniteController =
-                GetComponentInParent<InfiniteScrollingBackgroundController>();
-            if (legacyInfiniteController != null && legacyInfiniteController.enabled)
-            {
-                legacyInfiniteController.enabled = false;
-                hasConflict = true;
-            }
-
-            if (hasConflict && !_hasLoggedLegacyConflict)
-            {
-                _hasLoggedLegacyConflict = true;
-                GcLogger.LogWarning(
-                    $"[BackgroundLayer2D] {name}: 레거시 위치 제어 컴포넌트를 중지하고 신규 통합 레이어가 Transform을 전담합니다.");
-            }
         }
 
         /// <summary>

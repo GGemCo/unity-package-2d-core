@@ -30,11 +30,9 @@ namespace GGemCo2DCore
         private readonly List<BackgroundLayer2D> _layerBuffer = new();
         private MapTileCommon _currentMapTileCommon;
         private bool _hasBaseline;
-        private bool _hasLoggedLegacyConflict;
 
         private void Awake()
         {
-            DisableLegacyControllers();
             RefreshLayers();
             MapManager.OnLoadCompleteMap += OnLoadCompleteMap;
         }
@@ -260,32 +258,5 @@ namespace GGemCo2DCore
                 : null;
         }
 
-        /// <summary>
-        /// 신규 Rig와 동일한 오브젝트에 남아 있는 레거시 배경 컨트롤러를 중지하여 이중 위치 갱신을 방지합니다.
-        /// </summary>
-        private void DisableLegacyControllers()
-        {
-            bool hasConflict = false;
-
-            if (TryGetComponent(out ParallaxRig2D legacyParallaxRig) && legacyParallaxRig.enabled)
-            {
-                legacyParallaxRig.enabled = false;
-                hasConflict = true;
-            }
-
-            if (TryGetComponent(out InfiniteScrollingBackgroundController legacyInfiniteController) &&
-                legacyInfiniteController.enabled)
-            {
-                legacyInfiniteController.enabled = false;
-                hasConflict = true;
-            }
-
-            if (hasConflict && !_hasLoggedLegacyConflict)
-            {
-                _hasLoggedLegacyConflict = true;
-                GcLogger.LogWarning(
-                    $"[BackgroundMotionRig2D] {name}: 레거시 배경 Rig를 중지하고 신규 통합 Rig가 위치 갱신을 전담합니다.");
-            }
-        }
     }
 }
