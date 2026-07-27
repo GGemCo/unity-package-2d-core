@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -631,17 +632,29 @@ namespace GGemCo2DCore
                 remainHp = 1;
             }
 
-            // 외부 시스템(예: 보스 페이즈 전환)이 최종 HP를 보정할 수 있는 확장 지점입니다.
+            // 외부 시스템의 치명타 보호를 먼저 검사한 뒤 보스 페이즈 같은 최종 HP 보정을 적용합니다.
             long adjustedHp = IncomingHitExtensionResolver.ResolveFinalHp(
                 _characterBase,
                 metadataDamage,
-                remainHp);
+                remainHp,
+                out bool wasLethalProtected,
+                out IncomingHitLethalProtectionResult lethalProtectionResult);
+            if (wasLethalProtected)
+            {
+                // 잘못된 외부 구현이 회복이나 사망을 유발하지 않도록 현재 HP와 1 사이로 제한합니다.
+                long currentHp = Math.Max(1L, _characterBase.CurrentHp.Value);
+                adjustedHp = Math.Clamp(adjustedHp, 1L, currentHp);
+            }
+
             bool isHpAdjusted = adjustedHp != remainHp;
             remainHp = adjustedHp;
 
             // 보정 결과가 현재 HP와 같거나 더 크면 이번 피격은 흡수된 것으로 간주하고 종료합니다.
             // (연출/상태 반응 중복을 막기 위해 즉시 반환)
-            if (isHpAdjusted && remainHp >= _characterBase.CurrentHp.Value)
+            // 치명타 보호는 공격 성공 피드백을 유지해야 하므로 이 조기 반환에서 제외합니다.
+            if (!wasLethalProtected &&
+                isHpAdjusted &&
+                remainHp >= _characterBase.CurrentHp.Value)
             {
                 _characterBase.CurrentHp.OnNext(remainHp);
                 return;
@@ -709,7 +722,14 @@ namespace GGemCo2DCore
                 if (!hasRequestedPlayerHudStaminaFeedback)
                     TryPlayPlayerHudDamageFeedback(metadataDamage);
                 
-                bool shouldPlayDamageReaction = !suppressHitReactionByGuard && !metadataDamage.SuppressDamageReaction;
+                bool suppressActionCancelByLethalProtection =
+                    wasLethalProtected && lethalProtectionResult.SuppressActionCancel;
+                bool suppressDamageReactionByLethalProtection =
+                    wasLethalProtected && lethalProtectionResult.SuppressDamageReaction;
+                bool shouldPlayDamageReaction =
+                    !suppressHitReactionByGuard &&
+                    !metadataDamage.SuppressDamageReaction &&
+                    !suppressDamageReactionByLethalProtection;
                 CharacterConstants.HitReactionType hitReactionType = CharacterConstants.HitReactionType.None;
                 
                 // StaggerResistanceController가 있고, 이번 타격이 스태거 판정에 관여하는 경우에만
@@ -735,9 +755,12 @@ namespace GGemCo2DCore
                 if (shouldPlayDamageReaction)
                 {
                     // 피격 상태/CC 적용 전에 입력 액션을 먼저 정리해 가드/점프/대시 상태가 남지 않도록 합니다.
-                    IncomingHitExtensionResolver.NotifyActionCancelers(
-                        _characterBase,
-                        IncomingHitCancelReason.Damage);
+                    if (!suppressActionCancelByLethalProtection)
+                    {
+                        IncomingHitExtensionResolver.NotifyActionCancelers(
+                            _characterBase,
+                            IncomingHitCancelReason.Damage);
+                    }
 
                     if (hitReactionType == CharacterConstants.HitReactionType.Flinch)
                     {

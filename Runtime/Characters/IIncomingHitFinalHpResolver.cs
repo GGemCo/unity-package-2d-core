@@ -1,5 +1,64 @@
-﻿namespace GGemCo2DCore
+namespace GGemCo2DCore
 {
+    /// <summary>
+    /// 치명적인 피격을 외부 시스템이 먼저 소비하고 사망을 방지할 수 있는 확장 포인트입니다.
+    /// </summary>
+    /// <remarks>
+    /// Core는 차징 게이지, 특수 보호막 같은 구체 정책을 알지 않습니다.
+    /// 해당 정책을 소유한 상위 패키지가 구현하며, 성공한 보호 결과는 일반 최종 HP 보정기보다 먼저 적용됩니다.
+    /// </remarks>
+    public interface IIncomingHitLethalProtectionResolver
+    {
+        /// <summary>
+        /// HP가 0 이하가 되는 피격을 외부 보호 자원으로 처리할 수 있는지 확인합니다.
+        /// </summary>
+        /// <param name="proposedHp">Core 계산 기준 최종 HP입니다.</param>
+        /// <param name="metadataDamage">현재 피격 메타데이터입니다.</param>
+        /// <param name="result">보호 성공 시 적용할 HP와 후속 피격 처리 정책입니다.</param>
+        /// <returns>치명타를 보호 자원으로 처리했으면 <see langword="true"/>입니다.</returns>
+        bool TryResolveLethalIncomingHit(
+            long proposedHp,
+            MetadataDamage metadataDamage,
+            out IncomingHitLethalProtectionResult result);
+    }
+
+    /// <summary>
+    /// 치명타 보호 이후 적용할 HP와 후속 피격 처리 정책입니다.
+    /// </summary>
+    public readonly struct IncomingHitLethalProtectionResult
+    {
+        /// <summary>
+        /// 치명타 보호 후 적용할 HP입니다.
+        /// </summary>
+        public readonly long ResolvedHp;
+
+        /// <summary>
+        /// 같은 피격에서 일반 액션 취소 수신자를 다시 호출하지 않을지 여부입니다.
+        /// </summary>
+        public readonly bool SuppressActionCancel;
+
+        /// <summary>
+        /// 같은 피격에서 일반 피격 상태 전환과 피격 애니메이션을 억제할지 여부입니다.
+        /// </summary>
+        public readonly bool SuppressDamageReaction;
+
+        /// <summary>
+        /// 치명타 보호 결과를 생성합니다.
+        /// </summary>
+        /// <param name="resolvedHp">보호 후 적용할 HP입니다.</param>
+        /// <param name="suppressActionCancel">일반 액션 취소 재호출을 억제할지 여부입니다.</param>
+        /// <param name="suppressDamageReaction">일반 피격 반응을 억제할지 여부입니다.</param>
+        public IncomingHitLethalProtectionResult(
+            long resolvedHp,
+            bool suppressActionCancel,
+            bool suppressDamageReaction)
+        {
+            ResolvedHp = resolvedHp;
+            SuppressActionCancel = suppressActionCancel;
+            SuppressDamageReaction = suppressDamageReaction;
+        }
+    }
+
     /// <summary>
     /// 피격 처리 최종 단계에서 HP 값을 보정할 수 있는 확장 포인트입니다.
     /// </summary>

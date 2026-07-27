@@ -37,11 +37,56 @@ namespace GGemCo2DCore
             MetadataDamage metadataDamage,
             long proposedHp)
         {
+            return ResolveFinalHp(
+                target,
+                metadataDamage,
+                proposedHp,
+                out _,
+                out _);
+        }
+
+        /// <summary>
+        /// 치명타 보호를 우선 검사한 뒤 피격 대상의 최종 HP 보정기를 컴포넌트 순서대로 적용합니다.
+        /// </summary>
+        /// <param name="target">확장 처리기를 검색할 캐릭터입니다.</param>
+        /// <param name="metadataDamage">현재 피격 메타데이터입니다.</param>
+        /// <param name="proposedHp">Core 계산 기준 최종 HP입니다.</param>
+        /// <param name="wasLethalProtected">치명타 보호 처리기가 이번 피격을 소비했는지 여부입니다.</param>
+        /// <param name="lethalProtectionResult">치명타 보호 후속 처리 정책입니다.</param>
+        /// <returns>등록된 보호 또는 보정 정책이 반영된 최종 HP입니다.</returns>
+        public static long ResolveFinalHp(
+            CharacterBase target,
+            MetadataDamage metadataDamage,
+            long proposedHp,
+            out bool wasLethalProtected,
+            out IncomingHitLethalProtectionResult lethalProtectionResult)
+        {
+            wasLethalProtected = false;
+            lethalProtectionResult = default;
             if (target == null)
                 return proposedHp;
 
-            long resolvedHp = proposedHp;
             MonoBehaviour[] behaviours = target.GetComponents<MonoBehaviour>();
+            if (proposedHp <= 0L)
+            {
+                // 차징 게이지나 보호막처럼 피격 자체를 소비하는 정책은
+                // 보스 페이즈 같은 일반 최종 HP 보정보다 먼저 평가합니다.
+                for (int i = 0; i < behaviours.Length; i++)
+                {
+                    if (behaviours[i] is not IIncomingHitLethalProtectionResolver resolver)
+                        continue;
+                    if (!resolver.TryResolveLethalIncomingHit(
+                            proposedHp,
+                            metadataDamage,
+                            out lethalProtectionResult))
+                        continue;
+
+                    wasLethalProtected = true;
+                    return lethalProtectionResult.ResolvedHp;
+                }
+            }
+
+            long resolvedHp = proposedHp;
             for (int i = 0; i < behaviours.Length; i++)
             {
                 if (behaviours[i] is IIncomingHitFinalHpResolver resolver)
