@@ -5,7 +5,7 @@ namespace GGemCo2DCore
 {
     /// <summary>
     /// 현재 맵의 몬스터 전멸 상태를 감시하고, 설정된 맵 종료 정책을 실행하는 컨트롤러입니다.
-    /// 퀘스트 진행도와 분리하여 순수 맵 클리어 UX(Fade Out, 월드맵 오픈)만 담당합니다.
+    /// 퀘스트 진행도와 분리하여 순수 맵 클리어 UX(Fade Out, 종료 UIWindow 오픈)만 담당합니다.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class MapClearExitPolicyController : MonoBehaviour
@@ -16,6 +16,7 @@ namespace GGemCo2DCore
         private bool _isExecuting;
         private bool _isEventRegistered;
         private bool _ignoreAliveMonstersForExecution;
+        private int _pendingDestinationWindowUid;
         private Coroutine _executeRoutine;
         private readonly MapClearMonsterSuspensionScope _monsterSuspensionScope = new();
 
@@ -86,7 +87,7 @@ namespace GGemCo2DCore
         {
             UnregisterEvents();
             StopExecuteRoutine();
-            CancelPendingWorldMapOpen();
+            CancelPendingDestinationWindowOpen();
         }
 
         /// <summary>
@@ -127,7 +128,7 @@ namespace GGemCo2DCore
         {
             bool hadRunningExitPolicy = _isExecuting || _executeRoutine != null;
             StopExecuteRoutine();
-            CancelPendingWorldMapOpen();
+            CancelPendingDestinationWindowOpen();
             if (hadRunningExitPolicy)
             {
                 ClearMapExitFade(GetPolicy(), forceClear: true);
@@ -313,16 +314,18 @@ namespace GGemCo2DCore
                 yield break;
             }
 
-            if (policy.openWorldMap)
+            int destinationWindowUid = ResolveDestinationWindowUid(mapUid, policy);
+            if (destinationWindowUid > 0)
             {
-                OpenWorldMapWindow();
+                OpenDestinationWindow(destinationWindowUid);
             }
 
             if (policy.clearFadeAfterWorldMapOpen)
             {
-                if (policy.openWorldMap)
+                if (destinationWindowUid > 0)
                 {
-                    yield return WaitForWorldMapOpenBeforeFadeClear();
+                    yield return WaitForDestinationWindowOpenBeforeFadeClear(
+                        destinationWindowUid);
                 }
                 else
                 {
@@ -445,39 +448,74 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 월드맵 UI를 엽니다.
-        /// 사망 연출이나 컷신으로 월드맵 표시가 억제 중이면 요청을 보류하고, 억제 해제 후 자동으로 열리게 합니다.
+        /// 등록된 상위 계층 정책과 Core 기본 설정을 순서대로 확인하여 종료 화면 UID를 결정합니다.
         /// </summary>
-        private void OpenWorldMapWindow()
+        /// <param name="mapUid">클리어한 맵 UID입니다.</param>
+        /// <param name="policy">현재 맵 종료 정책 설정입니다.</param>
+        /// <returns>표시할 Window 테이블 UID이며, 표시할 화면이 없으면 0입니다.</returns>
+        private static int ResolveDestinationWindowUid(
+            int mapUid,
+            MapClearExitPolicySettings policy)
         {
-            if (_sceneGame?.uIWindowManager == null)
+            if (MapClearExitDestinationResolverRegistry.TryResolve(
+                    mapUid,
+                    out MapClearExitDestination destination))
             {
-                GcLogger.LogWarning("월드맵 UI를 열 수 없습니다. UIWindowManager가 없습니다.");
+                return destination.WindowUid;
+            }
+
+            return policy != null && policy.openWorldMap
+                ? (int)UIWindowConstants.WindowUid.WorldMap
+                : 0;
+        }
+
+        /// <summary>
+        /// 지정한 맵 클리어 종료 UIWindow를 엽니다.
+        /// 사망 연출이나 컷신으로 표시가 억제 중이면 요청을 보류하고, 억제 해제 후 자동으로 열리게 합니다.
+        /// </summary>
+        /// <param name="windowUid">표시할 Window 테이블 UID입니다.</param>
+        private void OpenDestinationWindow(int windowUid)
+        {
+            if (windowUid <= 0 || _sceneGame?.uIWindowManager == null)
+            {
+                GcLogger.LogWarning(
+                    $"맵 클리어 종료 UI를 열 수 없습니다. windowUid:{windowUid}");
                 return;
             }
 
+            var targetWindowUid = (UIWindowConstants.WindowUid)windowUid;
+            if (!_sceneGame.uIWindowManager.HasManagedWindow(targetWindowUid))
+            {
+                GcLogger.LogWarning(
+                    $"맵 클리어 종료 UI가 UIWindowManager에 등록되어 있지 않습니다. windowUid:{windowUid}");
+                return;
+            }
+
+            _pendingDestinationWindowUid = windowUid;
             _sceneGame.uIWindowManager.ShowWindowWhenAllowed(
-                UIWindowConstants.WindowUid.WorldMap,
+                targetWindowUid,
                 true,
                 UIWindowConstants.UIWindowVisibilityApplyMode.Normal,
                 this);
         }
 
         /// <summary>
-        /// 월드맵 표시 요청이 UI 표시 억제에 막힌 경우, 억제 해제 후 LateUpdate에서 보류 요청이 적용될 시간을 확보합니다.
-        /// Fade 화면을 월드맵 오픈 전에 먼저 정리하지 않도록 맵 클리어 루틴에서 사용합니다.
+        /// 종료 화면 표시 요청이 UI 표시 억제에 막힌 경우, 억제 해제 후 LateUpdate에서 보류 요청이 적용될 시간을 확보합니다.
+        /// Fade 화면을 종료 UI 오픈 전에 먼저 정리하지 않도록 맵 클리어 루틴에서 사용합니다.
         /// </summary>
-        /// <returns>월드맵 표시 적용 가능 시점까지 대기하는 코루틴 열거자입니다.</returns>
-        private IEnumerator WaitForWorldMapOpenBeforeFadeClear()
+        /// <param name="windowUid">표시 적용을 기다릴 Window 테이블 UID입니다.</param>
+        /// <returns>종료 화면 표시 적용 가능 시점까지 대기하는 코루틴 열거자입니다.</returns>
+        private IEnumerator WaitForDestinationWindowOpenBeforeFadeClear(int windowUid)
         {
             UIWindowManager windowManager = _sceneGame?.uIWindowManager;
-            if (windowManager == null || !windowManager.HasManagedWindow(UIWindowConstants.WindowUid.WorldMap))
+            var targetWindowUid = (UIWindowConstants.WindowUid)windowUid;
+            if (windowManager == null || !windowManager.HasManagedWindow(targetWindowUid))
             {
                 yield return null;
                 yield break;
             }
 
-            while (windowManager.IsWindowVisibilitySuppressed(UIWindowConstants.WindowUid.WorldMap))
+            while (windowManager.IsWindowVisibilitySuppressed(targetWindowUid))
             {
                 yield return null;
             }
@@ -487,14 +525,20 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 맵 종료 루틴에서 예약한 월드맵 표시 요청을 취소합니다.
+        /// 맵 종료 루틴에서 예약한 종료 화면 표시 요청을 취소합니다.
         /// 맵 전환이나 컨트롤러 파괴 시 이전 맵의 지연 요청이 다음 맵에서 실행되는 것을 방지합니다.
         /// </summary>
-        private void CancelPendingWorldMapOpen()
+        private void CancelPendingDestinationWindowOpen()
         {
+            if (_pendingDestinationWindowUid <= 0)
+            {
+                return;
+            }
+
             _sceneGame?.uIWindowManager?.CancelDeferredWindowVisibilityRequest(
-                UIWindowConstants.WindowUid.WorldMap,
+                (UIWindowConstants.WindowUid)_pendingDestinationWindowUid,
                 this);
+            _pendingDestinationWindowUid = 0;
         }
 
         /// <summary>

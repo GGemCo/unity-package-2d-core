@@ -52,10 +52,10 @@ namespace GGemCo2DCore
         [Tooltip("맵 종료 Fade Out 시간입니다.")]
         [Min(0f)] public float fadeOutDurationSeconds = 0.3f;
 
-        [Tooltip("맵 클리어 후 월드맵 UI를 자동으로 열지 여부입니다.")]
+        [Tooltip("외부 종료 화면 정책이 없는 맵에서 월드맵 UI를 자동으로 열지 여부입니다.")]
         public bool openWorldMap = true;
 
-        [Tooltip("월드맵 UI를 연 뒤 맵 종료 Fade 화면을 즉시 정리할지 여부입니다.\n꺼두면 ScreenFadeData의 holdFinalState 설정에 따라 검정 화면이 유지될 수 있습니다.")]
+        [Tooltip("월드맵 또는 외부 정책의 종료 UI를 연 뒤 맵 종료 Fade 화면을 즉시 정리할지 여부입니다.\n꺼두면 ScreenFadeData의 holdFinalState 설정에 따라 검정 화면이 유지될 수 있습니다.")]
         public bool clearFadeAfterWorldMapOpen = true;
 
         [Tooltip("맵 종료 시 사용할 화면 Fade 설정입니다.")]
