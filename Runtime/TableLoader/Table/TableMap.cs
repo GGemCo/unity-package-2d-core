@@ -18,6 +18,12 @@ namespace GGemCo2DCore
         public int PlayerDeadSpawnUid;
 
         /// <summary>
+        /// 저장된 현재 맵에서 게임을 다시 시작할 때 대신 진입할 맵 UID입니다.
+        /// 0 이하이면 저장된 현재 맵을 그대로 사용합니다.
+        /// </summary>
+        public int ResumeMapUid;
+
+        /// <summary>
         /// 기존 단일 BGM 설정과의 하위 호환성을 위한 대표 sound UID입니다.
         /// <see cref="BgmUids"/>가 비어 있을 때만 복수 BGM 후보에 포함됩니다.
         /// </summary>
@@ -132,6 +138,7 @@ namespace GGemCo2DCore
                 FolderName = reader.String("FolderName"),
                 PlayerSpawnPosition = reader.Vector2("PlayerSpawnPosition"),
                 PlayerDeadSpawnUid = reader.Int("PlayerDeadSpawnUid"),
+                ResumeMapUid = reader.Int("ResumeMapUid"),
                 BgmUids = reader.IntArray("BgmUids"),
                 AmbientSoundUids = reader.IntArray("AmbientSoundUids"),
                 UseCameraFollowOffset = reader.BoolYN("UseCameraFollowOffset"),

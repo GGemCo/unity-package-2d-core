@@ -222,6 +222,7 @@ namespace GGemCo2DCoreEditor
             { "RequestMapUid", ConfigAddressableTable.Map },
             { "TargetMapUid", ConfigAddressableTable.Map },
             { "FallbackMapUid", ConfigAddressableTable.Map },
+            { "ResumeMapUid", ConfigAddressableTable.Map },
             { "AnimationUid", ConfigAddressableTable.Animation },
             { "VfxUid", ConfigAddressableTable.Vfx },
             { "HitVfxUid", ConfigAddressableTable.Vfx },

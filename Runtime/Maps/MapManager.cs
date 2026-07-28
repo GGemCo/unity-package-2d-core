@@ -172,6 +172,13 @@ namespace GGemCo2DCore
                 var info = TableLoaderManager.Instance.GetMapData(startMapUid);
                 if (GcLogger.IsNull(info,
                         $"맵 테이블에 없는 고유번호 입니다. mapUid:{startMapUid}")) return 0;
+
+                if (TryResolveResumeMapUid(info, out int resumeMapUid))
+                {
+                    // 명시적인 맵별 재시작 정책은 전역 마을 시작 정책보다 우선합니다.
+                    return resumeMapUid;
+                }
+
                 // 마을 타입에서 시작하는 설정이 되어있으면
                 if (_mapSettings != null && _mapSettings.useStartMapTown && info.Type != _mapSettings.typeMapTown &&
                     _saveDataManager.MapProgress.LastTownMapUid > 0)
@@ -191,6 +198,41 @@ namespace GGemCo2DCore
             }
 
             return startMapUid;
+        }
+
+        /// <summary>
+        /// 저장된 현재 맵의 재시작 정책을 기준으로 최초 진입할 대체 맵을 결정합니다.
+        /// </summary>
+        /// <param name="savedMapData">저장된 현재 맵의 테이블 데이터입니다.</param>
+        /// <param name="resumeMapUid">유효한 경우 최초 진입할 대체 맵 UID입니다.</param>
+        /// <returns>유효한 대체 맵을 결정했으면 true를 반환합니다.</returns>
+        private bool TryResolveResumeMapUid(StruckTableMap savedMapData, out int resumeMapUid)
+        {
+            resumeMapUid = 0;
+            if (savedMapData == null || savedMapData.ResumeMapUid <= 0)
+            {
+                return false;
+            }
+
+            if (savedMapData.ResumeMapUid == savedMapData.Uid)
+            {
+                GcLogger.LogWarning(
+                    $"재시작 맵 UID가 현재 맵과 같습니다. mapUid:{savedMapData.Uid}, resumeMapUid:{savedMapData.ResumeMapUid}");
+                return false;
+            }
+
+            StruckTableMap resumeMapData =
+                _tableLoaderManager.GetMapData(savedMapData.ResumeMapUid);
+            if (resumeMapData == null)
+            {
+                GcLogger.LogWarning(
+                    $"재시작 맵 UID가 map 테이블에 없습니다. mapUid:{savedMapData.Uid}, resumeMapUid:{savedMapData.ResumeMapUid}");
+                return false;
+            }
+
+            // 연쇄 설정과 순환 참조를 만들지 않도록 저장된 맵 행의 목적지만 한 번 적용합니다.
+            resumeMapUid = resumeMapData.Uid;
+            return true;
         }
 
         /// <summary>
