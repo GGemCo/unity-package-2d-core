@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.UI;
 
 namespace GGemCo2DCore
@@ -146,7 +146,9 @@ namespace GGemCo2DCore
 
             if (_mapManager == null ||
                 _worldMapDefinition == null ||
-                !_worldMapDefinition.TryGetNodeByMapUid(_mapManager.GetCurrentMapUid(), out WorldMapNodeDefinition currentNode))
+                !_worldMapDefinition.TryGetNodeByMapUid(
+                    _mapManager.GetCurrentMapRequestUid(),
+                    out WorldMapNodeDefinition currentNode))
             {
                 return false;
             }

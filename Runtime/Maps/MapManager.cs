@@ -26,8 +26,11 @@ namespace GGemCo2DCore
         // 맵 로드 상태
         private MapConstants.State _currentState = MapConstants.State.None;
 
-        // 현재 맵 uid
+        // 현재 실제로 로드 중이거나 로드된 맵 UID
         private int _currentMapUid;
+
+        // map_entry_rule 적용 전에 요청된 월드맵 그래프 기준 맵 UID
+        private int _currentMapRequestUid;
 
         private SceneGame _sceneGame;
         private SaveDataManager _saveDataManager;
@@ -267,9 +270,9 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 맵 불러오기
+        /// 지정한 맵 UID에 입장 규칙을 적용하고 실제 대상 맵을 불러옵니다.
         /// </summary>
-        /// <param name="mapUid"></param>
+        /// <param name="mapUid">입장 규칙 적용 전 요청 맵 UID입니다.</param>
         public void LoadMap(int mapUid = 0)
         {
             if (IsPossibleLoad() != true)
@@ -284,13 +287,16 @@ namespace GGemCo2DCore
                 return;
             }
 
-            mapUid = ResolveMapEntryTargetMapUid(mapUid);
+            int requestMapUid = mapUid;
+            int targetMapUid = ResolveMapEntryTargetMapUid(requestMapUid);
             CancelCutsceneBeforeMapLoad();
             _sceneGame.cameraManager?.HandleMapLoadStarted();
             // GcLogger.Log("LoadMap start");
             Reset();
             _currentState = MapConstants.State.FadeIn;
-            _currentMapUid = mapUid;
+            // 월드맵 연결은 요청 UID를, 실제 맵 로딩과 런타임 시스템은 치환된 대상 UID를 사용합니다.
+            _currentMapRequestUid = requestMapUid;
+            _currentMapUid = targetMapUid;
 
             OnLoadStartMap?.Invoke();
 
@@ -1346,7 +1352,21 @@ namespace GGemCo2DCore
             _mapTileCommon.ActiveAllCharacters();
         }
 
+        /// <summary>
+        /// 현재 실제로 로드 중이거나 로드된 맵 UID를 반환합니다.
+        /// </summary>
+        /// <returns>입장 규칙이 적용된 실제 맵 UID입니다.</returns>
         public int GetCurrentMapUid() => _currentMapUid;
+
+        /// <summary>
+        /// 현재 맵을 불러올 때 입장 규칙 적용 전에 요청된 맵 UID를 반환합니다.
+        /// 월드맵 그래프처럼 원본 노드 연결 관계를 판정해야 하는 시스템에서 사용합니다.
+        /// </summary>
+        /// <returns>입장 규칙 적용 전 요청 맵 UID입니다. 요청 기록이 없으면 실제 맵 UID를 반환합니다.</returns>
+        public int GetCurrentMapRequestUid()
+        {
+            return _currentMapRequestUid > 0 ? _currentMapRequestUid : _currentMapUid;
+        }
 
         /// <summary>
         /// 현재 로드 중이거나 로드된 맵 테이블 데이터를 반환합니다.

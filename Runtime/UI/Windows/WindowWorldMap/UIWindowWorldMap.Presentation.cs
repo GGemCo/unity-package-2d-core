@@ -166,8 +166,10 @@ namespace GGemCo2DCore
                 return false;
             }
 
-            int currentMapUid = _mapManager.GetCurrentMapUid();
-            return _worldMapDefinition.TryGetNodeByMapUid(currentMapUid, out WorldMapNodeDefinition currentNode) &&
+            int currentMapRequestUid = _mapManager.GetCurrentMapRequestUid();
+            return _worldMapDefinition.TryGetNodeByMapUid(
+                       currentMapRequestUid,
+                       out WorldMapNodeDefinition currentNode) &&
                    _worldMapDefinition.IsAdjacentNode(currentNode.NodeId, node.NodeId);
         }
 
