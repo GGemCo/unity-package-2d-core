@@ -148,10 +148,7 @@ namespace GGemCo2DCore
         /// </param>
         private void EndInternal(bool restorePreviousState = true)
         {
-            bool canRestorePreviousState = restorePreviousState &&
-                                           _character != null &&
-                                           !_character.IsStatusDead() &&
-                                           !_character.IsDeathPending;
+            bool canRestorePreviousState = CanRestorePreviousState(restorePreviousState);
 
             if (_savedAnimationSpeedValid && _animationController != null)
             {
@@ -184,6 +181,32 @@ namespace GGemCo2DCore
             _savedStatusValid = false;
             _savedAnimationSpeedValid = false;
             _savedPhysicsValid = false;
+        }
+
+        /// <summary>
+        /// Hit Stop 시작 이후 캐릭터 상태가 외부 행동으로 변경되지 않았는지 확인하여
+        /// 저장된 상태와 물리 속도를 복원해도 안전한지 판단합니다.
+        /// </summary>
+        /// <param name="restorePreviousState">호출자가 이전 상태 복원을 요청했는지 여부입니다.</param>
+        /// <returns>Hit Stop 시작 당시 상태와 물리 속도를 복원해도 안전하면 <see langword="true"/>입니다.</returns>
+        private bool CanRestorePreviousState(bool restorePreviousState)
+        {
+            if (!restorePreviousState ||
+                _character == null ||
+                _character.IsStatusDead() ||
+                _character.IsDeathPending)
+            {
+                return false;
+            }
+
+            if (!_savedStatusValid)
+            {
+                return true;
+            }
+
+            // Hit Stop 도중 자동 이동이나 강제 행동이 새 상태를 설정했다면,
+            // 오래된 상태와 속도를 복원하여 최신 행동을 덮어쓰지 않습니다.
+            return _character.GetCurrentStatus() == _savedStatus;
         }
 
         private void RestoreStatus(CharacterConstants.CharacterStatus status)
