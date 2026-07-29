@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using UnityEngine;
 
 namespace GGemCo2DCore
@@ -175,8 +175,14 @@ namespace GGemCo2DCore
         public int Uid { get; set; }
         public int Level { get; set; }
     }
+    /// <summary>
+    /// AnimationEvent에서 재생할 사운드 식별자를 전달하는 JSON 데이터입니다.
+    /// </summary>
     public class StruckAnimationEventSound
     {
+        /// <summary>
+        /// 재생할 대표 사운드 Uid입니다.
+        /// </summary>
         public int Uid { get; set; }
     }
     public class StruckAnimationEventAttack

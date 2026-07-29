@@ -1,0 +1,18 @@
+<linker>
+  <!--
+    Newtonsoft.Json이 리플렉션으로 생성하고 값을 대입하는 AnimationEvent DTO입니다.
+    Android IL2CPP Managed Code Stripping에서 기본 생성자와 setter가 제거되지 않도록 전체 멤버를 보존합니다.
+  -->
+  <assembly fullname="GGemCoScripts">
+    <type fullname="GGemCo2DCore.StruckAnimationEventComplete" preserve="all" />
+    <type fullname="GGemCo2DCore.StruckAnimationEventVfx" preserve="all" />
+    <type fullname="GGemCo2DCore.StruckAnimationEventCameraShake" preserve="all" />
+    <type fullname="GGemCo2DCore.StruckAnimationEventSkill" preserve="all" />
+    <type fullname="GGemCo2DCore.StruckAnimationEventSound" preserve="all" />
+    <type fullname="GGemCo2DCore.StruckAnimationEventAttack" preserve="all" />
+    <type fullname="GGemCo2DCore.StruckAnimationEventBackstepTrail" preserve="all" />
+    <type fullname="GGemCo2DCore.StruckAnimationEventCrowdControl" preserve="all" />
+    <type fullname="GGemCo2DCore.StruckAnimationEventMotion" preserve="all" />
+    <type fullname="GGemCo2DCore.StruckAnimationEventAfterimageSnapshot" preserve="all" />
+  </assembly>
+</linker>

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -184,6 +184,10 @@ namespace GGemCo2DCore
             payloadToken[nameof(StruckAnimationEventVfx.Uid)] = uidToken?.DeepClone() ?? JValue.CreateNull();
         }
 
+        /// <summary>
+        /// 애니메이션 이벤트로 전달된 사운드 JSON을 해석해 대표 사운드를 재생합니다.
+        /// </summary>
+        /// <param name="json">사운드 Uid를 포함한 AnimationEvent JSON 문자열입니다.</param>
         public void OnAnimationEventSound(string json)
         {
             try
