@@ -461,7 +461,9 @@ namespace GGemCo2DCore
                 return;
             }
 
+            bool wasCurrentPageFullyRevealed = _messagePlayer.IsCurrentPageFullyRevealed;
             _messagePlayer.Tick(textMessage, GetRevealDeltaTime());
+            StopTypewriterSoundWhenRevealCompleted(wasCurrentPageFullyRevealed);
             RefreshChoiceButtonsVisibility();
 
             if (dialogueVisualMode == DialogueVisualMode.SpeechBubble)
@@ -498,6 +500,7 @@ namespace GGemCo2DCore
             }
 
             InteractionDialogueAdvanceResult result = _messagePlayer.Advance(textMessage);
+            SynchronizeTypewriterSoundAfterAdvance(result);
             if (result != InteractionDialogueAdvanceResult.None)
             {
                 RefreshChoiceButtonsVisibility();
@@ -898,6 +901,7 @@ namespace GGemCo2DCore
         /// <param name="revealImmediately">true이면 현재 페이지를 즉시 모두 노출합니다.</param>
         private void ApplyDialogueMessage(string message, bool revealImmediately)
         {
+            ApplyProjectTypewriterSoundDefaults();
             if (textMessage == null)
             {
                 return;
@@ -909,6 +913,7 @@ namespace GGemCo2DCore
                 _messagePlayer.RevealCurrentPage(textMessage);
             }
 
+            TryStartTypewriterSound();
             _lastKnownVisibleCharacters = textMessage.maxVisibleCharacters;
             _lastKnownEnterIndicatorVisibleCharacters = -1;
 

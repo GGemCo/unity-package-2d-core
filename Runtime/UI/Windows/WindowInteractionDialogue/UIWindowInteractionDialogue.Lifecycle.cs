@@ -218,6 +218,7 @@ namespace GGemCo2DCore
         /// </summary>
         private void HandleDialogueHidden()
         {
+            StopTypewriterSound();
             CancelDeferredInitialReveal();
             _dialogueLoadVersion++;
             _isLoadingDialogue = false;
