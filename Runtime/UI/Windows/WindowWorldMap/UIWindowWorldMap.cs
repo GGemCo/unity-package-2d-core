@@ -33,6 +33,9 @@ namespace GGemCo2DCore
         [Tooltip("이동하기 버튼")]
         [SerializeField] private Button buttonWarp;
 
+        [Tooltip("취소하기 버튼")]
+        [SerializeField] private Button buttonCancel;
+
         [Tooltip("일반 연결선 색상")]
         [SerializeField] private Color edgeColorNormal = new Color(0.72f, 0.72f, 0.72f, 1f);
 

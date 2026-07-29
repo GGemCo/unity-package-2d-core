@@ -41,6 +41,7 @@ namespace GGemCo2DCore
 
             BuildEdgeLines();
             buttonWarp?.onClick.AddListener(OnClickWarp);
+            buttonCancel?.onClick.AddListener(OnClickCancel);
         }
 
         /// <summary>
@@ -72,6 +73,7 @@ namespace GGemCo2DCore
         private void OnDestroy()
         {
             buttonWarp?.onClick.RemoveAllListeners();
+            buttonCancel?.onClick.RemoveAllListeners();
         }
 
         /// <summary>

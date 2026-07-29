@@ -18,6 +18,12 @@
             Show(false);
         }
 
+        private void OnClickCancel()
+        {
+            Show(false);
+            SceneGame.uIWindowManager.ShowWindow(UIWindowConstants.WindowUid.TimingBattleExit, true);
+        }
+
         /// <summary>
         /// 지정한 월드맵 노드로 현재 플레이어 위치에서 이동할 수 있는지 표시 정책 기준으로 확인합니다.
         /// </summary>
