@@ -123,7 +123,6 @@ namespace GGemCo2DCore
         {
             StruckTableMap compatibilityMapData = new StruckTableMap
             {
-                BgmUid = legacyBgmUid,
                 BgmUids = legacyBgmUid > 0 ? new[] { legacyBgmUid } : Array.Empty<int>(),
             };
             return PrepareAsync(mapUid, compatibilityMapData);

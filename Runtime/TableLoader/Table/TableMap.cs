@@ -24,12 +24,6 @@ namespace GGemCo2DCore
         public int ResumeMapUid;
 
         /// <summary>
-        /// 기존 단일 BGM 설정과의 하위 호환성을 위한 대표 sound UID입니다.
-        /// <see cref="BgmUids"/>가 비어 있을 때만 복수 BGM 후보에 포함됩니다.
-        /// </summary>
-        public int BgmUid;
-
-        /// <summary>
         /// 맵 진입 시 무작위로 하나를 선택하여 재생할 BGM sound UID 목록입니다.
         /// </summary>
         public int[] BgmUids = System.Array.Empty<int>();
