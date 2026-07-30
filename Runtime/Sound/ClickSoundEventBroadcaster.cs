@@ -5,10 +5,24 @@ using UnityEngine.EventSystems;
 namespace GGemCo2DCore
 {
     /// <summary>
-    /// Button/Toggle 공용 클릭 사운드 브로드캐스터
-    /// - Button: onClick에 반응
-    /// - Toggle: onValueChanged에 반응(옵션으로 On/Off 선택)
-    /// - triggerOnlyOnUserInteraction=true면 IPointerClick/ISubmit 기반으로만 재생
+    /// 클릭 사운드를 발생시킬 UI 상호작용 대상 종류입니다.
+    /// </summary>
+    public enum ClickSoundInteractionTargetMode
+    {
+        /// <summary>
+        /// 같은 오브젝트의 Button 또는 Toggle 활성 이벤트를 기준으로 클릭을 승인합니다.
+        /// </summary>
+        Selectable = 0,
+
+        /// <summary>
+        /// Button이나 Toggle이 없는 오브젝트의 포인터 클릭을 기준으로 클릭을 승인합니다.
+        /// </summary>
+        PointerClick = 1,
+    }
+
+    /// <summary>
+    /// Button, Toggle 및 포인터 클릭 UI에서 공용으로 사용하는 클릭 사운드 브로드캐스터입니다.
+    /// Selectable 모드는 실제 제어 활성 이벤트를 확인하고, PointerClick 모드는 유효한 왼쪽 포인터 클릭에 반응합니다.
     /// </summary>
     [DisallowMultipleComponent]
     public class ClickSoundEventBroadcaster : MonoBehaviour, IClickSoundEventTrigger,
@@ -30,9 +44,13 @@ namespace GGemCo2DCore
         [Tooltip("Toggle일 때 해제(Off)될 때도 재생")]
         public bool playOnToggleOff = false;
 
-        [Header("Trigger Mode")]
-        [Tooltip("사용자 상호작용(클릭/Submit)에만 반응. 프로그래매틱 변경에는 반응하지 않음")]
-        [SerializeField] private bool triggerOnlyOnUserInteraction = true;
+        [Header("Interaction Target")]
+        [Tooltip("Selectable은 Button/Toggle 활성 이벤트를 사용하고, PointerClick은 포인터 클릭 이벤트를 직접 사용합니다.")]
+        [SerializeField] private ClickSoundInteractionTargetMode interactionTargetMode =
+            ClickSoundInteractionTargetMode.Selectable;
+
+        // 사용자 상호작용(클릭/Submit)에만 반응. 프로그래매틱 변경에는 반응하지 않음
+        private const bool TriggerOnlyOnUserInteraction = true;
 
         private Button _button;
         private Toggle _toggle;
@@ -93,12 +111,13 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// Button과 Toggle이 실제 활성 동작을 발생시킨 시점을 확인하기 위한 이벤트를 중복 없이 구독합니다.
+        /// Selectable 모드에서 Button과 Toggle이 실제 활성 동작을 발생시킨 시점을 확인하기 위한 이벤트를 중복 없이 구독합니다.
         /// 사용자 입력 전용 모드에서는 승인 사실만 기록하고, 일반 모드에서는 해당 이벤트에서 바로 재생합니다.
         /// </summary>
         private void RegisterControlEvents()
         {
-            if (_controlEventsRegistered)
+            if (_controlEventsRegistered ||
+                interactionTargetMode != ClickSoundInteractionTargetMode.Selectable)
             {
                 return;
             }
@@ -152,17 +171,16 @@ namespace GGemCo2DCore
         public SoundConstants.UIButtonType GetSoundType() => type;
 
         /// <summary>
-        /// 포인터를 누른 시점에 Button 또는 Toggle이 입력 가능한 상태였는지 기록합니다.
-        /// 클릭 콜백이 이후 interactable을 변경하더라도 시작 시점의 유효성을 보존하기 위해 사용합니다.
+        /// 포인터를 누른 시점에 현재 대상 모드가 입력 가능한 상태였는지 기록합니다.
+        /// Selectable 모드에서는 interactable 상태를 검사하고, PointerClick 모드에서는 활성 컴포넌트 여부를 검사합니다.
         /// </summary>
         /// <param name="eventData">포인터 식별자와 버튼 정보를 포함한 이벤트 데이터입니다.</param>
         public void OnPointerDown(PointerEventData eventData)
         {
             ResetPointerInteractionState();
-            if (!triggerOnlyOnUserInteraction ||
-                eventData == null ||
+            if (eventData == null ||
                 eventData.button != PointerEventData.InputButton.Left ||
-                !CanBeginUserInteraction())
+                !CanBeginPointerInteraction())
             {
                 return;
             }
@@ -172,14 +190,14 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 사용자 포인터 클릭을 받아 활성화된 Button 또는 Toggle의 클릭 사운드를 요청합니다.
-        /// Unity Button/Toggle과 동일하게 왼쪽 버튼 입력만 유효한 클릭으로 처리합니다.
+        /// 사용자 포인터 클릭을 받아 현재 대상 모드에 맞는 클릭 사운드를 요청합니다.
+        /// PointerClick 모드는 같은 포인터의 누름과 클릭이 정상적으로 이어진 경우에 직접 발행합니다.
+        /// Selectable 모드는 실제 Button 또는 Toggle 활성 이벤트까지 확인하여 중복 발행을 방지합니다.
         /// </summary>
         /// <param name="eventData">포인터 버튼 정보를 포함한 이벤트 데이터입니다.</param>
         public void OnPointerClick(PointerEventData eventData)
         {
-            if (!triggerOnlyOnUserInteraction ||
-                eventData == null ||
+            if (eventData == null ||
                 eventData.button != PointerEventData.InputButton.Left)
             {
                 return;
@@ -190,9 +208,18 @@ namespace GGemCo2DCore
                 _acceptedPointerId == eventData.pointerId;
             bool soundAlreadyDispatched = _acceptedInteractionSoundDispatched;
             ResetPointerInteractionState();
-            if (!pointerInteractionAccepted ||
-                soundAlreadyDispatched ||
-                !WasControlActivationAccepted())
+            if (!pointerInteractionAccepted || soundAlreadyDispatched)
+            {
+                return;
+            }
+
+            if (interactionTargetMode == ClickSoundInteractionTargetMode.PointerClick)
+            {
+                DispatchClickSound();
+                return;
+            }
+
+            if (!TriggerOnlyOnUserInteraction || !WasControlActivationAccepted())
             {
                 return;
             }
@@ -216,7 +243,8 @@ namespace GGemCo2DCore
         /// <param name="eventData">Submit 입력 이벤트 데이터입니다.</param>
         public void OnSubmit(BaseEventData eventData)
         {
-            if (!triggerOnlyOnUserInteraction)
+            if (interactionTargetMode != ClickSoundInteractionTargetMode.Selectable ||
+                !TriggerOnlyOnUserInteraction)
             {
                 return;
             }
@@ -246,7 +274,7 @@ namespace GGemCo2DCore
         private void OnButtonActivated()
         {
             _lastControlActivationFrame = Time.frameCount;
-            if (!triggerOnlyOnUserInteraction)
+            if (!TriggerOnlyOnUserInteraction)
             {
                 DispatchClickSound();
                 return;
@@ -273,7 +301,7 @@ namespace GGemCo2DCore
                 return;
             }
 
-            if (!triggerOnlyOnUserInteraction)
+            if (!TriggerOnlyOnUserInteraction)
             {
                 DispatchClickSound();
                 return;
@@ -307,6 +335,21 @@ namespace GGemCo2DCore
                    _selectable != null &&
                    _selectable.IsActive() &&
                    _selectable.IsInteractable();
+        }
+
+        /// <summary>
+        /// 현재 대상 모드에서 새로운 포인터 상호작용을 시작할 수 있는지 확인합니다.
+        /// PointerClick 모드는 EventSystem이 전달한 포인터 이벤트를 신뢰하고 컴포넌트 활성 상태만 검사합니다.
+        /// </summary>
+        /// <returns>현재 포인터 상호작용을 시작할 수 있으면 <see langword="true"/>입니다.</returns>
+        private bool CanBeginPointerInteraction()
+        {
+            if (interactionTargetMode == ClickSoundInteractionTargetMode.PointerClick)
+            {
+                return isActiveAndEnabled;
+            }
+
+            return TriggerOnlyOnUserInteraction && CanBeginUserInteraction();
         }
 
         /// <summary>
@@ -352,8 +395,8 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 이미 승인된 Button 또는 Toggle 동작에 대한 클릭 사운드 이벤트를 발행합니다.
-        /// 승인 후 콜백에서 interactable이 변경될 수 있으므로 이 단계에서는 현재 상태를 다시 검사하지 않습니다.
+        /// 이미 승인된 UI 상호작용에 대한 클릭 사운드 이벤트를 발행합니다.
+        /// 승인 이후 콜백에서 오브젝트 상태가 변경될 수 있으므로 이 단계에서는 현재 상태를 다시 검사하지 않습니다.
         /// </summary>
         private void DispatchClickSound()
         {
