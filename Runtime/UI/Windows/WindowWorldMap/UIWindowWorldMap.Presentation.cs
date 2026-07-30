@@ -199,19 +199,18 @@ namespace GGemCo2DCore
             WorldMapNodeDefinition node,
             bool includeCurrentMap)
         {
-            if (_mapManager == null || _worldMapDefinition == null || node == null)
+            if (_mapManager == null || !IsWarpDestinationListable(node))
             {
                 return false;
+            }
+
+            // 현재 위치는 저장된 방문·활성 상태가 아직 갱신되지 않았더라도 목록에서 확인할 수 있어야 합니다.
+            if (IsCurrentMapNode(node))
+            {
+                return includeCurrentMap;
             }
 
             if (!IsNodeVisible(node) || IsWorldMapNodeInactive(node))
-            {
-                return false;
-            }
-
-            if (!WorldMapWindowPresentationOptions.ContainsNodeType(
-                    _activePresentationOptions.warpableNodeTypes,
-                    node.NodeType))
             {
                 return false;
             }
@@ -221,13 +220,34 @@ namespace GGemCo2DCore
                 return false;
             }
 
-            bool isCurrentMap = IsCurrentMapNode(node);
-            if (isCurrentMap)
-            {
-                return includeCurrentMap;
-            }
-
             return !_activePresentationOptions.requireAdjacencyToWarp || IsAdjacentToCurrentMapNode(node);
+        }
+
+        /// <summary>
+        /// 지정한 노드가 현재 월드맵 표시 정책의 워프 목적지 목록에 포함될 수 있는지 확인합니다.
+        /// 발견·방문·활성 상태는 검사하지 않으므로 파생 UI에서 미발견 목적지를 별도로 표시할 때 사용합니다.
+        /// </summary>
+        /// <param name="node">워프 목적지 목록 포함 여부를 확인할 월드맵 노드입니다.</param>
+        /// <returns>현재 표시 정책의 워프 대상 노드 타입이면 <see langword="true"/>입니다.</returns>
+        protected bool IsWarpDestinationListable(WorldMapNodeDefinition node)
+        {
+            return _worldMapDefinition != null &&
+                   node != null &&
+                   _activePresentationOptions != null &&
+                   WorldMapWindowPresentationOptions.ContainsNodeType(
+                       _activePresentationOptions.warpableNodeTypes,
+                       node.NodeType);
+        }
+
+        /// <summary>
+        /// 지정한 워프 목적지 노드가 현재 플레이어가 있는 맵인지 확인합니다.
+        /// 파생 워프 UI가 현재 위치와 다른 목적지의 표시 상태를 구분할 때 사용합니다.
+        /// </summary>
+        /// <param name="node">현재 위치 여부를 확인할 월드맵 노드입니다.</param>
+        /// <returns>현재 플레이어가 있는 맵 노드이면 <see langword="true"/>입니다.</returns>
+        protected bool IsCurrentWarpDestination(WorldMapNodeDefinition node)
+        {
+            return IsCurrentMapNode(node);
         }
 
         /// <summary>
