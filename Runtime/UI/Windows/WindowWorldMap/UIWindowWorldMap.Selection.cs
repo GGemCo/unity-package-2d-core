@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 namespace GGemCo2DCore
 {
@@ -79,11 +79,13 @@ namespace GGemCo2DCore
         protected UIIconWorldMap SelectedWorldMapIcon => _selectedUIIconWorldMap;
 
         /// <summary>
-        /// 월드맵 아이콘 선택 상태가 변경되었을 때 파생 창이 후처리할 수 있는 확장 지점입니다.
+        /// 월드맵 아이콘 선택 상태가 변경되었을 때 이동 버튼 상태를 갱신하고,
+        /// 파생 창이 추가 후처리를 연결할 수 있는 확장 지점을 제공합니다.
         /// </summary>
         /// <param name="icon">현재 선택된 월드맵 아이콘입니다. 선택이 해제되면 null입니다.</param>
         protected virtual void OnWorldMapIconSelectionChanged(UIIconWorldMap icon)
         {
+            RefreshWarpButtonInteractable(icon);
         }
 
         /// <summary>

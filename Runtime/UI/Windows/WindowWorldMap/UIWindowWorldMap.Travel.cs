@@ -1,4 +1,4 @@
-﻿namespace GGemCo2DCore
+namespace GGemCo2DCore
 {
     /// <summary>
     /// UIWindowWorldMap의 맵 이동 판정 책임을 분리한 partial 클래스입니다.
@@ -32,6 +32,24 @@
         private bool CanMoveToNode(WorldMapNodeDefinition node)
         {
             return CanWarpToNode(node);
+        }
+
+        /// <summary>
+        /// 현재 선택된 월드맵 아이콘이 실제 이동 가능한 목적지인지에 따라 이동 버튼 상태를 갱신합니다.
+        /// 현재 맵, 선택 없음, 표시 정책상 이동 불가능한 노드에서는 버튼을 비활성화합니다.
+        /// </summary>
+        /// <param name="icon">현재 선택된 월드맵 아이콘입니다. 선택이 없으면 null입니다.</param>
+        private void RefreshWarpButtonInteractable(UIIconWorldMap icon)
+        {
+            if (buttonWarp == null)
+            {
+                return;
+            }
+
+            buttonWarp.interactable =
+                icon != null &&
+                !IsCurrentMapIcon(icon) &&
+                CanMoveToNode(icon.NodeDefinition);
         }
 
         /// <summary>

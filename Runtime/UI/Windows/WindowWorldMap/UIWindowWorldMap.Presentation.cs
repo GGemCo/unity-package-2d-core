@@ -185,12 +185,26 @@ namespace GGemCo2DCore
         /// <returns>정책상 이동 가능한 노드이면 true입니다.</returns>
         private bool CanWarpToNode(WorldMapNodeDefinition node)
         {
+            return IsWarpDestinationAvailable(node, false);
+        }
+
+        /// <summary>
+        /// 지정한 노드가 현재 월드맵 표시 정책에서 워프 목적지로 노출 가능한지 확인합니다.
+        /// 목록 표시에서는 현재 맵을 포함할 수 있고, 실제 이동 판정에서는 현재 맵을 제외할 수 있습니다.
+        /// </summary>
+        /// <param name="node">워프 목적지 가능 여부를 확인할 월드맵 노드입니다.</param>
+        /// <param name="includeCurrentMap">현재 플레이어가 있는 맵도 목적지 목록에 포함할지 여부입니다.</param>
+        /// <returns>현재 표시 정책에서 워프 목적지로 사용할 수 있으면 <see langword="true"/>입니다.</returns>
+        protected bool IsWarpDestinationAvailable(
+            WorldMapNodeDefinition node,
+            bool includeCurrentMap)
+        {
             if (_mapManager == null || _worldMapDefinition == null || node == null)
             {
                 return false;
             }
 
-            if (!IsNodeVisible(node) || IsWorldMapNodeInactive(node) || IsCurrentMapNode(node))
+            if (!IsNodeVisible(node) || IsWorldMapNodeInactive(node))
             {
                 return false;
             }
@@ -205,6 +219,12 @@ namespace GGemCo2DCore
             if (_activePresentationOptions.requireVisitedToWarp && !IsWorldMapNodeVisited(node))
             {
                 return false;
+            }
+
+            bool isCurrentMap = IsCurrentMapNode(node);
+            if (isCurrentMap)
+            {
+                return includeCurrentMap;
             }
 
             return !_activePresentationOptions.requireAdjacencyToWarp || IsAdjacentToCurrentMapNode(node);
