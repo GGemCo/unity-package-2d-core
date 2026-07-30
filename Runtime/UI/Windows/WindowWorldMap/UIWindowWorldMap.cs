@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -104,6 +104,9 @@ namespace GGemCo2DCore
         private string _requestedBackgroundAddress;
         private WorldMapDragController _dragController;
         private int _selectionCenteringRequestId;
+        private WorldMapWindowPresentationOptions _activePresentationOptions;
+        private WorldMapWindowMode _nextPresentationMode;
+        private bool _hasNextPresentationMode;
 
         /// <summary>현재 윈도우가 표시 중인 월드맵 정의입니다.</summary>
         public WorldMapDefinition WorldMapDefinition => _worldMapDefinition;

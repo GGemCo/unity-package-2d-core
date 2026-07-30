@@ -491,6 +491,13 @@ namespace GGemCo2DCore
                 return;
             }
 
+            if (targetWindowUid == UIWindowConstants.WindowUid.WorldMap)
+            {
+                UIWindowWorldMap worldMapWindow =
+                    _sceneGame.uIWindowManager.GetUIWindowByUid<UIWindowWorldMap>(targetWindowUid);
+                worldMapWindow?.SetNextPresentationMode(WorldMapWindowMode.MapClearExit);
+            }
+
             _pendingDestinationWindowUid = windowUid;
             _sceneGame.uIWindowManager.ShowWindowWhenAllowed(
                 targetWindowUid,
@@ -538,6 +545,15 @@ namespace GGemCo2DCore
             _sceneGame?.uIWindowManager?.CancelDeferredWindowVisibilityRequest(
                 (UIWindowConstants.WindowUid)_pendingDestinationWindowUid,
                 this);
+
+            if (_pendingDestinationWindowUid == (int)UIWindowConstants.WindowUid.WorldMap)
+            {
+                UIWindowWorldMap worldMapWindow =
+                    _sceneGame?.uIWindowManager?.GetUIWindowByUid<UIWindowWorldMap>(
+                        UIWindowConstants.WindowUid.WorldMap);
+                worldMapWindow?.CancelNextPresentationMode(WorldMapWindowMode.MapClearExit);
+            }
+
             _pendingDestinationWindowUid = 0;
         }
 

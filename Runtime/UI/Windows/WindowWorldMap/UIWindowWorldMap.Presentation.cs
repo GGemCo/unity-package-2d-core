@@ -33,6 +33,62 @@ namespace GGemCo2DCore
             {
                 presentationOptions.ApplyPreset(defaultMode);
             }
+
+            _activePresentationOptions ??= presentationOptions;
+        }
+
+        /// <summary>
+        /// 다음번 월드맵 표시 한 번에 적용할 표시 정책 모드를 예약합니다.
+        /// 맵 클리어처럼 같은 Window UID를 다른 진입 목적에 맞게 표시할 때 사용합니다.
+        /// </summary>
+        /// <param name="mode">다음 표시에서 사용할 월드맵 표시 정책 모드입니다.</param>
+        public void SetNextPresentationMode(WorldMapWindowMode mode)
+        {
+            _nextPresentationMode = mode;
+            _hasNextPresentationMode = true;
+        }
+
+        /// <summary>
+        /// 지정한 모드로 예약된 다음 표시 정책을 취소합니다.
+        /// 지연 표시 요청이 취소된 뒤 해당 정책이 다른 월드맵 오픈에 남는 것을 방지합니다.
+        /// </summary>
+        /// <param name="mode">취소할 예약 표시 정책 모드입니다.</param>
+        /// <returns>일치하는 예약 표시 정책을 취소했으면 <see langword="true"/>를 반환합니다.</returns>
+        public bool CancelNextPresentationMode(WorldMapWindowMode mode)
+        {
+            if (!_hasNextPresentationMode || _nextPresentationMode != mode)
+            {
+                return false;
+            }
+
+            _hasNextPresentationMode = false;
+            _nextPresentationMode = default;
+            return true;
+        }
+
+        /// <summary>
+        /// 현재 월드맵 오픈에 적용할 표시 정책을 확정하고 일회성 예약을 소비합니다.
+        /// 예약이 없으면 Inspector에 직렬화된 기본 표시 정책을 사용합니다.
+        /// </summary>
+        private void ApplyPresentationOptionsForShow()
+        {
+            EnsurePresentationOptions();
+            if (_hasNextPresentationMode)
+            {
+                _activePresentationOptions =
+                    WorldMapWindowPresentationOptions.Create(_nextPresentationMode);
+                _hasNextPresentationMode = false;
+                _nextPresentationMode = default;
+            }
+            else
+            {
+                _activePresentationOptions = presentationOptions;
+            }
+
+            if (buttonCancel != null)
+            {
+                buttonCancel.gameObject.SetActive(_activePresentationOptions.showCancelButton);
+            }
         }
 
         /// <summary>
@@ -44,7 +100,7 @@ namespace GGemCo2DCore
         {
             return node != null &&
                    WorldMapWindowPresentationOptions.ContainsNodeType(
-                       presentationOptions.emphasizedNodeTypes,
+                       _activePresentationOptions.emphasizedNodeTypes,
                        node.NodeType);
         }
 
@@ -57,7 +113,7 @@ namespace GGemCo2DCore
         {
             return ShouldEmphasizeNode(node)
                 ? 1f
-                : Mathf.Clamp01(presentationOptions.dimmedNodeAlpha);
+                : Mathf.Clamp01(_activePresentationOptions.dimmedNodeAlpha);
         }
 
         /// <summary>
@@ -111,7 +167,7 @@ namespace GGemCo2DCore
         {
             if (node == null ||
                 !WorldMapWindowPresentationOptions.ContainsNodeType(
-                    presentationOptions.selectableNodeTypes,
+                    _activePresentationOptions.selectableNodeTypes,
                     node.NodeType))
             {
                 return false;
@@ -140,18 +196,18 @@ namespace GGemCo2DCore
             }
 
             if (!WorldMapWindowPresentationOptions.ContainsNodeType(
-                    presentationOptions.warpableNodeTypes,
+                    _activePresentationOptions.warpableNodeTypes,
                     node.NodeType))
             {
                 return false;
             }
 
-            if (presentationOptions.requireVisitedToWarp && !IsWorldMapNodeVisited(node))
+            if (_activePresentationOptions.requireVisitedToWarp && !IsWorldMapNodeVisited(node))
             {
                 return false;
             }
 
-            return !presentationOptions.requireAdjacencyToWarp || IsAdjacentToCurrentMapNode(node);
+            return !_activePresentationOptions.requireAdjacencyToWarp || IsAdjacentToCurrentMapNode(node);
         }
 
         /// <summary>
@@ -191,7 +247,7 @@ namespace GGemCo2DCore
         /// <returns>연결선을 보여줄 수 있으면 true입니다.</returns>
         private bool ShouldShowEdge(WorldMapEdgeDefinition edge)
         {
-            return edge != null && !presentationOptions.hideAllEdges;
+            return edge != null && !_activePresentationOptions.hideAllEdges;
         }
 
         /// <summary>
@@ -200,7 +256,7 @@ namespace GGemCo2DCore
         /// <returns>선택 연결선 강조를 사용하면 true입니다.</returns>
         private bool ShouldHighlightSelectedEdges()
         {
-            return presentationOptions.highlightSelectedEdges;
+            return _activePresentationOptions.highlightSelectedEdges;
         }
 
         /// <summary>
@@ -211,9 +267,9 @@ namespace GGemCo2DCore
         private bool ShouldShowNodePointState(WorldMapNodeDefinition node)
         {
             return node != null &&
-                   presentationOptions.showNodePointState &&
+                   _activePresentationOptions.showNodePointState &&
                    WorldMapWindowPresentationOptions.ContainsNodeType(
-                       presentationOptions.pointStateNodeTypes,
+                       _activePresentationOptions.pointStateNodeTypes,
                        node.NodeType);
         }
     }

@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 namespace GGemCo2DCore
 {
@@ -82,6 +82,12 @@ namespace GGemCo2DCore
         /// <param name="show">창을 표시하면 true, 숨기면 false입니다.</param>
         public override void OnShow(bool show)
         {
+            if (show)
+            {
+                // 생명주기 이벤트 구독자가 갱신된 표시 정책을 확인할 수 있도록 공용 이벤트 발행 전에 적용합니다.
+                ApplyPresentationOptionsForShow();
+            }
+
             base.OnShow(show);
             if (!show)
             {

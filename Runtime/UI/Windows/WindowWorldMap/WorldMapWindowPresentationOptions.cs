@@ -16,6 +16,9 @@ namespace GGemCo2DCore
 
         /// <summary>Inspector에서 직접 조합한 사용자 정의 표시 정책입니다.</summary>
         Custom = 2,
+
+        /// <summary>맵 클리어 종료 흐름에서 표시되는 월드맵 화면입니다.</summary>
+        MapClearExit = 3,
     }
 
     /// <summary>
@@ -58,6 +61,10 @@ namespace GGemCo2DCore
         /// <summary>현재 적용할 표시 정책의 대표 모드입니다.</summary>
         [Tooltip("현재 적용할 표시 정책의 대표 모드입니다. Custom은 아래 값을 직접 조합할 때 사용합니다.")]
         public WorldMapWindowMode mode = WorldMapWindowMode.Default;
+
+        /// <summary>취소하기 버튼을 표시할지 여부입니다.</summary>
+        [Tooltip("취소하기 버튼을 표시할지 여부입니다.")]
+        public bool showCancelButton = true;
 
         /// <summary>연결선을 모두 숨길지 여부입니다.</summary>
         [Tooltip("연결선을 모두 숨길지 여부입니다.")]
@@ -133,6 +140,9 @@ namespace GGemCo2DCore
                 case WorldMapWindowMode.Warp:
                     ApplyWarpPreset();
                     break;
+                case WorldMapWindowMode.MapClearExit:
+                    ApplyMapClearExitPreset();
+                    break;
                 default:
                     ApplyDefaultPreset();
                     break;
@@ -179,6 +189,7 @@ namespace GGemCo2DCore
         /// </summary>
         private void ApplyDefaultPreset()
         {
+            showCancelButton = true;
             hideAllEdges = false;
             highlightSelectedEdges = true;
             showNodePointState = true;
@@ -196,6 +207,7 @@ namespace GGemCo2DCore
         /// </summary>
         private void ApplyWarpPreset()
         {
+            showCancelButton = true;
             hideAllEdges = false;
             highlightSelectedEdges = false;
             showNodePointState = true;
@@ -206,6 +218,17 @@ namespace GGemCo2DCore
             warpableNodeTypes = WorldMapNodeTypeFilter.Rest;
             requireAdjacencyToWarp = false;
             requireVisitedToWarp = true;
+        }
+
+        /// <summary>
+        /// 맵 클리어 종료 월드맵 표시 정책 기본값을 적용합니다.
+        /// 일반 월드맵의 노드 및 이동 정책은 유지하고 이전 화면으로 돌아가는 취소 버튼만 숨깁니다.
+        /// </summary>
+        private void ApplyMapClearExitPreset()
+        {
+            ApplyDefaultPreset();
+            mode = WorldMapWindowMode.MapClearExit;
+            showCancelButton = false;
         }
     }
 }
