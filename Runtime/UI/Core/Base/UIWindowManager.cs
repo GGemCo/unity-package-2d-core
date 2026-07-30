@@ -128,15 +128,27 @@ namespace GGemCo2DCore
             _windowOrderService = new UIWindowOrderService(_windowRegistry, _windowTableBinder, () => windowKeys);
             _visibilityStateStack = new UIWindowVisibilityStateStack();
             _windowVisibilityService = new UIWindowVisibilityService(
-                windowUid => GetUIWindowByUid<UIWindow>(windowUid),
+                GetUIWindowByUidSilently,
                 GetManagedWindows,
                 _visibilityStateStack);
             _initialVisibilityService = new UIWindowInitialVisibilityService(GetManagedWindows);
             _slotActivationService = new UIWindowSlotActivationService(
                 windowUid => GetUIWindowByUid<UIWindow>(windowUid),
                 GetManagedWindows);
-            _iconTransferService = new UIWindowIconTransferService(windowUid => GetUIWindowByUid<UIWindow>(windowUid));
+            _iconTransferService = new UIWindowIconTransferService(GetUIWindowByUidSilently);
             _iconVisualPresenter = new UIWindowIconVisualPresenter();
+        }
+
+        /// <summary>
+        /// 내부 UI 서비스가 자체 실패 정책을 적용할 수 있도록 UIWindow를 오류 로그 없이 조회합니다.
+        /// </summary>
+        /// <param name="windowUid">조회할 UIWindow UID입니다.</param>
+        /// <returns>사용 가능한 UIWindow이며, 찾지 못하면 <see langword="null"/>입니다.</returns>
+        private UIWindow GetUIWindowByUidSilently(UIWindowConstants.WindowUid windowUid)
+        {
+            return TryGetUIWindowByUid(windowUid, out UIWindow uiWindow)
+                ? uiWindow
+                : null;
         }
 
         /// <summary>
@@ -473,6 +485,39 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// UID에 해당하는 UIWindow를 오류 로그 없이 지정 타입으로 조회합니다.
+        /// 선택적 UIWindow 확인이나 씬 종료 정리처럼 참조가 이미 파괴될 수 있는 경로에서 사용합니다.
+        /// </summary>
+        /// <typeparam name="T">반환받을 UIWindow 파생 타입입니다.</typeparam>
+        /// <param name="windowUid">조회할 UIWindow UID입니다.</param>
+        /// <param name="uiWindow">조회에 성공한 UIWindow입니다.</param>
+        /// <returns>사용 가능한 지정 타입의 UIWindow를 찾았으면 <see langword="true"/>입니다.</returns>
+        public bool TryGetUIWindowByUid<T>(
+            UIWindowConstants.WindowUid windowUid,
+            out T uiWindow) where T : UIWindow
+        {
+            EnsureServices();
+            uiWindow = null;
+
+            int uid = (int)windowUid;
+            if (uid <= 0 ||
+                !_windowTableBinder.TryGetWindowInfo(uid, out StruckTableWindow info) ||
+                !info.UseInGame)
+            {
+                return false;
+            }
+
+            UIWindow window = _windowRegistry.GetWindowReferenceByUid(uid);
+            if (window == null)
+            {
+                return false;
+            }
+
+            uiWindow = window as T;
+            return uiWindow != null;
+        }
+
+        /// <summary>
         /// 지정한 UIWindow 슬롯의 아이콘을 제거합니다.
         /// </summary>
         /// <param name="windowUid">아이콘을 제거할 UIWindow UID입니다.</param>
@@ -501,7 +546,7 @@ namespace GGemCo2DCore
         /// <returns>관리 중인 UIWindow이면 true입니다.</returns>
         public bool HasManagedWindow(UIWindowConstants.WindowUid windowUid)
         {
-            return GetUIWindowByUid<UIWindow>(windowUid) != null;
+            return TryGetUIWindowByUid(windowUid, out UIWindow _);
         }
 
         /// <summary>

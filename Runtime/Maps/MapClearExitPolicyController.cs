@@ -17,6 +17,7 @@ namespace GGemCo2DCore
         private bool _isEventRegistered;
         private bool _ignoreAliveMonstersForExecution;
         private int _pendingDestinationWindowUid;
+        private UIWindowWorldMap _pendingWorldMapWindow;
         private Coroutine _executeRoutine;
         private readonly MapClearMonsterSuspensionScope _monsterSuspensionScope = new();
 
@@ -476,7 +477,8 @@ namespace GGemCo2DCore
         /// <param name="windowUid">표시할 Window 테이블 UID입니다.</param>
         private void OpenDestinationWindow(int windowUid)
         {
-            if (windowUid <= 0 || _sceneGame?.uIWindowManager == null)
+            UIWindowManager windowManager = _sceneGame?.uIWindowManager;
+            if (windowUid <= 0 || windowManager == null)
             {
                 GcLogger.LogWarning(
                     $"맵 클리어 종료 UI를 열 수 없습니다. windowUid:{windowUid}");
@@ -484,22 +486,23 @@ namespace GGemCo2DCore
             }
 
             var targetWindowUid = (UIWindowConstants.WindowUid)windowUid;
-            if (!_sceneGame.uIWindowManager.HasManagedWindow(targetWindowUid))
+            if (!windowManager.HasManagedWindow(targetWindowUid))
             {
                 GcLogger.LogWarning(
                     $"맵 클리어 종료 UI가 UIWindowManager에 등록되어 있지 않습니다. windowUid:{windowUid}");
                 return;
             }
 
+            UIWindowWorldMap worldMapWindow = null;
             if (targetWindowUid == UIWindowConstants.WindowUid.WorldMap)
             {
-                UIWindowWorldMap worldMapWindow =
-                    _sceneGame.uIWindowManager.GetUIWindowByUid<UIWindowWorldMap>(targetWindowUid);
+                worldMapWindow = windowManager.GetUIWindowByUid<UIWindowWorldMap>(targetWindowUid);
                 worldMapWindow?.SetNextPresentationMode(WorldMapWindowMode.MapClearExit);
             }
 
             _pendingDestinationWindowUid = windowUid;
-            _sceneGame.uIWindowManager.ShowWindowWhenAllowed(
+            _pendingWorldMapWindow = worldMapWindow;
+            windowManager.ShowWindowWhenAllowed(
                 targetWindowUid,
                 true,
                 UIWindowConstants.UIWindowVisibilityApplyMode.Normal,
@@ -539,22 +542,33 @@ namespace GGemCo2DCore
         {
             if (_pendingDestinationWindowUid <= 0)
             {
+                _pendingWorldMapWindow = null;
                 return;
             }
 
-            _sceneGame?.uIWindowManager?.CancelDeferredWindowVisibilityRequest(
-                (UIWindowConstants.WindowUid)_pendingDestinationWindowUid,
-                this);
+            var pendingWindowUid =
+                (UIWindowConstants.WindowUid)_pendingDestinationWindowUid;
+            UIWindowWorldMap pendingWorldMapWindow = _pendingWorldMapWindow;
 
-            if (_pendingDestinationWindowUid == (int)UIWindowConstants.WindowUid.WorldMap)
+            // 외부 정리 호출 중 같은 정리 경로가 재진입해도 중복 취소하지 않도록 내부 상태를 먼저 비웁니다.
+            _pendingDestinationWindowUid = 0;
+            _pendingWorldMapWindow = null;
+
+            UIWindowManager windowManager = _sceneGame?.uIWindowManager;
+            bool canceled = windowManager != null &&
+                            windowManager.CancelDeferredWindowVisibilityRequest(
+                                pendingWindowUid,
+                                this);
+            if (!canceled ||
+                pendingWindowUid != UIWindowConstants.WindowUid.WorldMap ||
+                pendingWorldMapWindow == null)
             {
-                UIWindowWorldMap worldMapWindow =
-                    _sceneGame?.uIWindowManager?.GetUIWindowByUid<UIWindowWorldMap>(
-                        UIWindowConstants.WindowUid.WorldMap);
-                worldMapWindow?.CancelNextPresentationMode(WorldMapWindowMode.MapClearExit);
+                return;
             }
 
-            _pendingDestinationWindowUid = 0;
+            // 실제 지연 요청을 취소한 경우에만 함께 예약한 일회성 표시 모드를 되돌립니다.
+            // 씬 언로드 중 WorldMap이 먼저 파괴되면 Unity Object null 판정으로 안전하게 건너뜁니다.
+            pendingWorldMapWindow.CancelNextPresentationMode(WorldMapWindowMode.MapClearExit);
         }
 
         /// <summary>
