@@ -57,13 +57,25 @@ namespace GGemCo2DCoreEditor
             List<DebugOptionAssetScanner.DebugOptionEntry> enabledEntries = DebugOptionAssetScanner.FindEnabledDebugOptions(DebugOptionScanScope.ReleaseBuildCandidates);
             List<DevelopmentSettingsBuildInclusionScanner.DevelopmentSettingsBuildInclusionEntry> developmentRisks = DevelopmentSettingsBuildInclusionScanner.FindBuildInclusionRisks();
             List<BuildProfileScriptingDefineUtility.ScriptingDefineRiskEntry> scriptingDefineRisks = BuildProfileScriptingDefineUtility.FindReleaseBlockingSymbols(buildTargetGroup);
-            if (enabledEntries.Count == 0 && developmentRisks.Count == 0 && scriptingDefineRisks.Count == 0)
+            string versionCodeError = string.Empty;
+            bool isVersionCodeValid =
+                buildTargetGroup != BuildTargetGroup.Android ||
+                BuildProfileVersionCodeUtility.TryValidateAndroidBundleVersionCode(
+                    out versionCodeError);
+            if (enabledEntries.Count == 0 &&
+                developmentRisks.Count == 0 &&
+                scriptingDefineRisks.Count == 0 &&
+                isVersionCodeValid)
             {
                 message = "Release Build 안전 검증을 통과했습니다.";
                 return true;
             }
 
-            message = BuildFailureMessage(enabledEntries, developmentRisks, scriptingDefineRisks);
+            message = BuildFailureMessage(
+                enabledEntries,
+                developmentRisks,
+                scriptingDefineRisks,
+                versionCodeError);
             return false;
         }
 
@@ -73,15 +85,24 @@ namespace GGemCo2DCoreEditor
         /// <param name="enabledEntries">서비스용 빌드 후보에서 발견된 활성 디버그 옵션 목록입니다.</param>
         /// <param name="developmentRisks">개발용 Settings 빌드 포함 위험 요소 목록입니다.</param>
         /// <param name="scriptingDefineRisks">릴리즈 빌드를 차단해야 하는 Scripting Define Symbol 목록입니다.</param>
+        /// <param name="versionCodeError">Android 버전 코드 검증 실패 원인입니다.</param>
         /// <returns>빌드 실패 안내 메시지입니다.</returns>
         private static string BuildFailureMessage(
             IReadOnlyList<DebugOptionAssetScanner.DebugOptionEntry> enabledEntries,
             IReadOnlyList<DevelopmentSettingsBuildInclusionScanner.DevelopmentSettingsBuildInclusionEntry> developmentRisks,
-            IReadOnlyList<BuildProfileScriptingDefineUtility.ScriptingDefineRiskEntry> scriptingDefineRisks)
+            IReadOnlyList<BuildProfileScriptingDefineUtility.ScriptingDefineRiskEntry> scriptingDefineRisks,
+            string versionCodeError)
         {
             StringBuilder builder = new StringBuilder();
             builder.AppendLine("[GGemCo] Release Build 안전 검증에 실패했습니다.");
             builder.AppendLine();
+
+            if (!string.IsNullOrWhiteSpace(versionCodeError))
+            {
+                builder.AppendLine("Android Player Version과 Bundle Version Code 설정이 릴리즈 정책에 맞지 않습니다.");
+                builder.AppendLine(versionCodeError);
+                builder.AppendLine();
+            }
 
             if (enabledEntries != null && enabledEntries.Count > 0)
             {

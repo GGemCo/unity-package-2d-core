@@ -1,5 +1,6 @@
 using GGemCo2DCore;
 using UnityEditor;
+using UnityEngine;
 
 namespace GGemCo2DCoreEditor
 {
@@ -39,14 +40,51 @@ namespace GGemCo2DCoreEditor
 
         /// <summary>
         /// 실제 Release 빌드 후보 상태를 준비합니다.
-        /// 서비스용 Settings와 Release 빌드 옵션을 적용하고, 릴리즈 빌드에서 금지되는 치트 도구 컴파일 심볼을 제거합니다.
+        /// Android 활성 타겟의 버전 코드를 검증·동기화한 뒤 서비스용 Settings와 Release 빌드 옵션을 적용하고,
+        /// 릴리즈 빌드에서 금지되는 치트 도구 컴파일 심볼을 제거합니다.
         /// </summary>
         public static void PrepareReleaseBuild()
         {
+            if (TryPrepareReleaseBuild(out _, out string errorMessage))
+            {
+                return;
+            }
+
+            Debug.LogError($"[GGemCo] Release 빌드 준비 실패: {errorMessage}");
+        }
+
+        /// <summary>
+        /// 실제 Release 빌드 후보 상태를 검증 후 준비합니다.
+        /// Android 활성 타겟에서는 Player Version을 기준으로 Bundle Version Code를 먼저 동기화하며,
+        /// 버전 검증에 실패하면 Release 설정을 부분 적용하지 않습니다.
+        /// </summary>
+        /// <param name="versionCodeResult">Android Bundle Version Code 동기화 결과입니다.</param>
+        /// <param name="errorMessage">준비 실패 원인입니다.</param>
+        /// <returns>Release 빌드 후보 상태를 정상 적용했으면 <see langword="true"/>입니다.</returns>
+        internal static bool TryPrepareReleaseBuild(
+            out AndroidBundleVersionCodeSyncResult? versionCodeResult,
+            out string errorMessage)
+        {
+            versionCodeResult = null;
+            errorMessage = string.Empty;
+
+            if (EditorUserBuildSettings.selectedBuildTargetGroup == BuildTargetGroup.Android)
+            {
+                if (!BuildProfileVersionCodeUtility.TrySynchronizeAndroidBundleVersionCode(
+                        out AndroidBundleVersionCodeSyncResult result,
+                        out errorMessage))
+                {
+                    return false;
+                }
+
+                versionCodeResult = result;
+            }
+
             BuildProfileEditorPrefs.CurrentMode = GGemCoBuildMode.Release;
             SettingsProfileEditorPrefs.CurrentProfile = SettingsProfileKind.Service;
             EditorUserBuildSettings.development = false;
             SetCheatToolsEnabled(false);
+            return true;
         }
 
         /// <summary>

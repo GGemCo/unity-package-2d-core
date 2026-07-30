@@ -64,6 +64,30 @@ namespace GGemCo2DCoreEditor
             EditorGUILayout.Space(6f);
             EditorGUILayout.LabelField("현재 상태", EditorStyles.boldLabel);
 
+            bool isAndroidTarget =
+                EditorUserBuildSettings.selectedBuildTargetGroup == BuildTargetGroup.Android;
+            bool hasCalculatedVersionCode = false;
+            int calculatedVersionCode = 0;
+            string versionCodeError = string.Empty;
+            string versionCodeStatus = string.Empty;
+            if (isAndroidTarget)
+            {
+                hasCalculatedVersionCode =
+                    BuildProfileVersionCodeUtility.TryCalculateAndroidBundleVersionCode(
+                        PlayerSettings.bundleVersion,
+                        out calculatedVersionCode,
+                        out versionCodeError);
+                if (hasCalculatedVersionCode)
+                {
+                    int currentVersionCode = PlayerSettings.Android.bundleVersionCode;
+                    versionCodeStatus = calculatedVersionCode == currentVersionCode
+                        ? "동기화됨"
+                        : calculatedVersionCode > currentVersionCode
+                            ? "업데이트 필요"
+                            : "현재 코드보다 계산값이 낮음";
+                }
+            }
+
             using (new EditorGUI.DisabledScope(true))
             {
                 EditorGUILayout.EnumPopup("Build Mode", BuildProfileEditorPrefs.CurrentMode);
@@ -72,6 +96,29 @@ namespace GGemCo2DCoreEditor
                 EditorGUILayout.Toggle("Unity Development Build", EditorUserBuildSettings.development);
                 EditorGUILayout.LabelField("Active Build Target", BuildProfileScriptingDefineUtility.GetActiveBuildTargetGroupName());
                 EditorGUILayout.Toggle("Cheat Tools Compile Symbol", BuildProfileScriptingDefineUtility.HasCheatToolsSymbolInActiveTarget());
+                EditorGUILayout.TextField("Player Version", PlayerSettings.bundleVersion);
+
+                if (isAndroidTarget)
+                {
+                    EditorGUILayout.IntField(
+                        "Android Bundle Version Code",
+                        PlayerSettings.Android.bundleVersionCode);
+                    EditorGUILayout.TextField(
+                        "Calculated Android Code",
+                        hasCalculatedVersionCode
+                            ? calculatedVersionCode.ToString()
+                            : "계산 불가");
+                    EditorGUILayout.TextField(
+                        "Version Code Status",
+                        hasCalculatedVersionCode
+                            ? versionCodeStatus
+                            : "검증 실패");
+                }
+            }
+
+            if (isAndroidTarget && !hasCalculatedVersionCode)
+            {
+                EditorGUILayout.HelpBox(versionCodeError, MessageType.Error);
             }
         }
 
@@ -271,23 +318,53 @@ namespace GGemCo2DCoreEditor
 
         /// <summary>
         /// 실제 Release 빌드 후보를 준비합니다.
-        /// Release 모드, 서비스 Settings, Unity Release 빌드 옵션을 적용하고 치트 심볼과 릴리즈 후보 디버그 옵션을 정리한 뒤 검증을 실행합니다.
+        /// Android 활성 타겟에서는 Player Version으로 Bundle Version Code를 동기화한 뒤,
+        /// Release 모드, 서비스 Settings, Unity Release 빌드 옵션을 적용하고 치트 심볼과 릴리즈 후보 디버그 옵션을 정리합니다.
         /// </summary>
         private void PrepareReleaseBuild()
         {
-            BuildProfileApplier.PrepareReleaseBuild();
+            if (!BuildProfileApplier.TryPrepareReleaseBuild(
+                    out AndroidBundleVersionCodeSyncResult? versionCodeResult,
+                    out string errorMessage))
+            {
+                _lastValidationMessage = errorMessage;
+                _lastValidationMessageType = MessageType.Error;
+                Debug.LogError($"[GGemCo] Release 빌드 준비 실패: {errorMessage}");
+                EditorUtility.DisplayDialog(
+                    "GGemCo Release Preparation",
+                    errorMessage,
+                    "확인");
+                Repaint();
+                return;
+            }
+
+            string versionCodeMessage = versionCodeResult.HasValue
+                ? BuildProfileVersionCodeUtility.BuildSynchronizationMessage(versionCodeResult.Value)
+                : "활성 빌드 타겟이 Android가 아니므로 Android Bundle Version Code 동기화를 건너뛰었습니다.";
+
             DebugOptionMenu.DisableReleaseBuildDebugOptions();
-            ValidateReleaseSafety();
-            Debug.Log($"[GGemCo] Release 빌드 준비 실행: mode={BuildProfileEditorPrefs.CurrentMode}, settingsProfile={SettingsProfileEditorPrefs.CurrentProfile}, developmentBuild={EditorUserBuildSettings.development}, cheatSymbol={BuildProfileScriptingDefineUtility.HasCheatToolsSymbolInActiveTarget()}");
+            ValidateReleaseSafety(versionCodeMessage);
+            Debug.Log(
+                $"[GGemCo] Release 빌드 준비 실행: mode={BuildProfileEditorPrefs.CurrentMode}, " +
+                $"settingsProfile={SettingsProfileEditorPrefs.CurrentProfile}, " +
+                $"developmentBuild={EditorUserBuildSettings.development}, " +
+                $"cheatSymbol={BuildProfileScriptingDefineUtility.HasCheatToolsSymbolInActiveTarget()}, " +
+                $"versionCodeResult={versionCodeMessage}");
             Repaint();
         }
 
         /// <summary>
         /// 릴리즈 빌드 후보 안전 검증을 실행하고 결과를 표시합니다.
         /// </summary>
-        private void ValidateReleaseSafety()
+        /// <param name="prefixMessage">검증 결과 앞에 추가할 준비 단계 안내입니다.</param>
+        private void ValidateReleaseSafety(string prefixMessage = null)
         {
-            bool passed = ReleaseDebugOptionBuildValidator.TryValidateReleaseBuild(out string message);
+            bool passed =
+                ReleaseDebugOptionBuildValidator.TryValidateReleaseBuild(out string validationMessage);
+            string message = string.IsNullOrWhiteSpace(prefixMessage)
+                ? validationMessage
+                : prefixMessage + "\n\n" + validationMessage;
+
             _lastValidationMessage = message;
             _lastValidationMessageType = passed ? MessageType.Info : MessageType.Error;
 
