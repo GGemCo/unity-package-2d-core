@@ -152,6 +152,15 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 외부 시스템이 획득한 전체 조작 잠금 토큰이 활성화되어 있는지 확인합니다.
+        /// </summary>
+        /// <returns>전체 조작 잠금 토큰이 하나 이상 있으면 <see langword="true"/>를 반환합니다.</returns>
+        public bool IsControlLocked()
+        {
+            return _controlLockTokens.Count > 0;
+        }
+
+        /// <summary>
         /// 몬스터 Brain 또는 BT 판단을 일시정지하는 토큰을 획득합니다.
         /// </summary>
         /// <param name="owner">잠금 요청 소유자입니다. null이면 새 토큰을 생성합니다.</param>
