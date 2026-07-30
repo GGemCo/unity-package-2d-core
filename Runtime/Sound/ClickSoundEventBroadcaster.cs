@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
@@ -29,27 +29,30 @@ namespace GGemCo2DCore
 
         [Header("Trigger Mode")]
         [Tooltip("사용자 상호작용(클릭/Submit)에만 반응. 프로그래매틱 변경에는 반응하지 않음")]
-        private bool triggerOnlyOnUserInteraction;
+        [SerializeField] private bool triggerOnlyOnUserInteraction = true;
 
         private Button _button;
         private Toggle _toggle;
+        private Selectable _selectable;
 
+        /// <summary>
+        /// 같은 GameObject의 Button 또는 Toggle을 캐시하고 설정된 입력 모드에 맞춰 이벤트를 연결합니다.
+        /// </summary>
         private void Awake()
         {
-            triggerOnlyOnUserInteraction = true;
             _button = GetComponent<Button>();
             _toggle = GetComponent<Toggle>();
+            _selectable = _toggle != null ? _toggle : _button;
 
             if (triggerOnlyOnUserInteraction)
             {
-                // 사용자 입력 이벤트(IPointerClick/ISubmit)로만 처리
-                // Button/Toggle의 이벤트에는 구독하지 않음 → 프로그래매틱 변경 시 무음
+                // 사용자 입력 전용 모드에서는 Pointer/Submit 이벤트만 사용하여 코드에서 발생한 값 변경을 무음 처리합니다.
                 return;
             }
 
             if (_button != null)
             {
-                _button.onClick.AddListener(OnPlay);
+                _button.onClick.AddListener(TryDispatchClickSound);
             }
 
             if (_toggle != null)
@@ -58,59 +61,125 @@ namespace GGemCo2DCore
             }
         }
 
+        /// <summary>
+        /// Button과 Toggle에 등록한 클릭 사운드 이벤트를 해제합니다.
+        /// </summary>
         private void OnDestroy()
         {
-            if (_button != null) _button.onClick.RemoveListener(OnPlay);
+            if (_button != null) _button.onClick.RemoveListener(TryDispatchClickSound);
             if (_toggle != null) _toggle.onValueChanged.RemoveListener(OnToggleChanged);
         }
 
-        // --- IClickSoundEventTrigger ---
+        /// <summary>
+        /// 직접 지정된 클릭 사운드 UID를 반환합니다.
+        /// </summary>
+        /// <returns>직접 지정된 사운드 UID이며, 지정되지 않았으면 0입니다.</returns>
         public int GetSoundId() => soundUid;
+
+        /// <summary>
+        /// 사운드 UID가 없을 때 사용할 UI 버튼 사운드 타입을 반환합니다.
+        /// </summary>
+        /// <returns>현재 설정된 UI 버튼 사운드 타입입니다.</returns>
         public SoundConstants.UIButtonType GetSoundType() => type;
 
-        // --- Pointer/Submit(사용자 상호작용 전용 모드) ---
+        /// <summary>
+        /// 사용자 포인터 클릭을 받아 활성화된 Button 또는 Toggle의 클릭 사운드를 요청합니다.
+        /// Unity Button/Toggle과 동일하게 왼쪽 버튼 입력만 유효한 클릭으로 처리합니다.
+        /// </summary>
+        /// <param name="eventData">포인터 버튼 정보를 포함한 이벤트 데이터입니다.</param>
         public void OnPointerClick(PointerEventData eventData)
         {
-            if (!triggerOnlyOnUserInteraction) return;
-            // Toggle인 경우: 현재 상태에 따라 On/Off 정책 적용
+            if (!triggerOnlyOnUserInteraction ||
+                eventData == null ||
+                eventData.button != PointerEventData.InputButton.Left)
+            {
+                return;
+            }
+
             if (_toggle != null)
             {
-                // 클릭 직후의 값(_toggle.isOn)에 대해 설정을 평가
-                if ((_toggle.isOn && playOnToggleOn) || (!_toggle.isOn && playOnToggleOff))
-                    OnPlay();
+                if (ShouldPlayForToggleState(_toggle.isOn))
+                {
+                    TryDispatchClickSound();
+                }
             }
             else
             {
-                OnPlay();
+                TryDispatchClickSound();
             }
         }
 
+        /// <summary>
+        /// 키보드 또는 게임패드 Submit 입력을 받아 활성화된 Button 또는 Toggle의 클릭 사운드를 요청합니다.
+        /// </summary>
+        /// <param name="eventData">Submit 입력 이벤트 데이터입니다.</param>
         public void OnSubmit(BaseEventData eventData)
         {
-            if (!triggerOnlyOnUserInteraction) return;
-            // 키보드/패드 Submit에도 동일 정책 적용
+            if (!triggerOnlyOnUserInteraction)
+            {
+                return;
+            }
+
             if (_toggle != null)
             {
-                if ((_toggle.isOn && playOnToggleOn) || (!_toggle.isOn && playOnToggleOff))
-                    OnPlay();
+                if (ShouldPlayForToggleState(_toggle.isOn))
+                {
+                    TryDispatchClickSound();
+                }
             }
             else
             {
-                OnPlay();
+                TryDispatchClickSound();
             }
         }
 
-        // --- 내부 처리 ---
+        /// <summary>
+        /// Toggle 값 변경 이벤트를 현재 On/Off 재생 정책에 따라 처리합니다.
+        /// 사용자 입력 전용 모드가 아닐 때는 프로그래밍 방식의 값 변경도 이 경로로 들어옵니다.
+        /// </summary>
+        /// <param name="isOn">변경된 Toggle 선택 상태입니다.</param>
         private void OnToggleChanged(bool isOn)
         {
-            // 프로그래매틱 변경 포함(기본 정책)
-            // SetIsOnWithoutNotify 사용 시엔 호출되지 않음 → 초기화 시 무음 처리에 유용
-            if ((isOn && playOnToggleOn) || (!isOn && playOnToggleOff))
-                OnPlay();
+            if (ShouldPlayForToggleState(isOn))
+            {
+                TryDispatchClickSound();
+            }
         }
 
-        private void OnPlay()
+        /// <summary>
+        /// 현재 Toggle 상태가 설정된 클릭 사운드 재생 대상인지 확인합니다.
+        /// </summary>
+        /// <param name="isOn">확인할 Toggle 선택 상태입니다.</param>
+        /// <returns>현재 상태에서 클릭 사운드를 재생해야 하면 <see langword="true"/>입니다.</returns>
+        private bool ShouldPlayForToggleState(bool isOn)
         {
+            return isOn ? playOnToggleOn : playOnToggleOff;
+        }
+
+        /// <summary>
+        /// 연결된 Selectable이 현재 사용자 상호작용과 클릭 사운드를 허용하는 상태인지 확인합니다.
+        /// Button/Toggle의 enabled, interactable 및 상위 CanvasGroup 상호작용 정책을 함께 반영합니다.
+        /// </summary>
+        /// <returns>클릭 사운드를 발행할 수 있으면 <see langword="true"/>입니다.</returns>
+        private bool CanDispatchClickSound()
+        {
+            return isActiveAndEnabled &&
+                   _selectable != null &&
+                   _selectable.IsActive() &&
+                   _selectable.IsInteractable();
+        }
+
+        /// <summary>
+        /// 현재 UI 상호작용 상태가 유효한 경우에만 클릭 사운드 이벤트를 발행합니다.
+        /// 모든 입력 경로가 이 메서드를 거치게 하여 비활성 UI의 사운드 재생을 일관되게 차단합니다.
+        /// </summary>
+        private void TryDispatchClickSound()
+        {
+            if (!CanDispatchClickSound())
+            {
+                return;
+            }
+
             ClickSoundEventDispatcher.Dispatch(this);
         }
     }
