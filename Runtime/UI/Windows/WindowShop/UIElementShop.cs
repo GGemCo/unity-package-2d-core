@@ -51,6 +51,7 @@ namespace GGemCo2DCore
         private UIWindowItemBuy _uIWindowItemBuy;
         private UIIcon _uiIcon;
         private UISlot _uiSlot;
+        private ClickSoundEventBroadcaster _clickSoundEventBroadcaster;
 
         /// <summary>
         /// 현재 표시 중인 상점 아이템 데이터입니다.
@@ -76,6 +77,14 @@ namespace GGemCo2DCore
         /// 현재 게임 씬 참조입니다.
         /// </summary>
         private SceneGame _sceneGame;
+
+        /// <summary>
+        /// 같은 오브젝트에 연결된 수동 클릭 사운드 브로드캐스터를 캐싱합니다.
+        /// </summary>
+        private void Awake()
+        {
+            _clickSoundEventBroadcaster = GetComponent<ClickSoundEventBroadcaster>();
+        }
 
         /// <summary>
         /// 초기화 시 필요한 씬 및 윈도우 참조를 확보합니다.
@@ -326,12 +335,21 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 마우스 클릭 시 아이템을 선택 상태로 변경합니다.
+        /// 사용자 왼쪽 포인터 클릭 시 아이템을 선택하고 수동 클릭 사운드를 요청합니다.
+        /// 초기 자동 선택은 이 경로를 거치지 않으므로 클릭 사운드가 재생되지 않습니다.
         /// </summary>
+        /// <param name="eventData">포인터 버튼 정보를 포함한 이벤트 데이터입니다.</param>
         public void OnPointerClick(PointerEventData eventData)
         {
-            if (!usePointerClickEvent) return;
+            if (!usePointerClickEvent ||
+                eventData == null ||
+                eventData.button != PointerEventData.InputButton.Left)
+            {
+                return;
+            }
+
             SetSelected(true);
+            _clickSoundEventBroadcaster?.TryDispatchManualClick();
         }
 
         /// <summary>

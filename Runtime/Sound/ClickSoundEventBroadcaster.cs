@@ -18,11 +18,16 @@ namespace GGemCo2DCore
         /// Button이나 Toggle이 없는 오브젝트의 포인터 클릭을 기준으로 클릭을 승인합니다.
         /// </summary>
         PointerClick = 1,
+
+        /// <summary>
+        /// 자동 입력 감지를 사용하지 않고 호출자가 승인한 상호작용에서만 클릭 사운드를 발행합니다.
+        /// </summary>
+        Manual = 2,
     }
 
     /// <summary>
     /// Button, Toggle 및 포인터 클릭 UI에서 공용으로 사용하는 클릭 사운드 브로드캐스터입니다.
-    /// Selectable 모드는 실제 제어 활성 이벤트를 확인하고, PointerClick 모드는 유효한 왼쪽 포인터 클릭에 반응합니다.
+    /// Selectable과 PointerClick 모드는 입력을 자동 감지하고, Manual 모드는 호출자가 승인한 상호작용만 발행합니다.
     /// </summary>
     [DisallowMultipleComponent]
     public class ClickSoundEventBroadcaster : MonoBehaviour, IClickSoundEventTrigger,
@@ -45,7 +50,7 @@ namespace GGemCo2DCore
         public bool playOnToggleOff = false;
 
         [Header("Interaction Target")]
-        [Tooltip("Selectable은 Button/Toggle 활성 이벤트를 사용하고, PointerClick은 포인터 클릭 이벤트를 직접 사용합니다.")]
+        [Tooltip("Selectable은 Button/Toggle, PointerClick은 포인터 클릭, Manual은 호출자가 승인한 상호작용을 사용합니다.")]
         [SerializeField] private ClickSoundInteractionTargetMode interactionTargetMode =
             ClickSoundInteractionTargetMode.Selectable;
 
@@ -171,6 +176,23 @@ namespace GGemCo2DCore
         public SoundConstants.UIButtonType GetSoundType() => type;
 
         /// <summary>
+        /// Manual 대상 모드에서 호출자가 승인한 UI 상호작용의 클릭 사운드를 발행합니다.
+        /// 자동 선택이나 데이터 갱신 경로와 실제 사용자 입력 경로를 구분해야 할 때 사용합니다.
+        /// </summary>
+        /// <returns>클릭 사운드 이벤트를 발행했으면 <see langword="true"/>입니다.</returns>
+        public bool TryDispatchManualClick()
+        {
+            if (interactionTargetMode != ClickSoundInteractionTargetMode.Manual ||
+                !isActiveAndEnabled)
+            {
+                return false;
+            }
+
+            DispatchClickSound();
+            return true;
+        }
+
+        /// <summary>
         /// 포인터를 누른 시점에 현재 대상 모드가 입력 가능한 상태였는지 기록합니다.
         /// Selectable 모드에서는 interactable 상태를 검사하고, PointerClick 모드에서는 활성 컴포넌트 여부를 검사합니다.
         /// </summary>
@@ -193,6 +215,7 @@ namespace GGemCo2DCore
         /// 사용자 포인터 클릭을 받아 현재 대상 모드에 맞는 클릭 사운드를 요청합니다.
         /// PointerClick 모드는 같은 포인터의 누름과 클릭이 정상적으로 이어진 경우에 직접 발행합니다.
         /// Selectable 모드는 실제 Button 또는 Toggle 활성 이벤트까지 확인하여 중복 발행을 방지합니다.
+        /// Manual 모드는 자동 포인터 발행을 차단하고 <see cref="TryDispatchManualClick"/> 호출만 허용합니다.
         /// </summary>
         /// <param name="eventData">포인터 버튼 정보를 포함한 이벤트 데이터입니다.</param>
         public void OnPointerClick(PointerEventData eventData)
@@ -200,6 +223,12 @@ namespace GGemCo2DCore
             if (eventData == null ||
                 eventData.button != PointerEventData.InputButton.Left)
             {
+                return;
+            }
+
+            if (interactionTargetMode == ClickSoundInteractionTargetMode.Manual)
+            {
+                ResetPointerInteractionState();
                 return;
             }
 
@@ -340,10 +369,16 @@ namespace GGemCo2DCore
         /// <summary>
         /// 현재 대상 모드에서 새로운 포인터 상호작용을 시작할 수 있는지 확인합니다.
         /// PointerClick 모드는 EventSystem이 전달한 포인터 이벤트를 신뢰하고 컴포넌트 활성 상태만 검사합니다.
+        /// Manual 모드는 호출자 승인 전용이므로 자동 포인터 상호작용을 시작하지 않습니다.
         /// </summary>
         /// <returns>현재 포인터 상호작용을 시작할 수 있으면 <see langword="true"/>입니다.</returns>
         private bool CanBeginPointerInteraction()
         {
+            if (interactionTargetMode == ClickSoundInteractionTargetMode.Manual)
+            {
+                return false;
+            }
+
             if (interactionTargetMode == ClickSoundInteractionTargetMode.PointerClick)
             {
                 return isActiveAndEnabled;
