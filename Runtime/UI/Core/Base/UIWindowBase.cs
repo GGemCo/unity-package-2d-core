@@ -25,6 +25,7 @@ namespace GGemCo2DCore
         private StruckTableWindow _struckTableWindow;
         private InteractionManager _interactionManager;
         private UIEffectTarget _uiEffectTarget;
+        private UIWindowConstants.WindowUid _excludedLinkedWindowUid = UIWindowConstants.WindowUid.None;
 
         [HideInInspector] public SceneGame SceneGame;
 
@@ -119,8 +120,11 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// window 테이블에 있는 OpenWindowUid, CloseWindowUid 컬럼 처리
+        /// Window 테이블의 OpenWindowUid 또는 CloseWindowUid에 연결된 윈도우 표시 상태를 변경합니다.
+        /// 현재 표시 요청에서 제외하도록 지정된 연결 윈도우는 기존 상태를 유지합니다.
         /// </summary>
+        /// <param name="windowUids">표시 상태를 함께 변경할 연결 윈도우 Uid 배열입니다.</param>
+        /// <param name="show">연결 윈도우를 표시하면 <c>true</c>, 숨기면 <c>false</c>입니다.</param>
         private void ShowByTable(int[] windowUids, bool show)
         {
             if (windowUids == null)
@@ -128,9 +132,14 @@ namespace GGemCo2DCore
                 return;
             }
 
-            foreach (var openWindowUid in windowUids)
+            foreach (var linkedWindowUid in windowUids)
             {
-                UIWindowConstants.WindowUid windowUid = (UIWindowConstants.WindowUid)openWindowUid;
+                UIWindowConstants.WindowUid windowUid = (UIWindowConstants.WindowUid)linkedWindowUid;
+                if (windowUid == _excludedLinkedWindowUid)
+                {
+                    continue;
+                }
+
                 UIWindow uiWindow = ResolveLinkedWindow(windowUid);
                 if (uiWindow == null) continue;
                 if (show && uiWindow.IsVisibilitySuppressedByManager()) continue;
@@ -206,6 +215,32 @@ namespace GGemCo2DCore
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// 지정한 연결 윈도우의 표시 상태를 유지하면서 현재 윈도우를 열거나 닫습니다.
+        /// 기존 가상 <see cref="Show(bool)"/> 호출 경로를 사용하므로 파생 윈도우의 전용 표시 로직도 그대로 실행됩니다.
+        /// </summary>
+        /// <param name="show">현재 윈도우를 표시하면 <c>true</c>, 숨기면 <c>false</c>입니다.</param>
+        /// <param name="excludedLinkedWindowUid">이번 호출에서 표시 상태 변경을 제외할 연결 윈도우 Uid입니다.</param>
+        /// <returns><see cref="Show(bool)"/> 호출 결과입니다.</returns>
+        public bool ShowWithLinkedWindowExclusion(
+            bool show,
+            UIWindowConstants.WindowUid excludedLinkedWindowUid)
+        {
+            UIWindowConstants.WindowUid previousExcludedLinkedWindowUid = _excludedLinkedWindowUid;
+            _excludedLinkedWindowUid = excludedLinkedWindowUid;
+
+            try
+            {
+                // 파생 클래스의 Show 오버라이드를 우회하지 않도록 기존 가상 메서드를 호출합니다.
+                return Show(show);
+            }
+            finally
+            {
+                // 중첩 호출이나 예외가 발생해도 제외 정책이 다음 표시 요청으로 누출되지 않도록 복원합니다.
+                _excludedLinkedWindowUid = previousExcludedLinkedWindowUid;
+            }
         }
 
         /// <summary>
