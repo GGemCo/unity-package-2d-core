@@ -83,6 +83,11 @@ namespace GGemCo2DCore
                 buttonBuy.onClick.AddListener(OnClickBuy);
             if (_shopAvailabilityService != null)
                 _shopAvailabilityService.Changed += OnShopAvailabilityChanged;
+
+            if (_currentShopUid > 0)
+            {
+                RefreshVisibleAvailability();
+            }
         }
 
         /// <summary>
@@ -354,7 +359,12 @@ namespace GGemCo2DCore
 
         public void SetSelectItem(UIElementShop uiElementShop)
         {
-            if (_selectedElementShop == uiElementShop) return;
+            if (_selectedElementShop == uiElementShop)
+            {
+                RefreshSelectedPurchaseUi();
+                return;
+            }
+
             if (_selectedElementShop != null)
             {
                 _selectedElementShop.SetSelected(false);
@@ -481,22 +491,36 @@ namespace GGemCo2DCore
         /// </summary>
         private void UpdateButtonBuy()
         {
-            if (_selectedElementShop == null)
+            bool isBuyable = RefreshSelectedItemAvailability(out ShopDisplayItem displayItem);
+            if (!buttonBuy)
             {
-                if (buttonBuy)
-                {
-                    buttonBuy.interactable = false;
-                }
-
                 return;
             }
-            var displayItem = _selectedElementShop.GetDisplayItem();
-            if (buttonBuy)
+
+            buttonBuy.interactable = isBuyable &&
+                                     displayItem != null &&
+                                     CanAfford(displayItem);
+        }
+
+        /// <summary>
+        /// 현재 선택된 상품의 구매 가능 상태를 최신 런타임 조건으로 다시 계산하고 표시 데이터에 반영합니다.
+        /// 버튼은 이 결과를 사용하여 캐시된 과거 상태로 활성화되는 문제를 방지합니다.
+        /// </summary>
+        /// <param name="displayItem">현재 선택된 상점 상품 표시 데이터입니다.</param>
+        /// <returns>현재 시점에 상품을 구매할 수 있으면 true입니다.</returns>
+        private bool RefreshSelectedItemAvailability(out ShopDisplayItem displayItem)
+        {
+            displayItem = _selectedElementShop != null
+                ? _selectedElementShop.GetDisplayItem()
+                : null;
+            if (displayItem == null)
             {
-                buttonBuy.interactable = displayItem != null &&
-                                         displayItem.IsBuyable &&
-                                         CanAfford(displayItem);
+                return false;
             }
+
+            bool isBuyable = CanBuy(displayItem, out string disabledReason);
+            displayItem.SetAvailability(isBuyable, disabledReason);
+            return isBuyable;
         }
 
         private void UpdatePriceText()

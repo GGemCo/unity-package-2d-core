@@ -214,23 +214,45 @@ namespace GGemCo2DCore
         {
             if (_shopDisplayItem == null) return;
 
-            if (_uiWindowShop != null)
-            {
-                bool isBuyable = _uiWindowShop.CanBuy(_shopDisplayItem, out var disabledReason);
-                _shopDisplayItem.SetAvailability(isBuyable, disabledReason);
-            }
+            bool isBuyable = RefreshAvailabilityState();
             
             ShowImageDiscount(_shopDisplayItem.HasDiscount);
 
             ApplyAvailabilityVisual();
 
-            RefreshPurchaseButton();
+            ApplyPurchaseButtonState(isBuyable);
         }
 
         /// <summary>
         /// 현재 상품의 구매 제한 상태와 플레이어 재화 보유 여부를 구매 버튼에 반영합니다.
         /// </summary>
         public void RefreshPurchaseButton()
+        {
+            bool isBuyable = RefreshAvailabilityState();
+            ApplyPurchaseButtonState(isBuyable);
+        }
+
+        /// <summary>
+        /// 현재 상품의 구매 가능 상태를 최신 런타임 조건으로 다시 계산하고 표시 데이터에 반영합니다.
+        /// </summary>
+        /// <returns>현재 시점에 상품을 구매할 수 있으면 true입니다.</returns>
+        private bool RefreshAvailabilityState()
+        {
+            if (_shopDisplayItem == null || _uiWindowShop == null)
+            {
+                return false;
+            }
+
+            bool isBuyable = _uiWindowShop.CanBuy(_shopDisplayItem, out string disabledReason);
+            _shopDisplayItem.SetAvailability(isBuyable, disabledReason);
+            return isBuyable;
+        }
+
+        /// <summary>
+        /// 계산된 구매 가능 상태와 재화 보유 여부를 현재 상품의 구매 버튼에 반영합니다.
+        /// </summary>
+        /// <param name="isBuyable">최신 런타임 조건으로 계산한 구매 가능 여부입니다.</param>
+        private void ApplyPurchaseButtonState(bool isBuyable)
         {
             if (!buttonBuy)
             {
@@ -239,7 +261,7 @@ namespace GGemCo2DCore
 
             buttonBuy.gameObject.SetActive(true);
             buttonBuy.interactable = _shopDisplayItem != null &&
-                                     _shopDisplayItem.IsBuyable &&
+                                     isBuyable &&
                                      _uiWindowShop != null &&
                                      _uiWindowShop.CanAfford(_shopDisplayItem);
         }
