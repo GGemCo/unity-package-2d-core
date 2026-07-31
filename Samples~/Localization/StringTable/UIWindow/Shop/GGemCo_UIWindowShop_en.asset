@@ -22,6 +22,10 @@ MonoBehaviour:
     m_Localized: Buy
     m_Metadata:
       m_Items: []
+  - m_Id: 33102715490305
+    m_Localized: You cannot purchase any more.
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

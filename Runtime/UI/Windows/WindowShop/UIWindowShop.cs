@@ -13,6 +13,9 @@ namespace GGemCo2DCore
     public class UIWindowShop : UIWindow
     {
         private const string ExternalItemInfoWindowKey = "Shop.ItemInfo";
+        private const string SoldOutReasonKey = "Shop_SoldOut";
+        private const string NotEnoughStockTextKey = "Text_Not_Enough_Stock";
+        private const string CannotBuyMoreTextKey = "Text_Cannot_Buy_More";
 
         [Header(UIWindowConstants.TitleHeaderIndividual)]
         [Tooltip("상점 Element 프리팹")]
@@ -83,10 +86,11 @@ namespace GGemCo2DCore
                 buttonBuy.onClick.AddListener(OnClickBuy);
             if (_shopAvailabilityService != null)
                 _shopAvailabilityService.Changed += OnShopAvailabilityChanged;
+            GameEventManager.ItemPurchasedEvent += OnItemPurchased;
 
             if (_currentShopUid > 0)
             {
-                RefreshVisibleAvailability();
+                RefreshShopAvailabilityPresentation();
             }
         }
 
@@ -99,6 +103,7 @@ namespace GGemCo2DCore
                 buttonBuy.onClick.RemoveAllListeners();
             if (_shopAvailabilityService != null)
                 _shopAvailabilityService.Changed -= OnShopAvailabilityChanged;
+            GameEventManager.ItemPurchasedEvent -= OnItemPurchased;
             if (_selectedElementShop)
                 _selectedElementShop.SetSelected(false);
             HideItemInfo();
@@ -129,7 +134,7 @@ namespace GGemCo2DCore
                 player.CurrentHpTemp
                     .DistinctUntilChanged()
                     .Skip(1)
-                    .Subscribe(_ => RefreshVisibleAvailability())
+                    .Subscribe(_ => RefreshShopAvailabilityPresentation())
                     .AddTo(this);
             }
         }
@@ -213,7 +218,7 @@ namespace GGemCo2DCore
             // 같은 상점을 열었으면 업데이트 하지 않는다
             if (!forceRefresh && !reroll && _currentShopUid > 0 && _currentShopUid == shopUid)
             {
-                RefreshVisibleAvailability();
+                RefreshShopAvailabilityPresentation();
                 return;
             }
 
@@ -361,7 +366,7 @@ namespace GGemCo2DCore
         {
             if (_selectedElementShop == uiElementShop)
             {
-                RefreshSelectedPurchaseUi();
+                RefreshShopAvailabilityPresentation();
                 return;
             }
 
@@ -553,24 +558,39 @@ namespace GGemCo2DCore
 
         private void UpdateDiscountTalkBubble()
         {
-            if (_selectedElementShop == null) return;
-            
             SetDiscountTalkBubble(false, string.Empty, Vector3.zero);
+
+            if (_selectedElementShop == null) return;
             
             var displayItem = _selectedElementShop.GetDisplayItem();
             if (displayItem == null) return;
             
-            if (displayItem.HasDiscount)
+            // 구매 불가 상태에서는 할인 안내보다 구매 제한 사유를 우선해서 표시합니다.
+            if (!displayItem.IsBuyable)
+            {
+                string localizationKey = ResolveUnavailableTalkBubbleKey(displayItem);
+                string text = LocalizationManager.Instance.GetUIWindowShopByKey(localizationKey);
+                SetDiscountTalkBubble(true, text, _selectedElementShop.transform.position);
+            }
+            else if (displayItem.HasDiscount)
             {
                 var itemPrice = displayItem.CurrencyValue;
                 var text = string.Format(LocalizationManager.Instance.GetUIWindowShopByKey("Text_Discount"), itemPrice);
                 SetDiscountTalkBubble(true, text, _selectedElementShop.transform.position);
             }
-            else if (!displayItem.IsBuyable)
-            {
-                var text = LocalizationManager.Instance.GetUIWindowShopByKey("Text_Not_Enough_Stock");
-                SetDiscountTalkBubble(true, text, _selectedElementShop.transform.position);
-            }
+        }
+
+        /// <summary>
+        /// 상품의 구매 불가 사유에 맞는 상점 말풍선 Localization 키를 반환합니다.
+        /// 실제 구매 재고가 소진된 경우에만 재고 부족 문구를 사용하고, 그 외 상태 제한은 추가 구매 불가로 표시합니다.
+        /// </summary>
+        /// <param name="displayItem">구매 불가 사유를 확인할 상점 상품입니다.</param>
+        /// <returns>상점 말풍선에서 사용할 Localization 키입니다.</returns>
+        private static string ResolveUnavailableTalkBubbleKey(ShopDisplayItem displayItem)
+        {
+            return displayItem != null && displayItem.DisabledReason == SoldOutReasonKey
+                ? NotEnoughStockTextKey
+                : CannotBuyMoreTextKey;
         }
 
         /// <summary>
@@ -655,12 +675,59 @@ namespace GGemCo2DCore
             return RestockShop(_currentShopUid);
         }
 
+        /// <summary>
+        /// 재고 또는 외부 구매 제한이 변경되면 현재 상점 데이터와 구매 제한 표시를 다시 구성합니다.
+        /// </summary>
         private void OnShopAvailabilityChanged()
         {
             if (_currentShopUid <= 0) return;
             SetInfoByShopUid(_currentShopUid, true, false, false);
+            RefreshShopAvailabilityPresentation();
         }
 
+        /// <summary>
+        /// 현재 상점에서 구매가 완료되면 버튼과 선택 상품 말풍선을 최종 구매 상태로 즉시 갱신합니다.
+        /// </summary>
+        /// <param name="eventData">구매한 상품과 상점 식별 정보입니다.</param>
+        private void OnItemPurchased(ItemPurchasedEventData eventData)
+        {
+            if (_currentShopUid <= 0)
+            {
+                return;
+            }
+
+            if (eventData.ShopUid > 0 && eventData.ShopUid != _currentShopUid)
+            {
+                return;
+            }
+
+            // 레거시 구매 경로는 ShopUid가 없을 수 있으므로 현재 선택 상품 UID로 한 번 더 범위를 제한합니다.
+            if (eventData.ShopUid <= 0)
+            {
+                ShopDisplayItem selectedItem = _selectedElementShop != null
+                    ? _selectedElementShop.GetDisplayItem()
+                    : null;
+                if (selectedItem == null || selectedItem.ItemUid != eventData.ItemUid)
+                {
+                    return;
+                }
+            }
+
+            RefreshShopAvailabilityPresentation();
+        }
+
+        /// <summary>
+        /// 현재 표시 중인 상품의 구매 가능 상태, 구매 버튼 및 선택 상품 말풍선을 함께 갱신합니다.
+        /// </summary>
+        private void RefreshShopAvailabilityPresentation()
+        {
+            RefreshVisibleAvailability();
+            UpdateDiscountTalkBubble();
+        }
+
+        /// <summary>
+        /// 현재 생성된 모든 상품 요소와 선택 상품의 구매 가능 상태를 다시 계산합니다.
+        /// </summary>
         private void RefreshVisibleAvailability()
         {
             foreach (var pair in _uiElementShops)

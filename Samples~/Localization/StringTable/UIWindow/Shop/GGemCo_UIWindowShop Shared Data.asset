@@ -19,6 +19,10 @@ MonoBehaviour:
     m_Key: Element_Button_Buy
     m_Metadata:
       m_Items: []
+  - m_Id: 33102715490305
+    m_Key: Text_Cannot_Buy_More
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
