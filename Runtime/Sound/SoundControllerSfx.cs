@@ -24,6 +24,8 @@ namespace GGemCo2DCore
         private sealed class ActiveSfxPlayback
         {
             public int Uid;
+            public ResolvedSound Resolved;
+            public bool HasResolvedSound;
             public GameObject Object;
             public MonoBehaviour CoroutineHost;
             public Coroutine Routine;
@@ -37,6 +39,7 @@ namespace GGemCo2DCore
         private readonly AudioMixerGroup _group;
         private readonly string _volumeParam;
         private readonly AddressableLoaderSound _loader;
+        private readonly SoundPlaybackDebugReporter _debugReporter;
 
         private readonly Dictionary<int, Queue<GameObject>> _pool = new Dictionary<int, Queue<GameObject>>();
         private readonly Dictionary<int, int> _playCount = new Dictionary<int, int>();
@@ -63,6 +66,26 @@ namespace GGemCo2DCore
             AudioMixerGroup group,
             string volumeParam,
             AddressableLoaderSound loader)
+            : this(owner, mixer, group, volumeParam, loader, null)
+        {
+        }
+
+        /// <summary>
+        /// SFX 풀과 실제 재생 시작 정보를 출력할 디버그 보고기를 함께 초기화합니다.
+        /// </summary>
+        /// <param name="owner">생성한 AudioSource 오브젝트의 부모입니다.</param>
+        /// <param name="mixer">SFX 볼륨을 제어할 AudioMixer입니다.</param>
+        /// <param name="group">SFX 출력 AudioMixerGroup입니다.</param>
+        /// <param name="volumeParam">SFX 볼륨 Exposed Parameter 이름입니다.</param>
+        /// <param name="loader">AudioClip 재생 참조를 관리할 로더입니다.</param>
+        /// <param name="debugReporter">실제 재생 시작 정보를 출력할 보고기입니다.</param>
+        internal SoundControllerSfx(
+            Transform owner,
+            AudioMixer mixer,
+            AudioMixerGroup group,
+            string volumeParam,
+            AddressableLoaderSound loader,
+            SoundPlaybackDebugReporter debugReporter)
         {
             _preVolume = 0f;
             _owner = owner;
@@ -70,6 +93,7 @@ namespace GGemCo2DCore
             _group = group;
             _volumeParam = volumeParam;
             _loader = loader;
+            _debugReporter = debugReporter;
         }
 
         /// <summary>
@@ -186,7 +210,9 @@ namespace GGemCo2DCore
                 true,
                 resolved.Loop,
                 durationSeconds,
-                stopPolicy);
+                stopPolicy,
+                resolved,
+                true);
         }
 
         /// <summary>
@@ -196,7 +222,17 @@ namespace GGemCo2DCore
         /// <param name="coroutineHost">자동 반환 코루틴 실행자입니다.</param>
         public void Play(int uid, MonoBehaviour coroutineHost)
         {
-            Play(uid, coroutineHost, 1f, 1f, false, false, 0f, SoundPlaybackStopPolicy.Auto);
+            Play(
+                uid,
+                coroutineHost,
+                1f,
+                1f,
+                false,
+                false,
+                0f,
+                SoundPlaybackStopPolicy.Auto,
+                default,
+                false);
         }
 
         /// <summary>
@@ -210,6 +246,8 @@ namespace GGemCo2DCore
         /// <param name="loop">AudioSource 루프 재생 여부입니다.</param>
         /// <param name="durationSeconds">루프 효과음을 유지할 시간입니다.</param>
         /// <param name="stopPolicy">사운드 정지 정책입니다.</param>
+        /// <param name="resolved">대표 sound UID를 포함한 해석 결과입니다.</param>
+        /// <param name="hasResolvedSound">대표 sound UID를 통해 해석된 재생인지 여부입니다.</param>
         /// <returns>재생 정지 핸들입니다.</returns>
         private SoundPlaybackHandle Play(
             int uid,
@@ -219,7 +257,9 @@ namespace GGemCo2DCore
             bool useFinalVolume,
             bool loop,
             float durationSeconds,
-            SoundPlaybackStopPolicy stopPolicy)
+            SoundPlaybackStopPolicy stopPolicy,
+            ResolvedSound resolved,
+            bool hasResolvedSound)
         {
             if (_isDestroyed || coroutineHost == null)
                 return null;
@@ -243,6 +283,8 @@ namespace GGemCo2DCore
             ActiveSfxPlayback playback = new ActiveSfxPlayback
             {
                 Uid = uid,
+                Resolved = resolved,
+                HasResolvedSound = hasResolvedSound,
                 Object = obj,
                 CoroutineHost = coroutineHost,
             };
@@ -317,6 +359,12 @@ namespace GGemCo2DCore
             source.loop = loop;
             playback.Object.SetActive(true);
             source.Play();
+
+            // 비동기 로드와 동시 재생 제한을 모두 통과한 실제 재생 시작 시점에만 UID를 출력합니다.
+            if (playback.HasResolvedSound)
+                _debugReporter?.ReportStarted(playback.Resolved, source.clip);
+            else
+                _debugReporter?.ReportDirectStarted(playback.Uid, SoundConstants.Type.Sfx, source.clip, loop);
 
             if (stopPolicy == SoundPlaybackStopPolicy.ByHandle)
                 return;

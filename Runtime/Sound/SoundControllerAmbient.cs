@@ -24,6 +24,7 @@ namespace GGemCo2DCore
         private readonly AudioMixerGroup _group;
         private readonly AddressableLoaderSound _loader;
         private readonly float _defaultFadeDuration;
+        private readonly SoundPlaybackDebugReporter _debugReporter;
         private readonly Dictionary<int, AmbientPlayback> _playbacksByResourceUid =
             new Dictionary<int, AmbientPlayback>();
         private readonly HashSet<int> _nextResourceUids = new HashSet<int>();
@@ -55,11 +56,30 @@ namespace GGemCo2DCore
             AudioMixerGroup group,
             AddressableLoaderSound loader,
             float defaultFadeDuration)
+            : this(owner, group, loader, defaultFadeDuration, null)
+        {
+        }
+
+        /// <summary>
+        /// 환경음 재생 컨트롤러와 실제 재생 시작 정보를 출력할 디버그 보고기를 생성합니다.
+        /// </summary>
+        /// <param name="owner">환경음 AudioSource를 소유할 GameObject입니다.</param>
+        /// <param name="group">환경음 전용 AudioMixerGroup입니다.</param>
+        /// <param name="loader">AudioClip 재생 참조를 관리할 로더입니다.</param>
+        /// <param name="defaultFadeDuration">리소스에 Override가 없을 때 사용할 글로벌 페이드 시간입니다.</param>
+        /// <param name="debugReporter">실제 재생 시작 정보를 출력할 보고기입니다.</param>
+        internal SoundControllerAmbient(
+            GameObject owner,
+            AudioMixerGroup group,
+            AddressableLoaderSound loader,
+            float defaultFadeDuration,
+            SoundPlaybackDebugReporter debugReporter)
         {
             _owner = owner;
             _group = group;
             _loader = loader;
             _defaultFadeDuration = Mathf.Max(0f, defaultFadeDuration);
+            _debugReporter = debugReporter;
         }
 
         /// <summary>
@@ -206,6 +226,7 @@ namespace GGemCo2DCore
                     {
                         playback.Source.volume = 0f;
                         playback.Source.Play();
+                        _debugReporter?.ReportStarted(resolved, playback.Source.clip);
                     }
 
                     coroutineHost.StartCoroutine(
@@ -249,6 +270,7 @@ namespace GGemCo2DCore
             ApplyPlaybackSettings(playback.Source, resolved, preserveVolume: false);
             playback.Source.volume = 0f;
             playback.Source.Play();
+            _debugReporter?.ReportStarted(resolved, playback.Source.clip);
             coroutineHost.StartCoroutine(
                 FadeVolume(playback, requestVersion, 0f, resolved.Volume, fadeDuration, false));
         }

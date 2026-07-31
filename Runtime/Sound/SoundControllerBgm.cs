@@ -12,6 +12,7 @@ namespace GGemCo2DCore
         private readonly AudioMixer _mixer;
         private readonly string _volumeParam;
         private readonly float _fadeDuration;
+        private readonly SoundPlaybackDebugReporter _debugReporter;
 
         private AudioSource _sourceA;
         private AudioSource _sourceB;
@@ -37,10 +38,31 @@ namespace GGemCo2DCore
             AudioMixerGroup group,
             string volumeParam,
             float fadeDuration)
+            : this(owner, mixer, group, volumeParam, fadeDuration, null)
+        {
+        }
+
+        /// <summary>
+        /// BGM 재생 컨트롤러와 실제 재생 시작 정보를 출력할 디버그 보고기를 초기화합니다.
+        /// </summary>
+        /// <param name="owner">AudioSource를 추가할 소유 GameObject입니다.</param>
+        /// <param name="mixer">BGM 볼륨을 제어할 AudioMixer입니다.</param>
+        /// <param name="group">BGM 출력 AudioMixerGroup입니다.</param>
+        /// <param name="volumeParam">BGM 볼륨 Exposed Parameter 이름입니다.</param>
+        /// <param name="fadeDuration">BGM 교체 페이드 시간입니다.</param>
+        /// <param name="debugReporter">실제 재생 시작 정보를 출력할 보고기입니다.</param>
+        internal SoundControllerBgm(
+            GameObject owner,
+            AudioMixer mixer,
+            AudioMixerGroup group,
+            string volumeParam,
+            float fadeDuration,
+            SoundPlaybackDebugReporter debugReporter)
         {
             _mixer = mixer;
             _volumeParam = volumeParam;
             _fadeDuration = Mathf.Max(0f, fadeDuration);
+            _debugReporter = debugReporter;
 
             _sourceA = owner.AddComponent<AudioSource>();
             _sourceB = owner.AddComponent<AudioSource>();
@@ -71,7 +93,7 @@ namespace GGemCo2DCore
         /// <param name="clipVolume">클립별 볼륨 배율입니다.</param>
         public void Play(AudioClip clip, MonoBehaviour coroutineHost, float clipVolume)
         {
-            BeginPlay(clip, null, coroutineHost, clipVolume, _fadeDuration);
+            BeginPlay(clip, null, coroutineHost, clipVolume, _fadeDuration, default, false);
         }
 
         /// <summary>
@@ -87,7 +109,7 @@ namespace GGemCo2DCore
             float clipVolume,
             float fadeDuration)
         {
-            BeginPlay(clip, null, coroutineHost, clipVolume, fadeDuration);
+            BeginPlay(clip, null, coroutineHost, clipVolume, fadeDuration, default, false);
         }
 
         /// <summary>
@@ -129,7 +151,40 @@ namespace GGemCo2DCore
                 playbackLease,
                 coroutineHost,
                 clipVolume,
-                fadeDuration);
+                fadeDuration,
+                default,
+                false);
+        }
+
+        /// <summary>
+        /// 대표 sound UID에서 해석된 BGM을 재생하고 실제 시작 시점의 식별 정보를 출력할 수 있도록 전달합니다.
+        /// </summary>
+        /// <param name="playbackLease">재생 중 Addressables 참조를 유지할 임대 객체입니다.</param>
+        /// <param name="coroutineHost">페이드 코루틴을 실행할 MonoBehaviour입니다.</param>
+        /// <param name="clipVolume">클립별 볼륨 배율입니다.</param>
+        /// <param name="fadeDuration">이번 교체 요청에 적용할 페이드 시간입니다.</param>
+        /// <param name="resolved">대표 UID와 실제 리소스 UID를 포함한 해석 결과입니다.</param>
+        internal void PlayResolved(
+            SoundPlaybackLease playbackLease,
+            MonoBehaviour coroutineHost,
+            float clipVolume,
+            float fadeDuration,
+            ResolvedSound resolved)
+        {
+            if (playbackLease == null || playbackLease.Clip == null)
+            {
+                playbackLease?.Dispose();
+                return;
+            }
+
+            BeginPlay(
+                playbackLease.Clip,
+                playbackLease,
+                coroutineHost,
+                clipVolume,
+                fadeDuration,
+                resolved,
+                true);
         }
 
         /// <summary>
@@ -140,12 +195,16 @@ namespace GGemCo2DCore
         /// <param name="coroutineHost">페이드 코루틴 실행자입니다.</param>
         /// <param name="clipVolume">클립별 볼륨 배율입니다.</param>
         /// <param name="fadeDuration">이번 교체 요청에 적용할 페이드 시간입니다.</param>
+        /// <param name="resolved">대표 sound UID를 포함한 해석 결과입니다.</param>
+        /// <param name="hasResolvedSound">대표 sound UID를 통해 해석된 재생인지 여부입니다.</param>
         private void BeginPlay(
             AudioClip clip,
             SoundPlaybackLease playbackLease,
             MonoBehaviour coroutineHost,
             float clipVolume,
-            float fadeDuration)
+            float fadeDuration,
+            ResolvedSound resolved,
+            bool hasResolvedSound)
         {
             if (clip == null || coroutineHost == null)
             {
@@ -161,7 +220,9 @@ namespace GGemCo2DCore
                 Mathf.Clamp01(clipVolume),
                 playbackLease,
                 _playVersion,
-                Mathf.Max(0f, fadeDuration)));
+                Mathf.Max(0f, fadeDuration),
+                resolved,
+                hasResolvedSound));
         }
 
         /// <summary>
@@ -173,13 +234,17 @@ namespace GGemCo2DCore
         /// <param name="playbackLease">새 클립의 재생 참조 임대 객체입니다.</param>
         /// <param name="version">요청 순서를 식별하는 버전입니다.</param>
         /// <param name="fadeDuration">이번 교체 요청에 적용할 페이드 시간입니다.</param>
+        /// <param name="resolved">대표 sound UID를 포함한 해석 결과입니다.</param>
+        /// <param name="hasResolvedSound">대표 sound UID를 통해 해석된 재생인지 여부입니다.</param>
         /// <returns>페이드 실행 열거자입니다.</returns>
         private IEnumerator FadeAndSwitch(
             AudioClip newClip,
             float clipVolume,
             SoundPlaybackLease playbackLease,
             int version,
-            float fadeDuration)
+            float fadeDuration,
+            ResolvedSound resolved,
+            bool hasResolvedSound)
         {
             float savedVolume = PlayerPrefsManager.LoadSoundVolumeBGM();
             float dbTarget = Mathf.Log10(Mathf.Max(savedVolume, 0.0001f)) * 20f;
@@ -220,6 +285,12 @@ namespace GGemCo2DCore
             if (ReferenceEquals(_pendingLease, playbackLease))
                 _pendingLease = null;
             _current.Play();
+
+            // 이전 BGM의 Fade Out과 최신 요청 검증을 통과한 실제 교체 시점에만 UID를 출력합니다.
+            if (hasResolvedSound)
+                _debugReporter?.ReportStarted(resolved, _current.clip);
+            else
+                _debugReporter?.ReportDirectStarted(0, SoundConstants.Type.Bgm, _current.clip, true);
 
             t = 0f;
             while (t < fadeDuration)

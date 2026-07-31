@@ -22,6 +22,7 @@ namespace GGemCo2DCore
         private SoundControllerBgm _soundControllerBgm;
         private SoundControllerSfx _soundControllerSfx;
         private SoundControllerAmbient _soundControllerAmbient;
+        private SoundPlaybackDebugReporter _playbackDebugReporter;
         private SoundResolver _soundResolver;
 
         private TableLoaderManager _tableLoaderManager;
@@ -56,24 +57,28 @@ namespace GGemCo2DCore
             _defaultAmbientFadeDuration = soundSettings != null
                 ? soundSettings.GetDefaultAmbientFadeDurationSeconds()
                 : 0.7f;
+            _playbackDebugReporter = new SoundPlaybackDebugReporter(soundSettings);
 
             _soundControllerBgm = new SoundControllerBgm(
                 gameObject,
                 mainAudioMixer,
                 bgmMixerGroup,
                 SoundConstants.NameExposedParameterBGM,
-                _defaultBgmFadeDuration);
+                _defaultBgmFadeDuration,
+                _playbackDebugReporter);
             _soundControllerSfx = new SoundControllerSfx(
                 transform,
                 mainAudioMixer,
                 sfxMixerGroup,
                 SoundConstants.NameExposedParameterSfx,
-                _addressableLoaderSound);
+                _addressableLoaderSound,
+                _playbackDebugReporter);
             _soundControllerAmbient = new SoundControllerAmbient(
                 gameObject,
                 ambientMixerGroup,
                 _addressableLoaderSound,
-                _defaultAmbientFadeDuration);
+                _defaultAmbientFadeDuration,
+                _playbackDebugReporter);
             if (ambientMixerGroup == null)
             {
                 GcLogger.LogError(
@@ -276,7 +281,7 @@ namespace GGemCo2DCore
                 : resolved.UseFadeDurationOverride
                     ? resolved.FadeDuration
                     : _defaultBgmFadeDuration;
-            _soundControllerBgm.Play(lease, this, resolved.Volume, fadeDuration);
+            _soundControllerBgm.PlayResolved(lease, this, resolved.Volume, fadeDuration, resolved);
         }
 
         /// <summary>

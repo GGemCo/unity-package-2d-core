@@ -45,6 +45,24 @@ namespace GGemCo2DCore
         [SerializeField, Min(0f)]
         private float slowMapScopeLoadThresholdSeconds = 0.25f;
 
+        [Header("Sound Debug")]
+        [SerializeField, DebugOption("사운드 디버그 기능 전체 On/Off")]
+        private bool enableSoundDebug;
+
+        [SerializeField, DebugOption("실제로 재생이 시작된 사운드 UID 출력")]
+        private bool enablePlayingSoundUid;
+
+        /// <summary>
+        /// 현재 빌드에서 사운드 디버그 기능을 사용할 수 있는지 여부를 반환합니다.
+        /// </summary>
+        public bool EnableSoundDebug => DebugOptionRuntimeUtility.Resolve(enableSoundDebug);
+
+        /// <summary>
+        /// 실제 재생이 시작된 사운드 UID를 로그로 출력할지 여부를 반환합니다.
+        /// </summary>
+        public bool EnablePlayingSoundUid =>
+            EnableSoundDebug && DebugOptionRuntimeUtility.Resolve(enablePlayingSoundUid);
+
         /// <summary>
         /// 처음 생성 시 한 번만 실행됨
         /// </summary>
@@ -53,6 +71,8 @@ namespace GGemCo2DCore
             preloadConcurrentRequestCount = DefaultPreloadConcurrentRequestCount;
             defaultBgmFadeDurationSeconds = DefaultBgmFadeDurationSeconds;
             defaultAmbientFadeDurationSeconds = DefaultAmbientFadeDurationSeconds;
+            enableSoundDebug = false;
+            enablePlayingSoundUid = false;
             buttonClickSounds ??= new List<MappingButtonClickSound>();
             MappingButtonClickSound mappingButtonClickSound = new MappingButtonClickSound
             {
