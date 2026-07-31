@@ -10,11 +10,13 @@ namespace GGemCo2DCore
         /// </summary>
         private void OnClickWarp()
         {
-            int selectedMapUid = _selectedUIIconWorldMap != null
-                ? _selectedUIIconWorldMap.uid
+            MapManager mapManager = _mapManager;
+            UIIconWorldMap selectedIcon = _selectedUIIconWorldMap;
+            int selectedMapUid = selectedIcon != null
+                ? selectedIcon.uid
                 : 0;
-            int selectedDisplayMapUid = _selectedUIIconWorldMap != null
-                ? _selectedUIIconWorldMap.DisplayMapUid
+            int selectedDisplayMapUid = selectedIcon != null
+                ? selectedIcon.DisplayMapUid
                 : 0;
 
             // Android 기기에서 이동 버튼 입력과 조기 종료 사유를 확인하기 위한 임시 진단 로그입니다.
@@ -23,19 +25,27 @@ namespace GGemCo2DCore
                 $"[WorldMapDebug][WarpButtonClick] selectedMapUid={selectedMapUid}, " +
                 $"selectedDisplayMapUid={selectedDisplayMapUid}");
 
-            if (GcLogger.IsNull(_mapManager, nameof(MapManager)))
+            if (GcLogger.IsNull(mapManager, nameof(MapManager)))
             {
                 GcLogger.LogWarning(this, "[WorldMapDebug][WarpRejected] reason=MapManagerNull");
                 return;
             }
 
-            if (_selectedUIIconWorldMap == null)
+            if (selectedIcon == null)
             {
                 GcLogger.LogWarning(this, "[WorldMapDebug][WarpRejected] reason=SelectedIconNull");
                 return;
             }
 
-            if (!CanMoveToNode(_selectedUIIconWorldMap.NodeDefinition))
+            if (selectedMapUid <= 0)
+            {
+                GcLogger.LogWarning(
+                    this,
+                    $"[WorldMapDebug][WarpRejected] reason=InvalidMapUid, mapUid={selectedMapUid}");
+                return;
+            }
+
+            if (!CanMoveToNode(selectedIcon.NodeDefinition))
             {
                 GcLogger.LogWarning(
                     this,
@@ -43,7 +53,7 @@ namespace GGemCo2DCore
                 return;
             }
 
-            if (IsCurrentMapIcon(_selectedUIIconWorldMap))
+            if (IsCurrentMapIcon(selectedIcon))
             {
                 GcLogger.LogWarning(
                     this,
@@ -55,8 +65,11 @@ namespace GGemCo2DCore
                 this,
                 $"[WorldMapDebug][WarpRequested] mapUid={selectedMapUid}, " +
                 $"displayMapUid={selectedDisplayMapUid}");
+
+            // 창을 닫으면 OnShow(false)에서 선택 아이콘 참조가 초기화됩니다.
+            // 닫기 이후에는 미리 보관한 MapManager와 맵 UID만 사용해야 합니다.
             CloseWithReason(WorldMapWindowCloseReason.TravelStarted);
-            _mapManager.LoadMap(_selectedUIIconWorldMap.uid);
+            mapManager.LoadMap(selectedMapUid);
         }
 
         /// <summary>
