@@ -308,6 +308,15 @@ namespace GGemCo2DCore
         /// <param name="eventData">포인터 이벤트 데이터입니다.</param>
         public void OnPointerClick(PointerEventData eventData)
         {
+            // Android 기기에서 실제 포인터 이벤트가 아이콘까지 전달되는지 확인하기 위한 임시 진단 로그입니다.
+            string pointerSummary = eventData == null
+                ? "eventData=null"
+                : $"pointerId={eventData.pointerId}, button={eventData.button}, position={eventData.position}";
+            GcLogger.Log(
+                this,
+                $"[WorldMapDebug][PointerClick] object={name}, index={index}, " +
+                $"nodeId={NodeId}, requestMapUid={uid}, displayMapUid={DisplayMapUid}, {pointerSummary}");
+
             if (GcLogger.IsNull(_struckTableMap, "map 데이터가 없습니다.")) return;
             if (GcLogger.IsNull(window, "아이콘에 연결된 윈도우가 없습니다.")) return;
             if (GcLogger.IsZero(_struckTableMap.Uid, "map uid 값이 없습니다.")) return;

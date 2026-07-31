@@ -16,20 +16,33 @@ namespace GGemCo2DCore
             GameObject icon = icons[index];
             if (icon == null)
             {
+                GcLogger.LogWarning(
+                    this,
+                    $"[WorldMapDebug][SelectionRejected] index={index}, reason=IconObjectNull");
                 OnClearedSelectedIcon();
                 return;
             }
 
+            UIIconWorldMap worldMapIcon = icon.GetComponent<UIIconWorldMap>();
+            LogWorldMapSelectionDiagnostic("SelectionRequested", index, worldMapIcon);
+
             // 이동하지 못 하는 곳을 클릭했을 때는 아무것도 하지 않는다.
             if (!CanSelectWorldMapNode(index))
             {
+                LogWorldMapSelectionDiagnostic("SelectionRejected", index, worldMapIcon);
                 // OnClearedSelectedIcon();
                 return;
             }
             
             if (selectedIcon != null)
             {
-                if (selectedIcon.index == index) return;
+                if (selectedIcon.index == index)
+                {
+                    GcLogger.Log(
+                        this,
+                        $"[WorldMapDebug][SelectionUnchanged] index={index}, reason=AlreadySelected");
+                    return;
+                }
                 
                 selectedIcon.SetSelected(false);
                 selectedIcon = null;
@@ -38,12 +51,61 @@ namespace GGemCo2DCore
             selectedIcon = icon.GetComponent<UIIcon>();
             if (selectedIcon == null)
             {
+                GcLogger.LogWarning(
+                    this,
+                    $"[WorldMapDebug][SelectionRejected] index={index}, reason=UIIconComponentNull");
                 OnClearedSelectedIcon();
                 return;
             }
 
             selectedIcon.SetSelected(true, false);
             OnSelectedIcon(selectedIcon);
+            LogWorldMapSelectionDiagnostic(
+                "SelectionApplied",
+                index,
+                selectedIcon as UIIconWorldMap);
+        }
+
+        /// <summary>
+        /// 월드맵 노드 선택 과정에서 사용하는 핵심 상태를 임시 콘솔 로그로 출력합니다.
+        /// Android 기기에서 선택 요청이 거부되는 원인을 한 줄로 비교할 때 사용합니다.
+        /// </summary>
+        /// <param name="stage">선택 처리 단계 이름입니다.</param>
+        /// <param name="index">선택을 요청한 월드맵 노드 슬롯 인덱스입니다.</param>
+        /// <param name="icon">선택 대상 월드맵 아이콘입니다.</param>
+        private void LogWorldMapSelectionDiagnostic(
+            string stage,
+            int index,
+            UIIconWorldMap icon)
+        {
+            WorldMapNodeDefinition node = icon != null ? icon.NodeDefinition : null;
+            if (node == null)
+            {
+                GcLogger.LogWarning(
+                    this,
+                    $"[WorldMapDebug][{stage}] index={index}, reason=NodeDefinitionNull");
+                return;
+            }
+
+            int currentMapUid = _mapManager != null ? _mapManager.GetCurrentMapUid() : 0;
+            bool isCurrentMap = IsCurrentMapNode(node);
+            bool isVisible = IsNodeVisible(node);
+            bool isInactive = IsWorldMapNodeInactive(node);
+            bool isVisited = IsWorldMapNodeVisited(node);
+            bool isAdjacent = IsAdjacentToCurrentMapNode(node);
+            bool canMove = CanMoveToNode(node);
+            bool canSelect = CanSelectNode(node);
+
+            GcLogger.Log(
+                this,
+                $"[WorldMapDebug][{stage}] index={index}, nodeId={node.NodeId}, " +
+                $"requestMapUid={node.MapUid}, displayMapUid={icon.DisplayMapUid}, " +
+                $"currentMapUid={currentMapUid}, nodeType={node.NodeType}, " +
+                $"current={isCurrentMap}, visible={isVisible}, inactive={isInactive}, " +
+                $"visited={isVisited}, adjacent={isAdjacent}, " +
+                $"requireVisited={_activePresentationOptions.requireVisitedToWarp}, " +
+                $"requireAdjacency={_activePresentationOptions.requireAdjacencyToWarp}, " +
+                $"canMove={canMove}, canSelect={canSelect}");
         }
 
         /// <summary>

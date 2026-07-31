@@ -10,10 +10,51 @@ namespace GGemCo2DCore
         /// </summary>
         private void OnClickWarp()
         {
-            if (GcLogger.IsNull(_mapManager, nameof(MapManager))) return;
-            if (_selectedUIIconWorldMap == null) return;
-            if (!CanMoveToNode(_selectedUIIconWorldMap.NodeDefinition)) return;
-            if (IsCurrentMapIcon(_selectedUIIconWorldMap)) return;
+            int selectedMapUid = _selectedUIIconWorldMap != null
+                ? _selectedUIIconWorldMap.uid
+                : 0;
+            int selectedDisplayMapUid = _selectedUIIconWorldMap != null
+                ? _selectedUIIconWorldMap.DisplayMapUid
+                : 0;
+
+            // Android 기기에서 이동 버튼 입력과 조기 종료 사유를 확인하기 위한 임시 진단 로그입니다.
+            GcLogger.Log(
+                this,
+                $"[WorldMapDebug][WarpButtonClick] selectedMapUid={selectedMapUid}, " +
+                $"selectedDisplayMapUid={selectedDisplayMapUid}");
+
+            if (GcLogger.IsNull(_mapManager, nameof(MapManager)))
+            {
+                GcLogger.LogWarning(this, "[WorldMapDebug][WarpRejected] reason=MapManagerNull");
+                return;
+            }
+
+            if (_selectedUIIconWorldMap == null)
+            {
+                GcLogger.LogWarning(this, "[WorldMapDebug][WarpRejected] reason=SelectedIconNull");
+                return;
+            }
+
+            if (!CanMoveToNode(_selectedUIIconWorldMap.NodeDefinition))
+            {
+                GcLogger.LogWarning(
+                    this,
+                    $"[WorldMapDebug][WarpRejected] reason=CannotMove, mapUid={selectedMapUid}");
+                return;
+            }
+
+            if (IsCurrentMapIcon(_selectedUIIconWorldMap))
+            {
+                GcLogger.LogWarning(
+                    this,
+                    $"[WorldMapDebug][WarpRejected] reason=CurrentMap, mapUid={selectedMapUid}");
+                return;
+            }
+
+            GcLogger.Log(
+                this,
+                $"[WorldMapDebug][WarpRequested] mapUid={selectedMapUid}, " +
+                $"displayMapUid={selectedDisplayMapUid}");
             _mapManager.LoadMap(_selectedUIIconWorldMap.uid);
             Show(false);
         }
