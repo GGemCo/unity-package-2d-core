@@ -33,6 +33,8 @@ namespace GGemCo2DCore
 
         private InteractionManager.InteractionSuspensionToken
             _playerStatResetSuspensionToken;
+        private InteractionManager.InteractionSuspensionToken
+            _worldMapSuspensionToken;
 
         /// <summary>
         /// 선택지 버튼에 표시할 텍스트를 설정합니다.
@@ -229,11 +231,72 @@ namespace GGemCo2DCore
                         ? InteractionExecutionResult.SuspendForChildWindow
                         : InteractionExecutionResult.NotHandled;
                 case InteractionConstants.Type.WorldMap:
-                    _uiWindowWorldMap?.Show(true);
-                    return InteractionExecutionResult.CompleteInteraction;
+                    return OpenWorldMapForInteraction()
+                        ? InteractionExecutionResult.SuspendForChildWindow
+                        : InteractionExecutionResult.NotHandled;
                 default:
                     return InteractionExecutionResult.NotHandled;
             }
+        }
+
+        /// <summary>
+        /// 현재 NPC 인터랙션을 일시 중단한 뒤 월드맵을 자식 윈도우로 엽니다.
+        /// 월드맵 표시가 실패하면 중단 토큰을 취소하여 현재 대화 선택지를 유지합니다.
+        /// </summary>
+        /// <returns>인터랙션을 중단하고 월드맵을 열었으면 <see langword="true"/>입니다.</returns>
+        private bool OpenWorldMapForInteraction()
+        {
+            InteractionManager interactionManager =
+                SceneGame?.InteractionManager;
+            if (_uiWindowWorldMap == null || interactionManager == null)
+            {
+                return false;
+            }
+
+            if (!interactionManager.TrySuspendCurrentInteraction(
+                    _currentNpc,
+                    out InteractionManager.InteractionSuspensionToken token))
+            {
+                return false;
+            }
+
+            if (_uiWindowWorldMap.ShowWithCloseCallback(
+                    HandleInteractionWorldMapClosed))
+            {
+                _worldMapSuspensionToken = token;
+                return true;
+            }
+
+            interactionManager.CancelCurrentInteractionSuspension(token);
+            return false;
+        }
+
+        /// <summary>
+        /// 인터랙션에서 연 월드맵의 종료 사유에 따라 중단한 NPC 인터랙션을 재개하거나 종료합니다.
+        /// 취소하기 버튼으로 닫은 경우에만 NPC와 플레이어의 유효 범위를 다시 검사하고 선택지를 재구성합니다.
+        /// </summary>
+        /// <param name="closeReason">월드맵이 닫힌 최종 사유입니다.</param>
+        private void HandleInteractionWorldMapClosed(
+            WorldMapWindowCloseReason closeReason)
+        {
+            InteractionManager.InteractionSuspensionToken token =
+                _worldMapSuspensionToken;
+            _worldMapSuspensionToken = default;
+
+            InteractionManager interactionManager =
+                SceneGame?.InteractionManager;
+            if (interactionManager == null)
+            {
+                return;
+            }
+
+            if (closeReason == WorldMapWindowCloseReason.Cancelled)
+            {
+                interactionManager.ResumeSuspendedInteraction(token);
+                return;
+            }
+
+            interactionManager.CompleteSuspendedInteraction(token);
         }
 
         /// <summary>

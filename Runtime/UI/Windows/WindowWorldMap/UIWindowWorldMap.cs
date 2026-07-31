@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -107,6 +108,9 @@ namespace GGemCo2DCore
         private WorldMapWindowPresentationOptions _activePresentationOptions;
         private WorldMapWindowMode _nextPresentationMode;
         private bool _hasNextPresentationMode;
+        private Action<WorldMapWindowCloseReason> _closeCallback;
+        private WorldMapWindowCloseReason _pendingCloseReason;
+        private bool _hasPendingCloseReason;
 
         /// <summary>현재 윈도우가 표시 중인 월드맵 정의입니다.</summary>
         public WorldMapDefinition WorldMapDefinition => _worldMapDefinition;

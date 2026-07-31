@@ -4,6 +4,21 @@ using UnityEngine;
 namespace GGemCo2DCore
 {
     /// <summary>
+    /// 월드맵 윈도우가 닫힌 이유를 정의합니다.
+    /// </summary>
+    public enum WorldMapWindowCloseReason
+    {
+        /// <summary>취소하기 버튼을 눌러 월드맵을 닫았습니다.</summary>
+        Cancelled = 0,
+
+        /// <summary>선택한 목적지로 이동을 시작하며 월드맵을 닫았습니다.</summary>
+        TravelStarted = 1,
+
+        /// <summary>외부 표시 정책이나 다른 시스템에 의해 월드맵이 닫혔습니다.</summary>
+        Dismissed = 2,
+    }
+
+    /// <summary>
     /// 월드맵 윈도우가 어떤 목적의 화면으로 표시되는지 구분합니다.
     /// </summary>
     public enum WorldMapWindowMode

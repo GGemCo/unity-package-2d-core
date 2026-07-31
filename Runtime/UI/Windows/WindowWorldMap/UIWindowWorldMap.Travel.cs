@@ -55,14 +55,30 @@ namespace GGemCo2DCore
                 this,
                 $"[WorldMapDebug][WarpRequested] mapUid={selectedMapUid}, " +
                 $"displayMapUid={selectedDisplayMapUid}");
+            CloseWithReason(WorldMapWindowCloseReason.TravelStarted);
             _mapManager.LoadMap(_selectedUIIconWorldMap.uid);
-            Show(false);
         }
 
+        /// <summary>
+        /// 월드맵 취소 요청을 기록하고 창을 닫습니다.
+        /// 실제 복귀 동작은 월드맵을 연 호출자가 등록한 닫힘 콜백에서 결정합니다.
+        /// </summary>
         private void OnClickCancel()
         {
+            CloseWithReason(WorldMapWindowCloseReason.Cancelled);
+        }
+
+        /// <summary>
+        /// 명시적인 월드맵 종료 사유를 보관하고 창 닫기 전환을 시작합니다.
+        /// 닫기 연출이 완료되면 현재 표시 요청에 등록된 일회성 콜백으로 종료 사유를 전달합니다.
+        /// </summary>
+        /// <param name="closeReason">호출자에게 전달할 월드맵 종료 사유입니다.</param>
+        private void CloseWithReason(
+            WorldMapWindowCloseReason closeReason)
+        {
+            _pendingCloseReason = closeReason;
+            _hasPendingCloseReason = true;
             Show(false);
-            SceneGame.uIWindowManager.ShowWindow(UIWindowConstants.WindowUid.TimingBattleExit, true);
         }
 
         /// <summary>
