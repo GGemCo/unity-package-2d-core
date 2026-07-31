@@ -80,6 +80,12 @@ namespace GGemCo2DCore
         // 맵 웨이브 스폰 컨트롤러
         private MapWaveSpawnController _mapWaveSpawnController;
 
+        /// <summary>
+        /// 현재 맵에 시작 대기 중이거나 실행 중인 웨이브 시나리오가 있는지 여부입니다.
+        /// </summary>
+        public bool HasScheduledOrRunningWaveScenario =>
+            _mapWaveSpawnController?.HasScheduledOrRunningScenario == true;
+
         private AddressableLoaderPrefabCharacter _addressableLoaderPrefabCharacter;
         private MapEntryRuleResolver _mapEntryRuleResolver;
         private GGemCoMapSettings _mapSettings;

@@ -37,6 +37,16 @@ namespace GGemCo2DCore
         public bool HasRunningScenario => _scenarioByUid.Count > 0;
 
         /// <summary>
+        /// 시작 대기 중이거나 현재 실행 중인 웨이브 시나리오가 하나라도 있는지 여부입니다.
+        /// </summary>
+        /// <remarks>
+        /// 웨이브 사이에 생존 몬스터가 일시적으로 0명이 되더라도 맵 클리어로 오인하지 않도록
+        /// 맵 종료 정책에서 조회하는 상태입니다.
+        /// </remarks>
+        public bool HasScheduledOrRunningScenario =>
+            _scheduledScenarioUids.Count > 0 || _scenarioByUid.Count > 0;
+
+        /// <summary>
         /// 웨이브 진행 추적 로그를 Unity Console에 출력할지 여부입니다.
         /// </summary>
         public bool DebugLogEnabled { get; set; } = true;

@@ -12,6 +12,8 @@ namespace GGemCo2DCore
     [DisallowMultipleComponent]
     public sealed class PlayerAutoMoveController : MonoBehaviour, IAutoMoveVectorProvider, IAutoMoveSuspendService
     {
+        private const string DiagnosticLogPrefix = "[WaitAnimationDebug]";
+
         /// <summary>
         /// 자동 이동 요청이 활성 상태이고 현재 맵 정책상 자동 이동을 사용할 수 있는지 여부입니다.
         /// </summary>
@@ -205,9 +207,13 @@ namespace GGemCo2DCore
             }
         }
 
+        /// <summary>
+        /// 활성화된 자동 이동을 취소하고 캐릭터를 기본 대기 상태로 전환합니다.
+        /// </summary>
         public void Cancel()
         {
             if (!_isActive) return;
+            LogStopDiagnostic("AutoMoveCancel");
             _isActive = false;
             _lockInput = false;
             ResetCombatTargetRecovery();
@@ -221,9 +227,13 @@ namespace GGemCo2DCore
             }
         }
 
+        /// <summary>
+        /// 자동 이동 완료 상태를 정리하고 캐릭터를 기본 대기 상태로 전환합니다.
+        /// </summary>
         private void Complete()
         {
             if (!_isActive) return;
+            LogStopDiagnostic("AutoMoveComplete");
             _isActive = false;
             _lockInput = false;
             ResetCombatTargetRecovery();
@@ -244,6 +254,28 @@ namespace GGemCo2DCore
             {
                 GcLogger.LogException(ex);
             }
+        }
+
+        /// <summary>
+        /// 자동 이동 종료로 캐릭터 정지가 요청되는 시점을 확인할 임시 진단 로그를 출력합니다.
+        /// </summary>
+        /// <param name="phase">자동 이동 종료 원인을 나타내는 처리 단계입니다.</param>
+        private void LogStopDiagnostic(string phase)
+        {
+            string characterStatus = _character != null
+                ? _character.GetCurrentStatus().ToString()
+                : "Unavailable";
+            CharacterConstants.BattleStatus battleStatus = _character != null
+                ? _character.GetBattleStatus()
+                : CharacterConstants.BattleStatus.None;
+            string moveType = _request != null
+                ? _request.moveType.ToString()
+                : "Unavailable";
+            GcLogger.Log(
+                $"{DiagnosticLogPrefix} phase={phase}, frame={Time.frameCount}, " +
+                $"time={Time.time:F3}, characterStatus={characterStatus}, " +
+                $"battleStatus={battleStatus}, isActive={_isActive}, lockInput={_lockInput}, " +
+                $"moveType={moveType}");
         }
 
 

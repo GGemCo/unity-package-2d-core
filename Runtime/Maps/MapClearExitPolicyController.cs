@@ -19,6 +19,7 @@ namespace GGemCo2DCore
         private int _pendingDestinationWindowUid;
         private UIWindowWorldMap _pendingWorldMapWindow;
         private Coroutine _executeRoutine;
+        private Coroutine _mapClearEvaluationRoutine;
         private readonly MapClearMonsterSuspensionScope _monsterSuspensionScope = new();
 
         /// <summary>
@@ -87,6 +88,7 @@ namespace GGemCo2DCore
         private void OnDestroy()
         {
             UnregisterEvents();
+            StopPendingMapClearEvaluation();
             StopExecuteRoutine();
             CancelPendingDestinationWindowOpen();
         }
@@ -128,6 +130,7 @@ namespace GGemCo2DCore
         private void OnMapEntered(MapEnteredEventData eventData)
         {
             bool hadRunningExitPolicy = _isExecuting || _executeRoutine != null;
+            StopPendingMapClearEvaluation();
             StopExecuteRoutine();
             CancelPendingDestinationWindowOpen();
             if (hadRunningExitPolicy)
@@ -179,11 +182,39 @@ namespace GGemCo2DCore
                 return;
             }
 
+            ScheduleMapClearEvaluation();
+        }
+
+        /// <summary>
+        /// 몬스터 사망 이벤트의 다른 구독자가 웨이브 전환 상태를 반영할 시간을 확보한 뒤
+        /// 맵 클리어 여부를 다시 검사하도록 예약합니다.
+        /// </summary>
+        private void ScheduleMapClearEvaluation()
+        {
+            if (_mapClearEvaluationRoutine != null)
+            {
+                return;
+            }
+
+            _mapClearEvaluationRoutine = StartCoroutine(EvaluateMapClearNextFrame());
+        }
+
+        /// <summary>
+        /// 한 프레임을 양보한 뒤 생존 몬스터와 웨이브 예약 상태를 기준으로 맵 클리어를 검사합니다.
+        /// </summary>
+        /// <returns>다음 프레임까지 대기하는 코루틴 열거자입니다.</returns>
+        private IEnumerator EvaluateMapClearNextFrame()
+        {
+            // 몬스터 사망 이벤트 구독 순서와 무관하게 웨이브 시스템이 다음 그룹 예약 또는
+            // 최종 시나리오 완료 상태를 먼저 반영할 수 있도록 한 프레임을 양보합니다.
+            yield return null;
+
+            _mapClearEvaluationRoutine = null;
             TryBeginMapClearExitIfCompleted();
         }
 
         /// <summary>
-        /// 현재 맵에 살아있는 몬스터가 더 이상 없으면 맵 종료 루틴을 시작합니다.
+        /// 현재 맵에 살아있는 몬스터와 진행 예정인 웨이브가 더 이상 없으면 맵 종료 루틴을 시작합니다.
         /// </summary>
         private void TryBeginMapClearExitIfCompleted()
         {
@@ -200,6 +231,11 @@ namespace GGemCo2DCore
             }
 
             if (CountAliveMonsters() > 0)
+            {
+                return;
+            }
+
+            if (HasScheduledOrRunningWaveScenario())
             {
                 return;
             }
@@ -370,7 +406,9 @@ namespace GGemCo2DCore
             }
 
             return IsPlayerAliveForMapClear() &&
-                   (_ignoreAliveMonstersForExecution || CountAliveMonsters() <= 0);
+                   (_ignoreAliveMonstersForExecution ||
+                    (!HasScheduledOrRunningWaveScenario() &&
+                     CountAliveMonsters() <= 0));
         }
 
         /// <summary>
@@ -402,6 +440,16 @@ namespace GGemCo2DCore
             return _sceneGame?.mapManager != null
                 ? _sceneGame.mapManager.CountCurrentMapAliveMonsters()
                 : 0;
+        }
+
+        /// <summary>
+        /// 현재 맵에 시작 대기 중이거나 실행 중인 웨이브 시나리오가 있는지 확인합니다.
+        /// </summary>
+        /// <returns>완료되지 않은 웨이브 일정이 하나라도 있으면 <see langword="true"/>입니다.</returns>
+        private bool HasScheduledOrRunningWaveScenario()
+        {
+            return _sceneGame?.mapManager != null &&
+                   _sceneGame.mapManager.HasScheduledOrRunningWaveScenario;
         }
 
         /// <summary>
@@ -601,6 +649,18 @@ namespace GGemCo2DCore
             _isExecuting = false;
             _ignoreAliveMonstersForExecution = false;
             _monsterSuspensionScope.Release();
+        }
+
+        /// <summary>
+        /// 다음 프레임에 실행하도록 예약된 맵 클리어 검사를 중단합니다.
+        /// </summary>
+        private void StopPendingMapClearEvaluation()
+        {
+            if (_mapClearEvaluationRoutine != null)
+            {
+                StopCoroutine(_mapClearEvaluationRoutine);
+                _mapClearEvaluationRoutine = null;
+            }
         }
 
         /// <summary>
