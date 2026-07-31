@@ -132,6 +132,23 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 대표 sound UID가 SFX로 해석되는 경우에만 재생합니다.
+        /// 잘못된 설정으로 BGM이나 환경음이 피격·UI 같은 SFX 경로에서 재생되는 것을 방지합니다.
+        /// </summary>
+        /// <param name="uid">재생할 sound 테이블의 대표 UID입니다.</param>
+        /// <returns>재생 정지 핸들입니다. SFX로 재생하지 못하면 null을 반환합니다.</returns>
+        public SoundPlaybackHandle PlaySfxByUid(int uid)
+        {
+            return PlayByUidInternal(
+                uid,
+                null,
+                0f,
+                SoundPlaybackStopPolicy.Auto,
+                0f,
+                sfxOnly: true);
+        }
+
+        /// <summary>
         /// SFX sound UID를 루프 재생하고 요청 단위 재생 속도 배율을 적용합니다.
         /// BGM/Ambient로 해석되는 UID는 이 메서드에서 재생하지 않으며, 반환된 핸들을 통해 호출자가 직접 정지해야 합니다.
         /// </summary>

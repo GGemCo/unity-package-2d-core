@@ -70,6 +70,16 @@ namespace GGemCo2DCore
         [Tooltip("몬스터 피격 시 재생할 VFX 설정 목록입니다. 여러 항목을 등록하면 조건에 맞는 VFX를 순서대로 재생합니다.")]
         public List<IncomingHitVfxSettings> incomingHitVfxList = new();
 
+        [Header("피격 사운드")]
+        [Tooltip("몬스터에게 유효한 피해가 확정되었을 때 공통으로 재생할 대표 SFX UID입니다. 0이면 재생하지 않습니다.")]
+        [SerializeField, Min(0)]
+        private int incomingHitSoundUid;
+
+        /// <summary>
+        /// 몬스터에게 유효한 피해가 확정되었을 때 재생할 공용 대표 SFX UID입니다.
+        /// </summary>
+        public int IncomingHitSoundUid => incomingHitSoundUid;
+
         [Header("Battle HUD")]
         [Tooltip("몬스터 전투 HUD 사용 여부")]
         [SerializeField] private bool useBattleHud = true;
@@ -408,6 +418,7 @@ namespace GGemCo2DCore
             spriteWhiteOverlayColor = Color.white;
             spriteWhiteOverlayFlashDuration = 0.08f;
             incomingHitVfxList = new List<IncomingHitVfxSettings>();
+            incomingHitSoundUid = 0;
             cullingBrainResumePolicy = MonsterCullingBrainResumePolicy.Continue;
             resetAggroOnCullingBrainReset = false;
             resetToRegenPositionOnCullingBrainReset = false;

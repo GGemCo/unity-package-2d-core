@@ -93,10 +93,10 @@ namespace GGemCo2DCore
         public bool SuppressDamageReaction;
 
         /// <summary>
-        /// 이번 데미지에서 피격 시각 효과를 억제할지 여부입니다.
+        /// 이번 데미지에서 피격 VFX와 사운드 연출을 억제할지 여부입니다.
         /// </summary>
         /// <remarks>
-        /// 지속 피해처럼 피격 이펙트가 매 틱 반복되면 과한 경우에 사용합니다. 데미지 텍스트와 HP 처리는 유지됩니다.
+        /// 지속 피해처럼 피격 VFX와 사운드가 매 틱 반복되면 과한 경우에 사용합니다. 데미지 텍스트와 HP 처리는 유지됩니다.
         /// </remarks>
         public bool SuppressHitEffect;
 
@@ -287,6 +287,7 @@ namespace GGemCo2DCore
         private ControllerMonsterSuperArmor _controllerMonsterSuperArmor;
         private float _monsterGroggyAffectDuration;
         private int _monsterGroggyAffectUid;
+        private int _monsterIncomingHitSoundUid;
         
         private Color _textColorDamageMonster;
         private Color _textColorDamagePlayer;
@@ -320,6 +321,7 @@ namespace GGemCo2DCore
             {
                 _monsterGroggyAffectDuration = monsterSettings.monsterGroggyAffectDuration;
                 _monsterGroggyAffectUid = monsterSettings.monsterGroggyAffectUid;
+                _monsterIncomingHitSoundUid = monsterSettings.IncomingHitSoundUid;
             }
 
             if (loaderSettings != null && loaderSettings.settings)
@@ -717,7 +719,7 @@ namespace GGemCo2DCore
                 SceneGame.Instance.damageTextManager.ShowDamageText(metadataDamageText2);
             }
 
-            TryPlayIncomingHitEffects(metadataDamage);
+            TryPlayIncomingHitPresentation(metadataDamage);
             
             if (remainHp <= 0)
             {
@@ -1074,20 +1076,34 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 확정 데미지에 대한 피격 시각 효과를 재생합니다.
+        /// 확정 데미지에 대한 피격 VFX와 사운드 연출을 재생합니다.
         /// </summary>
         /// <param name="metadataDamage">현재 피격 처리에 사용한 데미지 메타데이터입니다.</param>
         /// <remarks>
         /// Affect Damage Modifier처럼 HP 변화만 필요하고 피격 플래시/VFX는 생략해야 하는 경우
         /// <see cref="MetadataDamage.SuppressHitEffect"/>를 통해 이 경로를 차단합니다.
         /// </remarks>
-        private void TryPlayIncomingHitEffects(MetadataDamage metadataDamage)
+        private void TryPlayIncomingHitPresentation(MetadataDamage metadataDamage)
         {
             if (metadataDamage != null && metadataDamage.SuppressHitEffect)
                 return;
 
             _characterBase.TryPlaySpriteWhiteOverlayOnHit();
             _incomingHitVfxController.TryPlay(IncomingHitVfxTriggerType.OnDamageConfirmed);
+            TryPlayMonsterIncomingHitSound();
+        }
+
+        /// <summary>
+        /// 몬스터에게 유효한 피해가 확정되었을 때 애니메이션 재생 여부와 관계없이 공용 피격 SFX를 재생합니다.
+        /// </summary>
+        private void TryPlayMonsterIncomingHitSound()
+        {
+            if (_monsterIncomingHitSoundUid <= 0 || _characterBase is not Monster)
+                return;
+
+            SceneGame sceneGame = SceneGame.Instance;
+            SoundManager soundManager = sceneGame != null ? sceneGame.soundManager : null;
+            soundManager?.PlaySfxByUid(_monsterIncomingHitSoundUid);
         }
 
         /// <summary>
