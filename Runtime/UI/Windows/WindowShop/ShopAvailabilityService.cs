@@ -106,6 +106,12 @@ namespace GGemCo2DCore
                 return false;
             }
 
+            if (item.BuyUsePolicy == ShopBuyUsePolicy.UseImmediately &&
+                !ItemUseService.IsItemActionAvailable(SceneGame.Instance, item.ItemUid, out disabledReason))
+            {
+                return false;
+            }
+
             if (TryGetRule(_productRules, (item.ShopUid, item.SlotIndex, item.ItemUid), out var rule) ||
                 TryGetRule(_shopItemRules, (item.ShopUid, item.ItemUid), out rule) ||
                 TryGetRule(_slotRules, (item.ShopUid, item.SlotIndex), out rule) ||

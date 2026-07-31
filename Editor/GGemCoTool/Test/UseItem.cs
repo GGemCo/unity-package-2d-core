@@ -182,7 +182,7 @@ namespace GGemCo2DCoreEditor
                             var a = actions[i];
                             if (a == null) continue;
                             sb.AppendLine(
-                                $"- ({a.Order}) {a.ActionType} / IntA:{a.ParamIntA} IntB:{a.ParamIntB} FloatA:{a.ParamFloatA} FloatB:{a.ParamFloatB} StrA:{a.ParamStringA} StrB:{a.ParamStringB}");
+                                $"- ({a.Order}) {a.ActionType} / Policy:{a.ActionPolicy} IntA:{a.ParamIntA} IntB:{a.ParamIntB} FloatA:{a.ParamFloatA} FloatB:{a.ParamFloatB} StrA:{a.ParamStringA} StrB:{a.ParamStringB}");
                         }
                     }
                 }

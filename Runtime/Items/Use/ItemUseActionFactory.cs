@@ -43,8 +43,8 @@ namespace GGemCo2DCore
                     return new ItemUseActionAddMaxHpNormal(row.ParamIntA);
 
                 case ItemUseActionType.AddMaxHpTemp:
-                    // ParamIntA = amount
-                    return new ItemUseActionAddMaxHpTemp(row.ParamIntA);
+                    // ParamIntA = 누적 증가량 또는 충전 목표값, ActionPolicy = 적용 정책
+                    return new ItemUseActionAddMaxHpTemp(row.ParamIntA, row.ActionPolicy);
 
                 case ItemUseActionType.ApplyAffect:
                     // ParamIntA = affectUid, ParamFloatA = durationOverrideSeconds(<=0이면 기본)

@@ -551,6 +551,31 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 아이템 임시 HP를 목표값까지 충전하고 변경된 최대치와 현재치를 저장합니다.
+        /// </summary>
+        /// <param name="targetValue">충전할 임시 HP 목표값입니다.</param>
+        /// <param name="raiseEvent">스탯 재계산 이벤트를 발생시킬지 여부입니다.</param>
+        /// <returns>임시 HP가 실제로 변경되면 true입니다.</returns>
+        public override bool RefillItemBonusHpTempTo(long targetValue, bool raiseEvent = true)
+        {
+            if (!base.RefillItemBonusHpTempTo(targetValue, raiseEvent))
+            {
+                return false;
+            }
+
+            if (_playerData == null)
+            {
+                return true;
+            }
+
+            // 최대치와 현재치를 한 번에 반영한 뒤 저장 호출을 한 번만 수행합니다.
+            _playerData.SetTotalItemBonusHpTemp(TotalHpTempItem, save: false);
+            _playerData.SetCurrentItemBonusHpTemp(GetItemBonusHpTempCurrent(), save: false);
+            _playerData.SaveItemBonusHpState();
+            return true;
+        }
+
+        /// <summary>
         /// ItemBonusHpCurrent(임시/추가 HP 현재치)가 감소했을 때, “하트 1개 완전 소모” 여부를 판정하여
         /// ItemBonusHpTemp(임시/추가 HP 최대치)를 영구 감소(저장)합니다.
         /// </summary>

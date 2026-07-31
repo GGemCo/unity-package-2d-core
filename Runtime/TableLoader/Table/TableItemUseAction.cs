@@ -18,6 +18,12 @@ namespace GGemCo2DCore
         public int Order;
         public ItemUseActionType ActionType;
 
+        /// <summary>
+        /// 임시 HP 액션의 적용 정책입니다.
+        /// 다른 액션 타입에서는 기본값 <see cref="ItemTempHpApplyPolicy.Add"/>를 사용합니다.
+        /// </summary>
+        public ItemTempHpApplyPolicy ActionPolicy;
+
         // 범용 파라미터(필요한 Action만 사용)
         public int ParamIntA;
         public int ParamIntB;
@@ -63,6 +69,11 @@ namespace GGemCo2DCore
                 ItemUseUid = itemUseUid,
                 Order = order,
                 ActionType = type,
+                // 범용 문자열 파라미터를 로드 시점에 강타입 정책으로 변환합니다.
+                // 기존 테이블의 빈 값은 누적 증가(Add)로 처리하여 하위 호환성을 유지합니다.
+                ActionPolicy = type == ItemUseActionType.AddMaxHpTemp
+                    ? reader.Enum("ParamStringB", ItemTempHpApplyPolicy.Add)
+                    : ItemTempHpApplyPolicy.Add,
                 ParamIntA = reader.Int("ParamIntA"),
                 ParamIntB = reader.Int("ParamIntB"),
                 ParamFloatA = reader.Float("ParamFloatA"),

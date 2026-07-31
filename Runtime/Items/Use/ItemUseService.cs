@@ -127,6 +127,99 @@ namespace GGemCo2DCore
             return ExecuteActionsWithoutInventoryConsume(context, actions);
         }
 
+        /// <summary>
+        /// 인벤토리 소모나 효과 적용 없이 아이템의 모든 액션을 실행할 수 있는지 검사합니다.
+        /// 상점 즉시 사용 상품의 구매 직전 검증처럼 실제 실행과 동일한 검사가 필요한 경우 사용합니다.
+        /// </summary>
+        /// <param name="sceneGame">현재 게임 씬입니다.</param>
+        /// <param name="itemUid">검사할 아이템 UID입니다.</param>
+        /// <param name="targetObject">효과 적용 대상입니다. null이면 플레이어를 사용합니다.</param>
+        /// <returns>아이템 액션 실행 가능 여부입니다.</returns>
+        public static ResultCommon CanUseItemDirect(
+            SceneGame sceneGame,
+            int itemUid,
+            GameObject targetObject = null)
+        {
+            if (sceneGame == null || itemUid <= 0)
+            {
+                return ResultCommon.Fail("ItemUse_InvalidContext");
+            }
+
+            if (!TryBuildContext(
+                    sceneGame,
+                    inventory: null,
+                    slotIndex: -1,
+                    itemUid: itemUid,
+                    targetObject: targetObject,
+                    out ItemUseContext context,
+                    out _,
+                    out List<StruckTableItemUseAction> actions,
+                    out _,
+                    out ResultCommon failResult))
+            {
+                return failResult;
+            }
+
+            return CanExecuteActions(context, actions);
+        }
+
+        /// <summary>
+        /// 상태 의존형 아이템 액션의 상점 구매 가능 여부를 메시지 출력 없이 검사합니다.
+        /// 일반적인 테이블 유효성 검사는 호출자가 먼저 수행해야 합니다.
+        /// </summary>
+        /// <param name="sceneGame">현재 게임 씬입니다.</param>
+        /// <param name="itemUid">검사할 아이템 UID입니다.</param>
+        /// <param name="disabledReason">구매할 수 없을 때 표시할 시스템 메시지 키입니다.</param>
+        /// <returns>상태 의존형 액션을 적용할 수 있으면 true입니다.</returns>
+        public static bool IsItemActionAvailable(
+            SceneGame sceneGame,
+            int itemUid,
+            out string disabledReason)
+        {
+            disabledReason = null;
+
+            if (sceneGame == null || itemUid <= 0)
+            {
+                disabledReason = "ItemUse_CannotExecute";
+                return false;
+            }
+
+            if (!TryBuildContext(
+                    sceneGame,
+                    inventory: null,
+                    slotIndex: -1,
+                    itemUid: itemUid,
+                    targetObject: null,
+                    out ItemUseContext context,
+                    out _,
+                    out List<StruckTableItemUseAction> actions,
+                    out _,
+                    out _))
+            {
+                disabledReason = "ItemUse_CannotExecute";
+                return false;
+            }
+
+            for (int i = 0; i < actions.Count; i++)
+            {
+                IItemUseAction action = ItemUseActionFactory.Create(actions[i]);
+                if (action == null)
+                {
+                    disabledReason = "ItemUse_CannotExecute";
+                    return false;
+                }
+
+                if (action is IItemUseActionAvailabilityRule availabilityRule &&
+                    !availabilityRule.IsAvailable(context, out disabledReason))
+                {
+                    disabledReason ??= "ItemUse_CannotExecute";
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         public static ResultCommon TryUseInventoryItem(SceneGame sceneGame, InventoryData inventory, int slotIndex,
             out float cooldownSeconds)
         {
@@ -166,16 +259,10 @@ namespace GGemCo2DCore
                 return ResultCommon.Fail("Item_NoUsableCount");
 
             // 1) CanExecute: 전체 사전 검증
-            foreach (var row in actions)
+            ResultCommon canExecuteResult = CanExecuteActions(ctx, actions);
+            if (canExecuteResult == null || !canExecuteResult.IsSuccess())
             {
-                var action = ItemUseActionFactory.Create(row);
-                if (action == null) return ResultCommon.Fail("ItemUse_InvalidAction");
-
-                var can = action.CanExecute(ctx);
-                if (can == null || !can.IsSuccess())
-                {
-                    return can ?? ResultCommon.Fail("ItemUse_CannotExecute");
-                }
+                return canExecuteResult ?? ResultCommon.Fail("ItemUse_CannotExecute");
             }
 
             // 2) Execute
@@ -307,16 +394,10 @@ namespace GGemCo2DCore
             ItemUseContext context,
             System.Collections.Generic.List<StruckTableItemUseAction> actions)
         {
-            foreach (var row in actions)
+            ResultCommon canExecuteResult = CanExecuteActions(context, actions);
+            if (canExecuteResult == null || !canExecuteResult.IsSuccess())
             {
-                var action = ItemUseActionFactory.Create(row);
-                if (action == null) return ResultCommon.Fail("ItemUse_InvalidAction");
-
-                var can = action.CanExecute(context);
-                if (can == null || !can.IsSuccess())
-                {
-                    return can ?? ResultCommon.Fail("ItemUse_CannotExecute");
-                }
+                return canExecuteResult ?? ResultCommon.Fail("ItemUse_CannotExecute");
             }
 
             foreach (var row in actions)
@@ -328,6 +409,34 @@ namespace GGemCo2DCore
                 if (exec == null || !exec.IsSuccess())
                 {
                     return exec ?? ResultCommon.Fail("ItemUse_Execute_Fail");
+                }
+            }
+
+            return ResultCommon.Success();
+        }
+
+        /// <summary>
+        /// 구성된 아이템 사용 액션 전체의 실행 가능 여부를 순서대로 검사합니다.
+        /// </summary>
+        /// <param name="context">아이템 사용 컨텍스트입니다.</param>
+        /// <param name="actions">검사할 액션 테이블 행 목록입니다.</param>
+        /// <returns>모든 액션이 실행 가능하면 성공 결과입니다.</returns>
+        private static ResultCommon CanExecuteActions(
+            ItemUseContext context,
+            List<StruckTableItemUseAction> actions)
+        {
+            for (int i = 0; i < actions.Count; i++)
+            {
+                IItemUseAction action = ItemUseActionFactory.Create(actions[i]);
+                if (action == null)
+                {
+                    return ResultCommon.Fail("ItemUse_InvalidAction");
+                }
+
+                ResultCommon canExecuteResult = action.CanExecute(context);
+                if (canExecuteResult == null || !canExecuteResult.IsSuccess())
+                {
+                    return canExecuteResult ?? ResultCommon.Fail("ItemUse_CannotExecute");
                 }
             }
 

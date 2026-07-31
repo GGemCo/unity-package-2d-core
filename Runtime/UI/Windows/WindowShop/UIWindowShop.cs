@@ -114,6 +114,19 @@ namespace GGemCo2DCore
                 .CombineLatest(playerData.OnCurrentSilverChanged(), (_, _) => Unit.Default)
                 .Subscribe(_ => RefreshCurrencyDependentUi())
                 .AddTo(this);
+
+            Player player = SceneGame?.player != null
+                ? SceneGame.player.GetComponent<Player>()
+                : null;
+            if (player != null)
+            {
+                // 아이템 임시 HP가 피해로 감소하면 충전형 상품을 즉시 다시 구매할 수 있도록 상태를 갱신합니다.
+                player.CurrentHpTemp
+                    .DistinctUntilChanged()
+                    .Skip(1)
+                    .Subscribe(_ => RefreshVisibleAvailability())
+                    .AddTo(this);
+            }
         }
 
         /// <summary>

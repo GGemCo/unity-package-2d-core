@@ -91,6 +91,33 @@ namespace GGemCo2DCore
                 SetItemBonusHpCurrent(newValue);
             }
         }
+
+        /// <summary>
+        /// 아이템 임시 HP를 지정한 목표값까지 충전합니다.
+        /// 최대치가 목표값보다 작으면 최대치도 함께 확장하지만, 기존 최대치를 감소시키지는 않습니다.
+        /// </summary>
+        /// <param name="targetValue">충전할 임시 HP 목표값입니다.</param>
+        /// <param name="raiseEvent">스탯 재계산 이벤트를 발생시킬지 여부입니다.</param>
+        /// <returns>임시 HP가 실제로 변경되면 true입니다.</returns>
+        public virtual bool RefillItemBonusHpTempTo(long targetValue, bool raiseEvent = true)
+        {
+            if (targetValue <= 0 || CurrentHpTempItem >= targetValue)
+            {
+                return false;
+            }
+
+            // 소모로 최대치가 제거된 상태라면 목표값만큼 다시 사용할 수 있도록 최대치를 복원합니다.
+            long nextMax = Math.Max(TotalHpTempItem, targetValue);
+            if (nextMax != TotalHpTempItem)
+            {
+                TotalHpTempItem = nextMax;
+                _itemBonusProvider?.SetHpBonusTemp(nextMax, raiseEvent);
+            }
+
+            SetItemBonusHpCurrent(targetValue);
+            return true;
+        }
+
         public virtual void SetItemBonusMaxHpTemp(long amount, bool raiseEvent = true)
         {
             if (amount <= 0) return;

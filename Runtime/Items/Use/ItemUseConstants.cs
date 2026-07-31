@@ -34,7 +34,8 @@ namespace GGemCo2DCore
 
         /// <summary>
         /// 아이템 사용으로 "임시 최대 HP"를 증가합니다.
-        /// - ParamIntA = amount
+        /// - ParamIntA = 누적 증가량 또는 충전 목표값
+        /// - ParamStringB = <see cref="ItemTempHpApplyPolicy"/> 이름, 빈 값은 Add
         /// </summary>
         AddMaxHpTemp,
 
@@ -52,5 +53,23 @@ namespace GGemCo2DCore
 
         // <summary>추후 확장용(예: 아이템 지급 등)</summary>
         // GiveItem = 10,
+    }
+
+    /// <summary>
+    /// 아이템으로 획득하는 임시 HP의 적용 방식을 정의합니다.
+    /// </summary>
+    public enum ItemTempHpApplyPolicy
+    {
+        /// <summary>
+        /// 설정값만큼 임시 HP 최대치와 현재치를 누적해서 증가시킵니다.
+        /// 기존 <see cref="ItemUseActionType.AddMaxHpTemp"/> 동작과 같습니다.
+        /// </summary>
+        Add = 0,
+
+        /// <summary>
+        /// 임시 HP 현재치를 설정값까지 충전합니다.
+        /// 현재치가 이미 설정값 이상이면 아이템을 사용할 수 없습니다.
+        /// </summary>
+        RefillToTarget = 1,
     }
 }

@@ -583,6 +583,14 @@ namespace GGemCo2DCore
                 return ResultCommon.Fail("Shop_ImmediateUseSingleOnly", $"itemUid: {itemUid}, itemCount: {itemCount}");
             }
 
+            // 효과를 적용할 수 없는 상품은 재화를 차감하기 전에 구매를 중단합니다.
+            // 재화 차감 후에도 실제 사용 단계에서 다시 검사하여 거래 시점의 데이터 무결성을 보장합니다.
+            ResultCommon canUseResult = ItemUseService.CanUseItemDirect(this, itemUid);
+            if (canUseResult == null || canUseResult.Result == ResultCommon.ResultType.Fail)
+            {
+                return canUseResult ?? ResultCommon.Fail("ItemUse_CannotExecute");
+            }
+
             var checkNeedCurrency = saveDataManager.Player.CheckNeedCurrency(currencyType, price);
             if (checkNeedCurrency.Result == ResultCommon.ResultType.Fail) return checkNeedCurrency;
 
