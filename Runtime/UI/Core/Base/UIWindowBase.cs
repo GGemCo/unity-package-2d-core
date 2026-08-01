@@ -26,6 +26,7 @@ namespace GGemCo2DCore
         private InteractionManager _interactionManager;
         private UIEffectTarget _uiEffectTarget;
         private UIWindowConstants.WindowUid _excludedLinkedWindowUid = UIWindowConstants.WindowUid.None;
+        private bool _suppressLinkedWindows;
 
         [HideInInspector] public SceneGame SceneGame;
 
@@ -127,7 +128,7 @@ namespace GGemCo2DCore
         /// <param name="show">연결 윈도우를 표시하면 <c>true</c>, 숨기면 <c>false</c>입니다.</param>
         private void ShowByTable(int[] windowUids, bool show)
         {
-            if (windowUids == null)
+            if (_suppressLinkedWindows || windowUids == null)
             {
                 return;
             }
@@ -240,6 +241,28 @@ namespace GGemCo2DCore
             {
                 // 중첩 호출이나 예외가 발생해도 제외 정책이 다음 표시 요청으로 누출되지 않도록 복원합니다.
                 _excludedLinkedWindowUid = previousExcludedLinkedWindowUid;
+            }
+        }
+
+        /// <summary>
+        /// Window 테이블에 연결된 다른 윈도우의 상태는 유지하고 현재 윈도우만 열거나 닫습니다.
+        /// 파생 윈도우의 <see cref="Show(bool)"/> 구현은 그대로 실행하되, 해당 호출 동안만 연결 윈도우 처리를 억제합니다.
+        /// </summary>
+        /// <param name="show">현재 윈도우를 표시하면 <see langword="true"/>, 숨기면 <see langword="false"/>입니다.</param>
+        /// <returns><see cref="Show(bool)"/> 호출 결과입니다.</returns>
+        public bool ShowWithoutLinkedWindows(bool show)
+        {
+            bool previousSuppressLinkedWindows = _suppressLinkedWindows;
+            _suppressLinkedWindows = true;
+
+            try
+            {
+                return Show(show);
+            }
+            finally
+            {
+                // 중첩 호출이나 예외가 발생해도 바깥 표시 요청의 연결 정책을 보존합니다.
+                _suppressLinkedWindows = previousSuppressLinkedWindows;
             }
         }
 

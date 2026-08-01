@@ -111,6 +111,7 @@ namespace GGemCo2DCore
         private Action<WorldMapWindowCloseReason> _closeCallback;
         private WorldMapWindowCloseReason _pendingCloseReason;
         private bool _hasPendingCloseReason;
+        private bool _followLinkedWindowsForCloseRequest = true;
 
         /// <summary>현재 윈도우가 표시 중인 월드맵 정의입니다.</summary>
         public WorldMapDefinition WorldMapDefinition => _worldMapDefinition;

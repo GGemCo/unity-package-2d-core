@@ -91,7 +91,7 @@ namespace GGemCo2DCore
         {
             _pendingCloseReason = closeReason;
             _hasPendingCloseReason = true;
-            Show(false);
+            ShowForCurrentCloseRequest(false);
         }
 
         /// <summary>

@@ -260,8 +260,11 @@ namespace GGemCo2DCore
                 return false;
             }
 
+            // NPC 인터랙션의 자식 창은 상단 탭 메뉴 같은 월드맵 연결 윈도우를 열지 않습니다.
+            // 취소 후에는 월드맵 닫힘 콜백을 통해 현재 NPC 인터랙션만 복원합니다.
             if (_uiWindowWorldMap.ShowWithCloseCallback(
-                    HandleInteractionWorldMapClosed))
+                    HandleInteractionWorldMapClosed,
+                    followLinkedWindows: false))
             {
                 _worldMapSuspensionToken = token;
                 return true;

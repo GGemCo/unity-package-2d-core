@@ -121,13 +121,27 @@ namespace GGemCo2DCore
         public bool ShowWithCloseCallback(
             System.Action<WorldMapWindowCloseReason> closeCallback)
         {
+            return ShowWithCloseCallback(closeCallback, followLinkedWindows: true);
+        }
+
+        /// <summary>
+        /// 월드맵을 열고, 창이 닫힐 때 종료 사유를 한 번 전달받을 콜백을 등록합니다.
+        /// 연결 윈도우 정책은 현재 표시 요청이 끝날 때까지 유지되어 열기와 닫기에 대칭적으로 적용됩니다.
+        /// </summary>
+        /// <param name="closeCallback">월드맵 종료 사유를 전달받을 일회성 콜백입니다.</param>
+        /// <param name="followLinkedWindows">Window 테이블에 연결된 윈도우도 함께 열고 닫을지 여부입니다.</param>
+        /// <returns>월드맵을 새로 열고 콜백을 등록했으면 <see langword="true"/>입니다.</returns>
+        public bool ShowWithCloseCallback(
+            System.Action<WorldMapWindowCloseReason> closeCallback,
+            bool followLinkedWindows)
+        {
             if (closeCallback == null || IsOpen())
             {
                 return false;
             }
 
-            PrepareCloseRequest(closeCallback);
-            Show(true);
+            PrepareCloseRequest(closeCallback, followLinkedWindows);
+            ShowForCurrentCloseRequest(true);
             if (IsOpen())
             {
                 return true;
@@ -153,7 +167,7 @@ namespace GGemCo2DCore
                 return false;
             }
 
-            PrepareCloseRequest(closeCallback);
+            PrepareCloseRequest(closeCallback, followLinkedWindows);
             SetVisibleImmediate(
                 show: true,
                 invokeOnShow: true,
@@ -171,11 +185,30 @@ namespace GGemCo2DCore
         /// 현재 월드맵 표시 요청에 사용할 일회성 닫힘 콜백을 준비합니다.
         /// </summary>
         /// <param name="closeCallback">종료 사유를 전달받을 콜백입니다.</param>
+        /// <param name="followLinkedWindows">현재 요청의 열기와 닫기에서 연결 윈도우를 함께 처리할지 여부입니다.</param>
         private void PrepareCloseRequest(
-            System.Action<WorldMapWindowCloseReason> closeCallback)
+            System.Action<WorldMapWindowCloseReason> closeCallback,
+            bool followLinkedWindows)
         {
             _closeCallback = closeCallback;
             _hasPendingCloseReason = false;
+            _followLinkedWindowsForCloseRequest = followLinkedWindows;
+        }
+
+        /// <summary>
+        /// 현재 월드맵 표시 요청에 저장된 연결 윈도우 정책으로 표시 상태를 변경합니다.
+        /// NPC 인터랙션처럼 독립적으로 열린 월드맵은 상단 메뉴 등 테이블 연결 윈도우의 상태를 변경하지 않습니다.
+        /// </summary>
+        /// <param name="show">월드맵을 표시하면 <see langword="true"/>, 숨기면 <see langword="false"/>입니다.</param>
+        private void ShowForCurrentCloseRequest(bool show)
+        {
+            if (_followLinkedWindowsForCloseRequest)
+            {
+                Show(show);
+                return;
+            }
+
+            ShowWithoutLinkedWindows(show);
         }
 
         /// <summary>
@@ -199,6 +232,7 @@ namespace GGemCo2DCore
             _closeCallback = null;
             _pendingCloseReason = default;
             _hasPendingCloseReason = false;
+            _followLinkedWindowsForCloseRequest = true;
         }
 
         /// <summary>
