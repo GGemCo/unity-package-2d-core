@@ -14,7 +14,8 @@ namespace GGemCo2DCore
         GuardAction,
         PlayerAttackRange,
         ControlLocked,
-        Skill
+        Skill,
+        LandingAction
     }
 
     /// <summary>
