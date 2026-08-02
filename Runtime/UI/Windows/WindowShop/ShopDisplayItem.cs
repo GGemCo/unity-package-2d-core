@@ -1,6 +1,14 @@
 namespace GGemCo2DCore
 {
     /// <summary>
+    /// 상점 상품의 구매 불가 사유로 사용하는 공통 키입니다.
+    /// </summary>
+    internal static class ShopAvailabilityReason
+    {
+        internal const string SoldOut = "Shop_SoldOut";
+    }
+
+    /// <summary>
     /// Resolved item displayed in the shop UI.
     /// </summary>
     public sealed class ShopDisplayItem
@@ -11,6 +19,13 @@ namespace GGemCo2DCore
         public int SlotIndex => Source?.SlotIndex ?? 0;
         public int ItemUid => Source?.ItemUid ?? 0;
         public bool IsEmpty => ItemUid <= 0;
+
+        /// <summary>
+        /// 실제 구매 재고가 모두 소진된 상품인지 여부입니다.
+        /// 기타 구매 제한 상태와 품절 표시를 구분하기 위해 구매 불가 사유를 함께 확인합니다.
+        /// </summary>
+        public bool IsSoldOut => DisabledReason == ShopAvailabilityReason.SoldOut;
+
         public CurrencyConstants.Type CurrencyType => Source?.CurrencyType ?? CurrencyConstants.Type.None;
         public int BaseCurrencyValue => Source?.CurrencyValue ?? 0;
         public int CurrencyValue => Promotion?.FinalCurrencyValue ?? BaseCurrencyValue;

@@ -2,6 +2,7 @@ using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 namespace GGemCo2DCore
@@ -35,17 +36,28 @@ namespace GGemCo2DCore
         [Tooltip("마우스 클릭 시 정보창 표시 여부")]
         [SerializeField] private bool usePointerClickEvent = false;
         
-        [Tooltip("구매 가능일 때, 아이콘 투명도")]
-        [SerializeField] private float normalIconAlpha = 1f;
-        [Tooltip("구매 불가능일 때, 아이콘 투명도")]
-        [SerializeField] private float soldOutIconAlpha = 0.1f;
-        
         [Header("선택 시 색상")]
         [SerializeField] private Color colorSelected = Color.white;
         [SerializeField] private Color colorNotSelected = Color.white;
         
         [Header("할인 이미지 아이콘")]
         [SerializeField] private Image imageDiscount;
+
+        [Header("상품 상태 이미지")]
+        [Tooltip("실제 구매 재고가 모두 소진되었을 때 아이템 위에 표시할 이미지")]
+        [SerializeField] private Image imageSoldOut;
+
+        [Tooltip("품절 이미지와 슬롯에 적용할 투명도")]
+        [Range(0f, 1f)]
+        [FormerlySerializedAs("soldOutImageAlpha")]
+        [SerializeField] private float soldOutAlpha = 1f;
+
+        [Tooltip("추첨 결과 판매할 아이템이 없는 슬롯에 표시할 이미지")]
+        [SerializeField] private Image imageEmpty;
+
+        [Tooltip("빈 상품 이미지 투명도")]
+        [Range(0f, 1f)]
+        [SerializeField] private float emptyImageAlpha = 1f;
 
         private UIWindowShop _uiWindowShop;
         private UIWindowItemBuy _uIWindowItemBuy;
@@ -152,6 +164,8 @@ namespace GGemCo2DCore
             _uiSlot = uiSlot;
             // 맨 뒤로 배치
             _uiSlot.gameObject.transform.SetSiblingIndex(0);
+            // SetIcon이 SetSlot보다 먼저 호출되므로 슬롯 연결 직후 현재 품절 상태를 다시 반영합니다.
+            ApplyAvailabilityVisual();
         }
         
         /// <summary>
@@ -181,9 +195,21 @@ namespace GGemCo2DCore
         {
             _shopDisplayItem = shopDisplayItem;
 
-            if (_shopDisplayItem == null || _shopDisplayItem.Source == null || _shopDisplayItem.IsEmpty)
+            if (_shopDisplayItem == null || _shopDisplayItem.Source == null)
             {
                 GcLogger.LogError("shop 테이블에 정보가 없습니다.");
+                ClearProductPresentation();
+                return;
+            }
+
+            // ItemUid가 0 이하인 행은 확률 추첨에 참여하는 정상적인 빈 상품입니다.
+            // 아이템 테이블을 조회하지 않고 빈 슬롯 전용 표시로 갱신합니다.
+            if (_shopDisplayItem.IsEmpty)
+            {
+                ClearProductTexts();
+                ShowImageDiscount(false);
+                ApplyAvailabilityVisual();
+                ApplyPurchaseButtonState(false);
                 return;
             }
 
@@ -191,6 +217,7 @@ namespace GGemCo2DCore
             if (info == null)
             {
                 GcLogger.LogError($"item 테이블에 정보가 없습니다. item uid: {_shopDisplayItem.ItemUid}");
+                ClearProductPresentation();
                 return;
             }
 
@@ -259,24 +286,38 @@ namespace GGemCo2DCore
                 return;
             }
 
-            buttonBuy.gameObject.SetActive(true);
+            bool hasProduct = _shopDisplayItem != null && !_shopDisplayItem.IsEmpty;
+            buttonBuy.gameObject.SetActive(hasProduct);
             buttonBuy.interactable = _shopDisplayItem != null &&
+                                     hasProduct &&
                                      isBuyable &&
                                      _uiWindowShop != null &&
                                      _uiWindowShop.CanAfford(_shopDisplayItem);
         }
 
         /// <summary>
-        /// 구매 가능 여부와 품절 표시 방식에 따라 아이콘 표시 상태를 갱신합니다.
+        /// 구매 가능 여부와 품절 표시 방식에 따라 상태 이미지와 슬롯 투명도를 갱신합니다.
+        /// UIIcon에는 Alpha를 직접 적용하지 않고 슬롯의 CanvasGroup을 통해 일관된 표시 상태를 유지합니다.
         /// </summary>
         private void ApplyAvailabilityVisual()
         {
-            if (_uiIcon == null || _shopDisplayItem == null) return;
+            bool isEmpty = _shopDisplayItem == null || _shopDisplayItem.IsEmpty;
+            bool isSoldOut = !isEmpty &&
+                             _shopDisplayItem.IsSoldOut &&
+                             _shopDisplayItem.SoldOutDisplayType == ShopSoldOutDisplayType.Disable;
 
-            bool dimIcon = !_shopDisplayItem.IsBuyable &&
-                           _shopDisplayItem.SoldOutDisplayType == ShopSoldOutDisplayType.Disable;
+            SetStateImage(imageEmpty, isEmpty, emptyImageAlpha);
+            SetStateImage(imageSoldOut, isSoldOut, soldOutAlpha);
 
-            _uiIcon.SetAlpha(dimIcon ? soldOutIconAlpha : normalIconAlpha);
+            if (_uiSlot != null)
+            {
+                _uiSlot.SetAlpha(isSoldOut ? soldOutAlpha : 1f);
+            }
+
+            if (_uiIcon != null)
+            {
+                _uiIcon.gameObject.SetActive(!isEmpty);
+            }
         }
 
         /// <summary>
@@ -284,7 +325,7 @@ namespace GGemCo2DCore
         /// </summary>
         public void OnClickBuy()
         {
-            if (_shopDisplayItem == null || _shopDisplayItem.Source == null) return;
+            if (_shopDisplayItem == null || _shopDisplayItem.Source == null || _shopDisplayItem.IsEmpty) return;
 
             string disabledReason = String.Empty;
             if (!_shopDisplayItem.IsBuyable || !_uiWindowShop.CanBuy(_shopDisplayItem, out disabledReason))
@@ -365,7 +406,9 @@ namespace GGemCo2DCore
         {
             if (!usePointerClickEvent ||
                 eventData == null ||
-                eventData.button != PointerEventData.InputButton.Left)
+                eventData.button != PointerEventData.InputButton.Left ||
+                _shopDisplayItem == null ||
+                _shopDisplayItem.IsEmpty)
             {
                 return;
             }
@@ -398,6 +441,12 @@ namespace GGemCo2DCore
             SetColorImageDiscount(colorNotSelected);
             if (value)
             {
+                if (_shopDisplayItem == null || _shopDisplayItem.IsEmpty)
+                {
+                    _uiWindowShop?.HideItemInfo();
+                    return;
+                }
+
                 _uiWindowShop.SetSelectItem(this);
 
                 EnsureWindows();
@@ -440,6 +489,60 @@ namespace GGemCo2DCore
         {
             if (!imageDiscount) return;
             imageDiscount.color = color;
+        }
+
+        /// <summary>
+        /// 상품 정보 조회에 실패했을 때 이전 텍스트와 상태 이미지가 남지 않도록 표시를 초기화합니다.
+        /// </summary>
+        private void ClearProductPresentation()
+        {
+            ClearProductTexts();
+            ShowImageDiscount(false);
+            SetStateImage(imageEmpty, false, emptyImageAlpha);
+            SetStateImage(imageSoldOut, false, soldOutAlpha);
+            if (_uiSlot != null)
+            {
+                _uiSlot.SetAlpha(1f);
+            }
+            ApplyPurchaseButtonState(false);
+        }
+
+        /// <summary>
+        /// 현재 상품의 이름과 가격 텍스트를 비웁니다.
+        /// </summary>
+        private void ClearProductTexts()
+        {
+            if (textName)
+            {
+                textName.text = string.Empty;
+            }
+
+            if (textPrice)
+            {
+                textPrice.text = string.Empty;
+            }
+        }
+
+        /// <summary>
+        /// 상태 이미지의 표시 여부와 투명도를 함께 적용합니다.
+        /// 프리팹이 재사용되더라도 이전 상품의 표시 상태가 남지 않도록 항상 활성 상태를 갱신합니다.
+        /// </summary>
+        /// <param name="image">표시 상태를 변경할 이미지입니다.</param>
+        /// <param name="show">이미지를 표시할지 여부입니다.</param>
+        /// <param name="alpha">이미지에 적용할 투명도입니다.</param>
+        private static void SetStateImage(Image image, bool show, float alpha)
+        {
+            if (!image)
+            {
+                return;
+            }
+
+            Color color = image.color;
+            color.a = Mathf.Clamp01(alpha);
+            image.color = color;
+            // 상태 오버레이가 부모 요소의 선택 및 구매 포인터 이벤트를 가로채지 않도록 합니다.
+            image.raycastTarget = false;
+            image.gameObject.SetActive(show);
         }
     }
 }

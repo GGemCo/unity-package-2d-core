@@ -92,7 +92,7 @@ namespace GGemCo2DCore
 
             if (GetRemainingCount(item) >= count) return true;
 
-            disabledReason = "Shop_SoldOut";
+            disabledReason = ShopAvailabilityReason.SoldOut;
             return false;
         }
 

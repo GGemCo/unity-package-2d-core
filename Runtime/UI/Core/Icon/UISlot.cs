@@ -76,7 +76,12 @@ namespace GGemCo2DCore
             _rectTransform = GetComponent<RectTransform>();
             if (useCanvasGroup)
             {
-                _canvasGroup = gameObject.AddComponent<CanvasGroup>();
+                // 커스텀 슬롯 프리팹에 CanvasGroup이 이미 있으면 재사용하여 중복 컴포넌트 생성을 방지합니다.
+                _canvasGroup = GetComponent<CanvasGroup>();
+                if (_canvasGroup == null)
+                {
+                    _canvasGroup = gameObject.AddComponent<CanvasGroup>();
+                }
             }
             ChangeSlotImageSize(slotSize);
             SetEquippedState(false);
@@ -94,9 +99,20 @@ namespace GGemCo2DCore
         {
             transform.localPosition = position;
         }
+
+        /// <summary>
+        /// 슬롯의 CanvasGroup에 투명도를 적용합니다.
+        /// <see cref="useCanvasGroup"/>이 활성화되어 초기화된 슬롯에서만 적용됩니다.
+        /// </summary>
+        /// <param name="alpha">슬롯과 자식 UI에 적용할 투명도입니다.</param>
         public void SetAlpha(float alpha)
         {
-            if (useCanvasGroup) _canvasGroup.alpha = alpha;
+            if (!useCanvasGroup || _canvasGroup == null)
+            {
+                return;
+            }
+
+            _canvasGroup.alpha = Mathf.Clamp01(alpha);
         }
 
         public void SetColor(Color color)

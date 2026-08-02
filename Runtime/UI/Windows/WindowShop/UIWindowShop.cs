@@ -13,7 +13,6 @@ namespace GGemCo2DCore
     public class UIWindowShop : UIWindow
     {
         private const string ExternalItemInfoWindowKey = "Shop.ItemInfo";
-        private const string SoldOutReasonKey = "Shop_SoldOut";
         private const string NotEnoughStockTextKey = "Text_Not_Enough_Stock";
         private const string CannotBuyMoreTextKey = "Text_Cannot_Buy_More";
 
@@ -261,7 +260,6 @@ namespace GGemCo2DCore
             foreach (var info in datas)
             {
                 if (info == null) continue;
-                if (info.IsEmpty) continue;
                 int index = info.SlotIndex;
                 if (index < 0 || index >= maxCountIcon) continue;
 
@@ -278,9 +276,18 @@ namespace GGemCo2DCore
                     _uiElementShops.TryAdd(index, uiElementShop);
                 }
 
+                // 빈 상품도 UIElementShop은 생성하여 전용 이미지를 표시합니다.
+                // 실제 아이템이 없으므로 UISlot과 UIIcon 생성 및 아이템 테이블 조회는 생략합니다.
+                if (info.IsEmpty)
+                {
+                    continue;
+                }
+
                 GameObject slotObject = Instantiate(slot, parent.transform);
                 UISlot uiSlot = slotObject.GetComponent<UISlot>();
                 if (uiSlot == null) continue;
+                // 상점의 품절 Alpha는 UISlot.SetAlpha()로 적용하므로 상점 슬롯에만 CanvasGroup 사용을 활성화합니다.
+                uiSlot.useCanvasGroup = true;
                 uiSlot.Initialize(this, uid, index, slotSize);
                 SetPositionUiSlot(uiSlot, index);
                 slots[index] = slotObject;
@@ -362,8 +369,20 @@ namespace GGemCo2DCore
             Show(true);
         }
 
+        /// <summary>
+        /// 지정한 상점 요소를 현재 선택 상품으로 설정하고 연계 UI를 갱신합니다.
+        /// </summary>
+        /// <param name="uiElementShop">선택할 상점 요소입니다.</param>
         public void SetSelectItem(UIElementShop uiElementShop)
         {
+            ShopDisplayItem displayItem = uiElementShop != null
+                ? uiElementShop.GetDisplayItem()
+                : null;
+            if (displayItem == null || displayItem.IsEmpty)
+            {
+                return;
+            }
+
             if (_selectedElementShop == uiElementShop)
             {
                 RefreshShopAvailabilityPresentation();
@@ -410,7 +429,7 @@ namespace GGemCo2DCore
             }
 
             var displayItem = uiElementShop.GetDisplayItem();
-            if (displayItem == null)
+            if (displayItem == null || displayItem.IsEmpty)
             {
                 return false;
             }
@@ -530,11 +549,16 @@ namespace GGemCo2DCore
 
         private void UpdatePriceText()
         {
-            if (_selectedElementShop == null) return;
             if (!textPrice) return;
-            
-            var displayItem = _selectedElementShop.GetDisplayItem();
-            if (displayItem == null) return;
+
+            var displayItem = _selectedElementShop != null
+                ? _selectedElementShop.GetDisplayItem()
+                : null;
+            if (displayItem == null || displayItem.IsEmpty)
+            {
+                textPrice.text = string.Empty;
+                return;
+            }
 
             var playerCurrency = GetPlayerCurrencyValue(displayItem.CurrencyType);
             var itemPrice = displayItem.CurrencyValue;
@@ -588,7 +612,7 @@ namespace GGemCo2DCore
         /// <returns>상점 말풍선에서 사용할 Localization 키입니다.</returns>
         private static string ResolveUnavailableTalkBubbleKey(ShopDisplayItem displayItem)
         {
-            return displayItem != null && displayItem.DisabledReason == SoldOutReasonKey
+            return displayItem != null && displayItem.DisabledReason == ShopAvailabilityReason.SoldOut
                 ? NotEnoughStockTextKey
                 : CannotBuyMoreTextKey;
         }
@@ -775,7 +799,7 @@ namespace GGemCo2DCore
             maxCountIcon = 0;
             _selectedElementShop = null;
             _uiElementShops.Clear();
-            UpdateButtonBuy();
+            RefreshSelectedPurchaseUi();
 
             if (vfxEffectUISelected)
             {
@@ -797,14 +821,24 @@ namespace GGemCo2DCore
             int minSlotIndex = int.MaxValue;
             foreach (var pair in _uiElementShops)
             {
-                if (pair.Key < minSlotIndex)
+                ShopDisplayItem displayItem = pair.Value != null
+                    ? pair.Value.GetDisplayItem()
+                    : null;
+                if (displayItem != null &&
+                    !displayItem.IsEmpty &&
+                    pair.Key < minSlotIndex)
                 {
                     minSlotIndex = pair.Key;
                     element = pair.Value;
                 }
             }
 
-            if (element == null) return;
+            if (element == null)
+            {
+                RefreshSelectedPurchaseUi();
+                return;
+            }
+
             element.SetSelected(true);
         }
 
@@ -817,7 +851,8 @@ namespace GGemCo2DCore
         {
             var element = _uiElementShops.GetValueOrDefault(slotIndex);
             if (element == null) return 0;
-            return element.GetDisplayItem()?.Uid ?? 0;
+            ShopDisplayItem displayItem = element.GetDisplayItem();
+            return displayItem != null && !displayItem.IsEmpty ? displayItem.Uid : 0;
         }
 
         /// <summary>
