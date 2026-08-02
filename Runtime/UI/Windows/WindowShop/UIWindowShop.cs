@@ -700,12 +700,11 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 재고 또는 외부 구매 제한이 변경되면 현재 상점 데이터와 구매 제한 표시를 다시 구성합니다.
+        /// 재고 또는 외부 구매 제한이 변경되면 현재 판매 목록은 유지하고 구매 가능 상태만 갱신합니다.
         /// </summary>
         private void OnShopAvailabilityChanged()
         {
             if (_currentShopUid <= 0) return;
-            SetInfoByShopUid(_currentShopUid, true, false, false);
             RefreshShopAvailabilityPresentation();
         }
 

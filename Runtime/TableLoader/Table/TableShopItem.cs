@@ -2,10 +2,29 @@ using System.Collections.Generic;
 
 namespace GGemCo2DCore
 {
+    /// <summary>
+    /// 품절된 상점 상품을 현재 슬롯에 표시하는 방식을 정의합니다.
+    /// </summary>
     public enum ShopSoldOutDisplayType
     {
+        /// <summary>현재 상품을 품절 상태로 표시하고 구매를 비활성화합니다.</summary>
         Disable = 0,
+
+        /// <summary>현재 상품을 상점 목록에서 숨깁니다.</summary>
         Hide = 1,
+    }
+
+    /// <summary>
+    /// 품절된 상점 상품이 다음 슬롯 추첨에 참여할지 결정합니다.
+    /// 현재 표시 정책과 다음 재추첨 후보 정책을 분리하여 판매 목록이 구매 직후 변경되지 않도록 합니다.
+    /// </summary>
+    public enum ShopSoldOutRollPolicy
+    {
+        /// <summary>품절 상태여도 다음 추첨 후보에 유지합니다.</summary>
+        KeepCandidate = 0,
+
+        /// <summary>품절 상태이면 다음 추첨 후보에서 제외합니다.</summary>
+        ExcludeCandidate = 1,
     }
 
     /// <summary>
@@ -46,6 +65,11 @@ namespace GGemCo2DCore
         public ShopSoldOutDisplayType SoldOutDisplayType;
 
         /// <summary>
+        /// 재고가 모두 소진된 뒤 다음 슬롯 추첨에서 후보를 유지할지 결정하는 정책입니다.
+        /// </summary>
+        public ShopSoldOutRollPolicy SoldOutRollPolicy;
+
+        /// <summary>
         /// 구매 성공 후 아이템을 인벤토리에 넣을지, 즉시 사용할지 결정하는 정책입니다.
         /// </summary>
         public ShopBuyUsePolicy BuyUsePolicy;
@@ -69,6 +93,7 @@ namespace GGemCo2DCore
                 UniqueGroup = row.UniqueGroup,
                 PurchaseLimitCount = 0,
                 SoldOutDisplayType = ShopSoldOutDisplayType.Disable,
+                SoldOutRollPolicy = ShopSoldOutRollPolicy.KeepCandidate,
                 BuyUsePolicy = ShopBuyUsePolicy.AddToInventory,
             };
         }
@@ -135,6 +160,7 @@ namespace GGemCo2DCore
                 UniqueGroup = reader.Int("UniqueGroup"),
                 PurchaseLimitCount = reader.Int("PurchaseLimitCount"),
                 SoldOutDisplayType = reader.Enum<ShopSoldOutDisplayType>("SoldOutDisplayType"),
+                SoldOutRollPolicy = reader.Enum<ShopSoldOutRollPolicy>("SoldOutRollPolicy"),
                 BuyUsePolicy = reader.Enum<ShopBuyUsePolicy>("BuyUsePolicy"),
             };
         }

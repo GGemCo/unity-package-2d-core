@@ -67,11 +67,6 @@ namespace GGemCo2DCore
                 rolledItems = RollItemsBySlot(rows);
                 _rolledItemsByShopUid[shopUid] = rolledItems;
             }
-            else
-            {
-                // 구매 제한 등으로 캐시된 상품이 새로 숨김 상태가 되면 해당 슬롯만 다시 추첨합니다.
-                RefreshHiddenUnavailableSlots(rows, rolledItems);
-            }
 
             var result = new List<ShopDisplayItem>(rolledItems.Count);
 
@@ -167,8 +162,8 @@ namespace GGemCo2DCore
 
             foreach (var slotIndex in slotIndices)
             {
-                // 숨김 처리된 후보 제거
-                var candidates = FilterHiddenUnavailableCandidates(candidatesBySlot[slotIndex]);
+                // 품절 표시 및 다음 추첨 정책에 따라 참여할 수 없는 후보를 제거합니다.
+                var candidates = FilterUnavailableCandidates(candidatesBySlot[slotIndex]);
                 if (candidates.Count <= 0) continue;
 
                 // 유니크 그룹 중복 제거
@@ -188,78 +183,6 @@ namespace GGemCo2DCore
             }
 
             return rolledItems;
-        }
-
-        /// <summary>
-        /// 캐시된 추첨 결과 중 구매 불가 상태에서 숨겨야 하는 상품이 있는 슬롯만 다시 추첨합니다.
-        /// 영향받지 않은 슬롯은 기존 결과를 유지하여 한 상품의 품절로 상점 전체 구성이 바뀌지 않도록 합니다.
-        /// </summary>
-        /// <param name="rows">현재 상점에 등록된 전체 상품 행입니다.</param>
-        /// <param name="rolledItems">슬롯 인덱스를 키로 사용하는 현재 추첨 결과입니다.</param>
-        private void RefreshHiddenUnavailableSlots(
-            List<StruckTableShopItem> rows,
-            Dictionary<int, StruckTableShopItem> rolledItems)
-        {
-            if (rows == null || rolledItems == null || rolledItems.Count <= 0) return;
-
-            var invalidSlotIndices = new HashSet<int>();
-            foreach (var pair in rolledItems)
-            {
-                if (ShouldExcludeFromRoll(pair.Value))
-                {
-                    invalidSlotIndices.Add(pair.Key);
-                }
-            }
-
-            if (invalidSlotIndices.Count <= 0) return;
-
-            var candidatesBySlot = BuildCandidatesBySlot(rows);
-            var pickedItemUidsByUniqueGroup = new Dictionary<int, HashSet<int>>();
-
-            // 유지되는 슬롯을 먼저 등록하여 다시 추첨하는 슬롯이 기존 상품과 중복되지 않게 합니다.
-            foreach (var pair in rolledItems)
-            {
-                if (!invalidSlotIndices.Contains(pair.Key))
-                {
-                    RegisterUniquePick(pair.Value, pickedItemUidsByUniqueGroup);
-                }
-            }
-
-            var sortedInvalidSlotIndices = new List<int>(invalidSlotIndices);
-            sortedInvalidSlotIndices.Sort();
-
-            for (int i = 0; i < sortedInvalidSlotIndices.Count; i++)
-            {
-                int slotIndex = sortedInvalidSlotIndices[i];
-                if (!candidatesBySlot.TryGetValue(slotIndex, out var slotCandidates))
-                {
-                    rolledItems.Remove(slotIndex);
-                    continue;
-                }
-
-                var availableCandidates = FilterHiddenUnavailableCandidates(slotCandidates);
-                if (availableCandidates.Count <= 0)
-                {
-                    // 후보가 모두 숨김 상태라면 슬롯 자체를 표시하지 않습니다.
-                    rolledItems.Remove(slotIndex);
-                    continue;
-                }
-
-                var uniqueCandidates = FilterUniqueCandidates(
-                    availableCandidates,
-                    pickedItemUidsByUniqueGroup);
-                var prioritizedCandidates = FilterHighestRollPriority(
-                    uniqueCandidates.Count > 0 ? uniqueCandidates : availableCandidates);
-                StruckTableShopItem picked = PickWeighted(prioritizedCandidates);
-                if (picked == null)
-                {
-                    rolledItems.Remove(slotIndex);
-                    continue;
-                }
-
-                rolledItems[slotIndex] = picked;
-                RegisterUniquePick(picked, pickedItemUidsByUniqueGroup);
-            }
         }
 
         /// <summary>
@@ -291,11 +214,11 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 구매 불가 + 숨김 설정된 후보를 제거합니다.
+        /// 구매 불가 상태에서 숨겨야 하거나 다음 추첨 제외 정책이 적용된 후보를 제거합니다.
         /// </summary>
         /// <param name="candidates">구매 가능 여부를 검사할 슬롯 후보 목록입니다.</param>
-        /// <returns>숨김 조건에 해당하지 않는 후보 목록입니다.</returns>
-        private List<StruckTableShopItem> FilterHiddenUnavailableCandidates(List<StruckTableShopItem> candidates)
+        /// <returns>현재 추첨에 참여할 수 있는 후보 목록입니다.</returns>
+        private List<StruckTableShopItem> FilterUnavailableCandidates(List<StruckTableShopItem> candidates)
         {
             var filteredCandidates = new List<StruckTableShopItem>();
 
@@ -313,7 +236,7 @@ namespace GGemCo2DCore
 
         /// <summary>
         /// 지정한 상품이 현재 추첨 후보에서 제외되어야 하는지 확인합니다.
-        /// 구매할 수 없더라도 비활성 표시 정책이면 후보로 유지하고, 숨김 정책일 때만 제외합니다.
+        /// 숨김 표시 정책은 기존 동작을 유지하고, 품절 추첨 제외 정책은 표시 방식과 독립적으로 적용합니다.
         /// </summary>
         /// <param name="candidate">검사할 상점 상품 행입니다.</param>
         /// <returns>현재 추첨 후보에서 제외해야 하면 <see langword="true"/>입니다.</returns>
@@ -323,7 +246,14 @@ namespace GGemCo2DCore
 
             var item = new ShopDisplayItem(candidate);
             ApplyAvailability(item);
-            return !item.IsBuyable && item.SoldOutDisplayType == ShopSoldOutDisplayType.Hide;
+            if (item.IsBuyable) return false;
+
+            if (item.IsSoldOut && item.SoldOutRollPolicy == ShopSoldOutRollPolicy.ExcludeCandidate)
+            {
+                return true;
+            }
+
+            return item.SoldOutDisplayType == ShopSoldOutDisplayType.Hide;
         }
 
         /// <summary>

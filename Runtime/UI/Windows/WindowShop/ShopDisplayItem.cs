@@ -35,6 +35,12 @@ namespace GGemCo2DCore
         public ShopSoldOutDisplayType SoldOutDisplayType => Source?.SoldOutDisplayType ?? ShopSoldOutDisplayType.Disable;
 
         /// <summary>
+        /// 품절된 상품이 다음 슬롯 추첨에 참여할지 결정하는 정책입니다.
+        /// </summary>
+        public ShopSoldOutRollPolicy SoldOutRollPolicy =>
+            Source?.SoldOutRollPolicy ?? ShopSoldOutRollPolicy.KeepCandidate;
+
+        /// <summary>
         /// 구매 성공 후 아이템을 인벤토리에 넣을지, 즉시 사용할지 결정하는 정책입니다.
         /// </summary>
         public ShopBuyUsePolicy BuyUsePolicy => Source?.BuyUsePolicy ?? ShopBuyUsePolicy.AddToInventory;
