@@ -67,7 +67,9 @@ namespace GGemCo2DCoreEditor
         /// <param name="sceneView">현재 렌더링 중인 SceneView입니다.</param>
         private void DrawWaveSceneGizmos(SceneView sceneView)
         {
-            if (!_drawWaveSceneGizmos || _waveExporter?.DataList?.WaveScenarios == null)
+            if (!IsWavePlacementTabActive ||
+                !_drawWaveSceneGizmos ||
+                _waveExporter?.DataList?.WaveScenarios == null)
             {
                 return;
             }

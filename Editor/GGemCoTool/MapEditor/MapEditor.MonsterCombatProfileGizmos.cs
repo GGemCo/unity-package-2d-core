@@ -171,7 +171,11 @@ namespace GGemCo2DCoreEditor
         /// <param name="sceneView">현재 렌더링 중인 SceneView입니다.</param>
         private void DrawMonsterCombatProfileSceneGizmos(SceneView sceneView)
         {
-            if (!_drawMonsterCombatProfileGizmos || _defaultMap == null || _tableMonster == null || _tableMonsterCombatProfile == null)
+            if (!IsMonsterPlacementTabActive ||
+                !_drawMonsterCombatProfileGizmos ||
+                _defaultMap == null ||
+                _tableMonster == null ||
+                _tableMonsterCombatProfile == null)
             {
                 return;
             }

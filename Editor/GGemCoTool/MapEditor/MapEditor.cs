@@ -33,7 +33,6 @@ namespace GGemCo2DCoreEditor
         // private readonly PatrolExporter _patrolExporter = new PatrolExporter();
 
         // ---- UI State ----
-        private Vector2 _scrollPos;
         private bool _foldMap = true;
         private bool _foldNpc = true;
         private bool _foldNpcEdit = true;
@@ -67,8 +66,7 @@ namespace GGemCo2DCoreEditor
         private readonly List<SearchableDropdownUtility.Option<int>> _monsterOptions = new List<SearchableDropdownUtility.Option<int>>();
         private readonly List<SearchableDropdownUtility.Option<int>> _monsterCombatProfileOptions =
             new List<SearchableDropdownUtility.Option<int>>();
-        
-        // MapEditor.cs 상단 필드 추가
+
         private bool _suppressSceneOpsThisEnable;
 
         [MenuItem(ConfigEditor.NameToolMapExporter, false, (int)ConfigEditor.ToolOrdering.MapExporter)]
@@ -100,6 +98,7 @@ namespace GGemCo2DCoreEditor
             _editMonsterCombatProfileUidOverride = null;
             _editMonsterApplyToSameUid = false;
             _editMonsterBoundInstanceId = 0;
+            RestoreSelectedMapEditorTab();
 
             // 컴파일/도메인리로드 직후에는 씬 변경 작업을 막습니다.
             // (아래 2)에서 더 정교하게 처리)
@@ -360,24 +359,10 @@ namespace GGemCo2DCoreEditor
                 return;
             }
 
-            _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos); // :contentReference[oaicite:3]{index=3}
-            {
-                DrawMapSection();
-                GUILayout.Space(12);
-                DrawNpcSection();
-                GUILayout.Space(12);
-                DrawNpcEditSection();
-                GUILayout.Space(12);
-                DrawMonsterSection();
-                GUILayout.Space(12);
-                DrawMonsterEditSection();
-                GUILayout.Space(12);
-                DrawWaveSection();
-                GUILayout.Space(12);
-                DrawWarpSection();
-                DrawExtensionSections();
-            }
-            EditorGUILayout.EndScrollView();
+            DrawMapSection();
+            GUILayout.Space(6f);
+            DrawMapEditorTabs();
+            DrawSelectedMapEditorTab();
         }
 
         /// <summary>
@@ -387,22 +372,83 @@ namespace GGemCo2DCoreEditor
         {
             if (_extensions.Count <= 0)
             {
+                EditorGUILayout.HelpBox(
+                    "현재 프로젝트에서 사용할 수 있는 맵 배치 확장이 없습니다.",
+                    MessageType.Info);
                 return;
             }
 
             MapEditorExtensionContext context = CreateExtensionContext();
+            string previousCategoryName = null;
             for (int i = 0; i < _extensions.Count; i++)
             {
-                GUILayout.Space(12);
-                try
+                IMapEditorExtension extension = _extensions[i];
+                string categoryName = ResolveExtensionCategoryName(extension);
+                string displayName = ResolveExtensionDisplayName(extension);
+                if (!string.Equals(
+                        previousCategoryName,
+                        categoryName,
+                        StringComparison.Ordinal))
                 {
-                    _extensions[i].OnGUI(context);
+                    if (!string.IsNullOrEmpty(previousCategoryName))
+                    {
+                        GUILayout.Space(12f);
+                    }
+
+                    EditorGUILayout.LabelField(categoryName, EditorStyles.boldLabel);
+                    previousCategoryName = categoryName;
                 }
-                catch (Exception exception)
+
+                using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
                 {
-                    Debug.LogException(exception);
+                    EditorGUILayout.LabelField(displayName, EditorStyles.boldLabel);
+                    try
+                    {
+                        extension.OnGUI(context);
+                    }
+                    catch (Exception exception)
+                    {
+                        Debug.LogException(exception);
+                        EditorGUILayout.HelpBox(
+                            $"'{displayName}' 확장 UI를 그리는 중 오류가 발생했습니다. Console을 확인해주세요.",
+                            MessageType.Error);
+                    }
                 }
             }
+        }
+
+        /// <summary>
+        /// 외부 확장이 제공한 표시 메타데이터에서 프로젝트 확장 그룹명을 결정합니다.
+        /// 메타데이터가 없거나 이름이 비어 있으면 기존 확장도 표시할 수 있도록 기본 그룹을 사용합니다.
+        /// </summary>
+        /// <param name="extension">표시 그룹을 확인할 외부 맵 배치 확장입니다.</param>
+        /// <returns>프로젝트 확장 탭에 표시할 그룹명입니다.</returns>
+        private static string ResolveExtensionCategoryName(IMapEditorExtension extension)
+        {
+            if (extension is IMapEditorExtensionPresentation presentation &&
+                !string.IsNullOrWhiteSpace(presentation.CategoryName))
+            {
+                return presentation.CategoryName.Trim();
+            }
+
+            return "기타 확장";
+        }
+
+        /// <summary>
+        /// 외부 확장이 제공한 표시 메타데이터에서 패널 제목을 결정합니다.
+        /// 메타데이터가 없으면 구현 타입명을 사용하여 기존 확장의 UI 진입점을 유지합니다.
+        /// </summary>
+        /// <param name="extension">표시 이름을 확인할 외부 맵 배치 확장입니다.</param>
+        /// <returns>프로젝트 확장 탭의 패널 제목입니다.</returns>
+        private static string ResolveExtensionDisplayName(IMapEditorExtension extension)
+        {
+            if (extension is IMapEditorExtensionPresentation presentation &&
+                !string.IsNullOrWhiteSpace(presentation.DisplayName))
+            {
+                return presentation.DisplayName.Trim();
+            }
+
+            return extension?.GetType().Name ?? "알 수 없는 확장";
         }
 
         private void DrawToolbar()
@@ -485,14 +531,14 @@ namespace GGemCo2DCoreEditor
 
         private void DrawMapSection()
         {
-            _foldMap = EditorGUILayout.Foldout(_foldMap, "1) 맵 불러오기 / 저장", true);
+            _foldMap = EditorGUILayout.Foldout(_foldMap, "맵 불러오기 / 전체 저장", true);
             if (!_foldMap) return;
 
             using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
             {
                 EditorGUILayout.HelpBox(
                     "맵을 선택한 뒤 '불러오기'로 배치 데이터를 로드합니다.\n" +
-                    "NPC/몬스터/워프/패트롤 배치 후 '저장하기'로 Json을 갱신합니다.",
+                    "NPC/몬스터/웨이브/워프/외부 확장 배치 후 '저장하기'로 전체 Json을 갱신합니다.",
                     MessageType.Info);
                 if (_suppressSceneOpsThisEnable)
                 {
@@ -650,7 +696,7 @@ namespace GGemCo2DCoreEditor
         /// </summary>
         private void DrawNpcSection()
         {
-            _foldNpc = EditorGUILayout.Foldout(_foldNpc, "2) NPC 추가", true);
+            _foldNpc = EditorGUILayout.Foldout(_foldNpc, "NPC 추가", true);
             if (!_foldNpc) return;
 
             using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
@@ -707,7 +753,7 @@ namespace GGemCo2DCoreEditor
         /// </summary>
         private void DrawNpcEditSection()
         {
-            _foldNpcEdit = EditorGUILayout.Foldout(_foldNpcEdit, "3) 배치된 NPC 편집", true);
+            _foldNpcEdit = EditorGUILayout.Foldout(_foldNpcEdit, "배치된 NPC 편집", true);
             if (!_foldNpcEdit) return;
 
             using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
@@ -961,7 +1007,7 @@ namespace GGemCo2DCoreEditor
         /// </summary>
         private void DrawMonsterSection()
         {
-            _foldMonster = EditorGUILayout.Foldout(_foldMonster, "4) 몬스터 추가", true);
+            _foldMonster = EditorGUILayout.Foldout(_foldMonster, "몬스터 추가", true);
             if (!_foldMonster) return;
 
             using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
@@ -1030,7 +1076,7 @@ namespace GGemCo2DCoreEditor
         /// </summary>
         private void DrawMonsterEditSection()
         {
-            _foldMonsterEdit = EditorGUILayout.Foldout(_foldMonsterEdit, "5) 배치된 몬스터 편집", true);
+            _foldMonsterEdit = EditorGUILayout.Foldout(_foldMonsterEdit, "배치된 몬스터 편집", true);
             if (!_foldMonsterEdit) return;
 
             using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
@@ -1332,11 +1378,15 @@ namespace GGemCo2DCoreEditor
         /// </summary>
         private void DrawWarpSection()
         {
-            _foldWarp = EditorGUILayout.Foldout(_foldWarp, "7) 워프 추가", true);
+            _foldWarp = EditorGUILayout.Foldout(_foldWarp, "워프 배치", true);
             if (!_foldWarp) return;
 
             using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
             {
+                EditorGUILayout.HelpBox(
+                    "워프를 추가한 뒤 Scene에서 오브젝트를 선택하여 위치, 목적지 맵과 Collider를 편집하세요.",
+                    MessageType.Info);
+
                 using (new EditorGUILayout.HorizontalScope())
                 {
                     GUI.enabled = GetSelectedMapUid() > 0;

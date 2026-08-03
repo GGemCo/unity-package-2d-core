@@ -44,6 +44,23 @@ namespace GGemCo2DCoreEditor
     }
 
     /// <summary>
+    /// 외부 맵 배치 확장이 프로젝트 확장 탭에 표시될 그룹과 이름을 선택적으로 제공합니다.
+    /// 기존 <see cref="IMapEditorExtension"/> 구현과의 호환성을 유지하기 위해 별도 인터페이스로 분리합니다.
+    /// </summary>
+    public interface IMapEditorExtensionPresentation
+    {
+        /// <summary>
+        /// 프로젝트 확장 탭에서 확장 패널을 묶을 패키지 또는 게임 기능 그룹명입니다.
+        /// </summary>
+        string CategoryName { get; }
+
+        /// <summary>
+        /// 프로젝트 확장 탭의 패널 제목으로 표시할 사용자 친화적인 이름입니다.
+        /// </summary>
+        string DisplayName { get; }
+    }
+
+    /// <summary>
     /// 맵 배치툴 확장 구현에 현재 선택 맵과 씬 루트를 안전하게 전달하는 읽기 전용 컨텍스트입니다.
     /// </summary>
     public sealed class MapEditorExtensionContext

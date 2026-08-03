@@ -34,7 +34,7 @@ namespace GGemCo2DCoreEditor
         /// </summary>
         private void DrawWaveSection()
         {
-            _foldWave = EditorGUILayout.Foldout(_foldWave, "6) 웨이브 스폰 편집", true);
+            _foldWave = EditorGUILayout.Foldout(_foldWave, "웨이브 스폰 편집", true);
             if (!_foldWave) return;
 
             using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
