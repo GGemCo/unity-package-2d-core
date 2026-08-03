@@ -111,6 +111,7 @@ namespace GGemCo2DCoreEditor
             InitializeExtensions();
             RebuildPopupCaches();
             RegisterWaveSceneGizmos();
+            RegisterMonsterCombatProfilePreview();
 
             // Grid 생성 등 씬 작업은 즉시 하지 않고 delayCall로 한 틱 뒤로 미룹니다.
             EditorApplication.delayCall += () =>
@@ -127,6 +128,7 @@ namespace GGemCo2DCoreEditor
         {
             DisableExtensions();
             UnregisterWaveSceneGizmos();
+            UnregisterMonsterCombatProfilePreview();
             // DestroyGridObjectIfExists();
         }
 
@@ -419,6 +421,8 @@ namespace GGemCo2DCoreEditor
                     InitializeExporters();
                     InitializeExtensions();
                     RebuildPopupCaches();
+                    InvalidateMonsterCombatProfilePreview();
+                    SceneView.RepaintAll();
                     Repaint();
                 }
             }
@@ -1011,6 +1015,8 @@ namespace GGemCo2DCoreEditor
                             _monsterSpawnMapVisibilityPolicy,
                             _monsterSpawnAttackTypeOverride,
                             _monsterSpawnCombatProfileUidOverride);
+                        InvalidateMonsterCombatProfilePreview();
+                        SceneView.RepaintAll();
                     }
 
                     GUI.enabled = true;
@@ -1029,6 +1035,8 @@ namespace GGemCo2DCoreEditor
 
             using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
             {
+                DrawMonsterCombatProfileGizmoOptions();
+
                 if (_defaultMap == null || GetSelectedMapUid() <= 0)
                 {
                     EditorGUILayout.HelpBox("맵을 먼저 불러온 뒤 배치된 몬스터를 선택해주세요.", MessageType.Info);
@@ -1241,6 +1249,8 @@ namespace GGemCo2DCoreEditor
 
             if (appliedCount > 0)
             {
+                InvalidateMonsterCombatProfilePreview();
+                SceneView.RepaintAll();
                 Debug.Log($"몬스터 배치 설정 적용 완료: {appliedCount}개 / Uid:{selectedMonster.uid}");
             }
         }
@@ -1597,6 +1607,7 @@ namespace GGemCo2DCoreEditor
             _monsterExporter.SetDefaultMap(_defaultMap);
             _warpExporter.SetDefaultMap(_defaultMap);
             _waveExporter.SetDefaultMap(_defaultMap);
+            InvalidateMonsterCombatProfilePreview();
             ResetWaveEditorSelection();
             // _patrolExporter.SetDefaultMap(_defaultMap);
         }

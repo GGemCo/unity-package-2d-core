@@ -497,6 +497,7 @@ namespace GGemCo2DCoreEditor
                 _undoController?.CommitSnapshot(_selectedTable.TableKey, _document);
                 RefreshStatus();
                 TryAutoPackAfterSave(context);
+                TableEditorChangeNotifier.NotifyTableSaved(_selectedTable.TableKey);
             }
             catch (Exception ex)
             {
