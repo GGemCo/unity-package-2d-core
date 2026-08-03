@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using GGemCo2DCore;
 using UnityEditor;
 using UnityEngine;
@@ -93,6 +93,12 @@ namespace GGemCo2DCoreEditor
             if (!cameraManager)
             {
                 cameraManager = mainCameraObj.AddComponent<CameraManager>();
+            }
+            FixedAspectCameraController fixedAspectController =
+                mainCameraObj.GetComponent<FixedAspectCameraController>();
+            if (!fixedAspectController)
+            {
+                Undo.AddComponent<FixedAspectCameraController>(mainCameraObj);
             }
             cameraManager.SetCameraMoveSpeed(10);
             scene.SetCameraManager(cameraManager);
