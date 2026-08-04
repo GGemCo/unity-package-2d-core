@@ -1,4 +1,4 @@
-﻿namespace GGemCo2DCore
+namespace GGemCo2DCore
 {
     public interface ISkillCancelableDriver : IMonsterSkillDriver
     {
@@ -17,6 +17,11 @@
         StateChanged,
         ForcedBySystem,
         ComboChain,
-        Damage
+        Damage,
+
+        /// <summary>
+        /// 플레이어 가드 입력이 현재 스킬을 중단했습니다.
+        /// </summary>
+        GuardInput = 9,
     }
 }
