@@ -493,8 +493,23 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 107281613710344192
-    m_Localized: "\uC774\uC804 \uC2AC\uB86F\uC744 \uBA3C\uC800 \uD65C\uC131\uD654
-      \uD574\uC57C\uD574."
+    m_Localized: Unlock the previous combo slot first.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 141062814828773376
+    m_Localized: Unlock the linked parent slot first.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 141062814900076544
+    m_Localized: Equip the previous combo skill first.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 141062814900076545
+    m_Localized: Equip the linked parent skill first.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 141062814900076546
+    m_Localized: Unequip the connected next skill first.
     m_Metadata:
       m_Items: []
   references:

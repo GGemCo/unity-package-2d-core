@@ -1,4 +1,5 @@
 Key,Shared Comments,English(en),English(en) Comments,Korean(ko),Korean(ko) Comments
+"SkillSetting_PreviousMainSlotRequired","","이전 슬롯을 먼저 활성화 해야해.","","이전 슬롯을 먼저 활성화 해야해.",""
 "Player_LevelTooLow","Player.cs","Your level is too low.","","플레이어 레벨이 부족합니다.",""
 "Skill_NoTarget","DefaultSkill","No target.","","타겟이 없습니다.",""
 "Currency_NotEnoughGold","SystemMessageManager","Not enough gold.","","골드가 부족합니다.",""
@@ -117,3 +118,8 @@ Key,Shared Comments,English(en),English(en) Comments,Korean(ko),Korean(ko) Comme
 "Skill_TargetOutOfRange","","No target within range.","","사거리 안에 타겟이 없습니다.",""
 "Skill_AlreadyInUse","","Another skill is already in use.","","다른 스킬을 사용 중입니다.",""
 "Skill_NotEnoughMp","","Not Enough Mana","","마나가 부족합니다.",""
+"SkillSetting_PreviousMainSlotRequired","","Unlock the previous combo slot first.","","이전 연계 슬롯을 먼저 활성화해야 합니다.",""
+"SkillSetting_LinkedMainSlotRequired","","Unlock the linked parent slot first.","","연결된 부모 슬롯을 먼저 활성화해야 합니다.",""
+"SkillSetting_PreviousMainSkillRequired","","Equip the previous combo skill first.","","이전 연계 스킬을 먼저 장착해야 합니다.",""
+"SkillSetting_LinkedMainSkillRequired","","Equip the linked parent skill first.","","연결된 부모 스킬을 먼저 장착해야 합니다.",""
+"SkillSetting_DependentSkillEquipped","","Unequip the connected next skill first.","","연결된 다음 스킬을 먼저 해제해야 합니다.",""
