@@ -3,6 +3,23 @@ using UnityEngine;
 namespace GGemCo2DCore
 {
     /// <summary>
+    /// 기준 종횡비와 다른 화면에서 카메라 Viewport를 구성하는 방식을 정의합니다.
+    /// </summary>
+    public enum CameraAspectMode
+    {
+        /// <summary>
+        /// 모든 화면에서 기준 종횡비를 유지하고 남는 영역에 여백을 둡니다.
+        /// </summary>
+        Fixed = 0,
+
+        /// <summary>
+        /// 기준보다 넓은 화면에서는 세로 시야를 유지한 채 가로 시야를 확장합니다.
+        /// 기준보다 좁은 화면에서는 기준 종횡비를 유지합니다.
+        /// </summary>
+        ExpandHorizontal = 1,
+    }
+
+    /// <summary>
     /// 카메라 흔들림 요청을 구분하고 선택적으로 중단하기 위한 채널입니다.
     /// </summary>
     public enum CameraShakeChannel

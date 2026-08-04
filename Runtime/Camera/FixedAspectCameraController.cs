@@ -4,8 +4,8 @@ using UnityEngine.UI;
 namespace GGemCo2DCore
 {
     /// <summary>
-    /// 카메라의 출력 영역을 지정한 화면 비율로 제한하고 남는 화면 영역을 단색 여백으로 표시합니다.
-    /// Orthographic Size는 변경하지 않으므로 기존 카메라 줌과 컷신 연출을 그대로 사용할 수 있습니다.
+    /// 카메라의 출력 영역을 기준 종횡비와 화면 확장 정책에 맞게 조정합니다.
+    /// Orthographic Size는 변경하지 않으므로 가로 확장 시에도 기존 세로 시야와 줌 연출을 유지합니다.
     /// </summary>
     [DefaultExecutionOrder(-1000)]
     [DisallowMultipleComponent]
@@ -24,6 +24,9 @@ namespace GGemCo2DCore
         [Tooltip("기준 화면 비율의 세로 값입니다.")]
         [Min(1f)]
         [SerializeField] private float targetHeight = 9f;
+
+        [Tooltip("기준보다 넓은 화면에서 카메라의 가로 시야를 처리하는 방식입니다.")]
+        [SerializeField] private CameraAspectMode aspectMode = CameraAspectMode.ExpandHorizontal;
 
         [Header("Letterbox")]
         [Tooltip("카메라 출력 영역 밖을 단색 여백으로 가릴지 여부입니다.")]
@@ -44,12 +47,12 @@ namespace GGemCo2DCore
         private int _lastScreenHeight = -1;
 
         /// <summary>
-        /// 현재 화면에 적용된 정규화 16:9 출력 영역을 반환합니다.
+        /// 현재 화면에 적용된 정규화 카메라 출력 영역을 반환합니다.
         /// </summary>
         public Rect ContentViewportRect => _contentViewportRect;
 
         /// <summary>
-        /// 현재 화면에 적용된 픽셀 단위 16:9 출력 영역을 반환합니다.
+        /// 현재 화면에 적용된 픽셀 단위 카메라 출력 영역을 반환합니다.
         /// </summary>
         public Rect ContentPixelRect => _camera != null ? _camera.pixelRect : Rect.zero;
 
@@ -128,6 +131,27 @@ namespace GGemCo2DCore
         /// <returns>0~1 범위로 정규화된 카메라 Viewport입니다.</returns>
         public static Rect CalculateViewportRect(int screenWidth, int screenHeight, float targetAspect)
         {
+            return CalculateViewportRect(
+                screenWidth,
+                screenHeight,
+                targetAspect,
+                CameraAspectMode.Fixed);
+        }
+
+        /// <summary>
+        /// 화면 크기, 목표 비율, 가로 확장 정책을 기준으로 정규화 Viewport를 계산합니다.
+        /// </summary>
+        /// <param name="screenWidth">현재 출력 화면의 픽셀 너비입니다.</param>
+        /// <param name="screenHeight">현재 출력 화면의 픽셀 높이입니다.</param>
+        /// <param name="targetAspect">기준으로 사용할 가로/세로 화면 비율입니다.</param>
+        /// <param name="mode">기준보다 넓은 화면의 처리 방식입니다.</param>
+        /// <returns>0~1 범위로 정규화된 카메라 Viewport입니다.</returns>
+        public static Rect CalculateViewportRect(
+            int screenWidth,
+            int screenHeight,
+            float targetAspect,
+            CameraAspectMode mode)
+        {
             if (screenWidth <= 0 || screenHeight <= 0 || targetAspect <= 0f ||
                 float.IsNaN(targetAspect) || float.IsInfinity(targetAspect))
             {
@@ -137,6 +161,13 @@ namespace GGemCo2DCore
             float screenAspect = screenWidth / (float)screenHeight;
             if (screenAspect > targetAspect)
             {
+                if (mode == CameraAspectMode.ExpandHorizontal)
+                {
+                    // Orthographic Size를 유지하고 전체 화면을 사용하면 세로 시야는 그대로이며
+                    // 실제 화면 비율만큼 좌우 월드 시야가 자연스럽게 확장됩니다.
+                    return new Rect(0f, 0f, 1f, 1f);
+                }
+
                 // 화면이 기준보다 넓으면 좌우에 동일한 여백을 둡니다.
                 float normalizedWidth = targetAspect / screenAspect;
                 return new Rect((1f - normalizedWidth) * 0.5f, 0f, normalizedWidth, 1f);
@@ -178,7 +209,11 @@ namespace GGemCo2DCore
             _lastScreenHeight = screenHeight;
 
             float targetAspect = targetWidth / targetHeight;
-            _contentViewportRect = CalculateViewportRect(screenWidth, screenHeight, targetAspect);
+            _contentViewportRect = CalculateViewportRect(
+                screenWidth,
+                screenHeight,
+                targetAspect,
+                aspectMode);
             _camera.rect = _contentViewportRect;
 
             // 수동 Aspect 값이 남아 있더라도 변경된 Viewport 기준으로 다시 계산되도록 초기화합니다.
