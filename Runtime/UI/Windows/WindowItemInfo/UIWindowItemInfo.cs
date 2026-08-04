@@ -157,6 +157,68 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 현재 아이템 정보와 화면에 표시된 동적 내용을 초기화합니다.
+        /// </summary>
+        /// <remarks>
+        /// 아이콘의 비동기 바인딩 요청을 먼저 무효화하여, 초기화 이후 이전 아이템 Sprite가 뒤늦게 적용되지 않도록 합니다.
+        /// 정보창의 표시 상태는 변경하지 않으므로 후보 아이템이 없는 선택 화면에서도 빈 정보창 레이아웃을 유지할 수 있습니다.
+        /// </remarks>
+        public void ClearItemInfo()
+        {
+            _currentStruckTableItem = null;
+            _currentInstanceId = 0;
+
+            UIAddressableIconBinder binder = ResolveIconImageBinder();
+            binder?.Clear();
+            if (imageIcon != null)
+            {
+                // 바인더의 fallback Sprite 설정과 관계없이 아이템 정보 영역은 완전히 비웁니다.
+                imageIcon.sprite = null;
+            }
+
+            ClearText(textName);
+            ClearText(textType);
+            ClearText(textCategory);
+            ClearText(textSubCategory);
+            ClearText(textAntiFlag);
+            ClearText(textBaseOption);
+            ClearText(textRandomOption);
+            ClearText(textDescription);
+            ClearText(textSalePrice);
+
+            SetOptionalTextVisible(textSubCategory, false);
+            SetOptionalTextVisible(textAntiFlag, false);
+            SetOptionalTextVisible(textBaseOption, false);
+            SetOptionalTextVisible(textRandomOption, false);
+            ResetImageSkillMp();
+        }
+
+        /// <summary>
+        /// 지정한 텍스트 UI의 내용을 빈 문자열로 초기화합니다.
+        /// </summary>
+        /// <param name="text">초기화할 텍스트 UI입니다.</param>
+        private static void ClearText(TextMeshProUGUI text)
+        {
+            if (text != null)
+            {
+                text.text = string.Empty;
+            }
+        }
+
+        /// <summary>
+        /// 아이템 데이터가 있을 때만 사용하는 선택형 텍스트 오브젝트의 표시 상태를 변경합니다.
+        /// </summary>
+        /// <param name="text">표시 상태를 변경할 텍스트 UI입니다.</param>
+        /// <param name="show">오브젝트를 표시하면 <see langword="true"/>입니다.</param>
+        private static void SetOptionalTextVisible(TextMeshProUGUI text, bool show)
+        {
+            if (text != null)
+            {
+                text.gameObject.SetActive(show);
+            }
+        }
+
+        /// <summary>
         /// 요청 객체가 유효한지 확인하고 현재 표시 대상 아이템 상태를 갱신합니다.
         /// </summary>
         /// <param name="request">아이템 정보창 표시에 필요한 문맥 정보입니다.</param>

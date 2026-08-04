@@ -384,6 +384,8 @@ namespace GGemCo2DCore
             {
                 SetAllSlotFilteringState(true);
                 RefreshInventorySlotPage(contextActive);
+                ClearEmptySelectionContextPresentation();
+                RefreshContextActionButtons();
                 return;
             }
 
@@ -473,7 +475,30 @@ namespace GGemCo2DCore
             }
 
             RefreshInventorySlotPage(contextActive);
+            if (contextActive && _contextVisibleSlotOrder.Count == 0)
+            {
+                ClearEmptySelectionContextPresentation();
+            }
+
             RefreshContextActionButtons();
+        }
+
+        /// <summary>
+        /// 활성 선택 문맥에 표시 가능한 후보가 없을 때 선택 상태와 아이템 정보 표시를 초기화합니다.
+        /// </summary>
+        /// <remarks>
+        /// ItemInfo 윈도우는 닫지 않고 내용만 비워, 인벤토리와 함께 열린 고정 레이아웃을 유지합니다.
+        /// 인벤토리 전용 ItemInfo override가 연결된 경우에도 현재 해석된 참조를 사용하므로 같은 규칙이 적용됩니다.
+        /// </remarks>
+        private void ClearEmptySelectionContextPresentation()
+        {
+            if (_selectionContext is not { IsActive: true })
+            {
+                return;
+            }
+
+            RemoveSelectedIcon();
+            _uiWindowItemInfo?.ClearItemInfo();
         }
 
         /// <summary>
@@ -899,7 +924,7 @@ namespace GGemCo2DCore
 
         /// <summary>
         /// 자동 선택 옵션이 활성화되어 있을 때 첫 번째 점유 슬롯을 즉시 선택합니다.
-        /// 비어 있는 슬롯만 있으면 아무 작업도 하지 않습니다.
+        /// 선택 문맥에 후보가 없으면 이전 선택과 아이템 정보 표시를 초기화합니다.
         /// </summary>
         private void TrySelectFirstOccupiedSlotImmediate()
         {
@@ -911,6 +936,7 @@ namespace GGemCo2DCore
             int firstOccupiedIndex = FindFirstOccupiedSlotIndex();
             if (firstOccupiedIndex < 0)
             {
+                ClearEmptySelectionContextPresentation();
                 return;
             }
 
