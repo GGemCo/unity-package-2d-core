@@ -59,6 +59,8 @@ namespace GGemCo2DCore
         [SerializeField] private Image imageSkillMp;
         [Tooltip("스킬 Need Mp를 보여줄 스프라이트")]
         [SerializeField] private Sprite[] spriteSkillMp;
+        [Tooltip("선택된 아이템이 없을 때, 투명한 이미지로 보여주기")]
+        [SerializeField] private Sprite spriteBlank;
 
         private Dictionary<ItemConstants.Category, Action> _categoryUIHandlers;
 
@@ -173,7 +175,7 @@ namespace GGemCo2DCore
             if (imageIcon != null)
             {
                 // 바인더의 fallback Sprite 설정과 관계없이 아이템 정보 영역은 완전히 비웁니다.
-                imageIcon.sprite = null;
+                imageIcon.sprite = spriteBlank;
             }
 
             ClearText(textName);
@@ -441,8 +443,7 @@ namespace GGemCo2DCore
             if (!imageSkillMp)
                 return;
 
-            imageSkillMp.sprite = null;
-            imageSkillMp.gameObject.SetActive(false);
+            imageSkillMp.sprite = spriteSkillMp[0];
         }
 
         /// <summary>

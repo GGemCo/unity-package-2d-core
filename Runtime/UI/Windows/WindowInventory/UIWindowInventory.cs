@@ -497,8 +497,21 @@ namespace GGemCo2DCore
                 return;
             }
 
+            ClearSelectedItemPresentation();
+        }
+
+        /// <summary>
+        /// 현재 인벤토리 선택과 아이템 정보 표시를 함께 초기화합니다.
+        /// </summary>
+        /// <remarks>
+        /// 빈 슬롯 클릭과 선택 문맥의 빈 후보 목록이 같은 정리 경로를 사용하도록 묶어,
+        /// 선택 강조 또는 이전 아이템 정보가 화면에 남지 않게 합니다.
+        /// </remarks>
+        private void ClearSelectedItemPresentation()
+        {
             RemoveSelectedIcon();
             _uiWindowItemInfo?.ClearItemInfo();
+            RefreshContextActionButtons();
         }
 
         /// <summary>
@@ -1202,11 +1215,21 @@ namespace GGemCo2DCore
         }
         
         /// <summary>
-        /// 아이템 나누기 단축키 : shift + 좌클릭 적용 
+        /// 인벤토리 슬롯 선택을 갱신하고, 빈 슬롯이면 이전 아이템 정보 표시를 초기화합니다.
         /// </summary>
-        /// <param name="index"></param>
+        /// <param name="index">선택할 인벤토리 슬롯 인덱스입니다.</param>
         public override void SetSelectedIcon(int index)
         {
+            UIIcon icon = GetIconByIndex(index);
+            if (icon == null || icon.uid <= 0)
+            {
+                ClearSelectedItemPresentation();
+
+                // Shift+클릭으로 빈 슬롯을 선택했을 때의 기존 안내 메시지 동작은 유지합니다.
+                OnItemSplit(index);
+                return;
+            }
+
             base.SetSelectedIcon(index);
 
             OnItemSplit(index);
