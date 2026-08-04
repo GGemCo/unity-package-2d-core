@@ -3,7 +3,7 @@ using UnityEngine;
 namespace GGemCo2DCore
 {
     /// <summary>
-    /// UI ViewportRoot를 지정한 기준 종횡비의 중앙 안전 영역에 맞춥니다.
+    /// UI ViewportRoot를 기준 종횡비와 화면 확장 정책에 맞는 영역으로 조정합니다.
     /// 기존 사용처와의 호환을 위해 선택적으로 카메라 Viewport에도 같은 영역을 적용할 수 있습니다.
     /// </summary>
     [DisallowMultipleComponent]
@@ -27,6 +27,10 @@ namespace GGemCo2DCore
 
         [SerializeField, Min(1)]
         private int targetHeight = 9;
+
+        [Tooltip("기준보다 넓은 화면에서 UI Viewport를 처리하는 방식입니다.")]
+        [SerializeField]
+        private CameraAspectMode aspectMode = CameraAspectMode.Fixed;
 
         private int _cachedScreenWidth;
         private int _cachedScreenHeight;
@@ -113,7 +117,8 @@ namespace GGemCo2DCore
                 screenWidth,
                 screenHeight,
                 targetWidth,
-                targetHeight);
+                targetHeight,
+                aspectMode);
 
             ApplyCameraRect(NormalizedViewportRect);
             ApplyViewportRoot(NormalizedViewportRect);
@@ -178,27 +183,42 @@ namespace GGemCo2DCore
             int targetWidth,
             int targetHeight)
         {
+            return CalculateViewportRect(
+                screenWidth,
+                screenHeight,
+                targetWidth,
+                targetHeight,
+                CameraAspectMode.Fixed);
+        }
+
+        /// <summary>
+        /// 화면 중앙에 배치할 기준 종횡비 영역을 UI 확장 정책에 맞게 계산합니다.
+        /// </summary>
+        /// <param name="screenWidth">현재 출력 화면의 픽셀 너비입니다.</param>
+        /// <param name="screenHeight">현재 출력 화면의 픽셀 높이입니다.</param>
+        /// <param name="targetWidth">기준 종횡비의 가로 값입니다.</param>
+        /// <param name="targetHeight">기준 종횡비의 세로 값입니다.</param>
+        /// <param name="mode">기준보다 넓은 화면의 UI 처리 방식입니다.</param>
+        /// <returns>0~1 범위로 정규화된 UI 영역입니다.</returns>
+        public static Rect CalculateViewportRect(
+            int screenWidth,
+            int screenHeight,
+            int targetWidth,
+            int targetHeight,
+            CameraAspectMode mode)
+        {
             if (screenWidth <= 0 || screenHeight <= 0 ||
                 targetWidth <= 0 || targetHeight <= 0)
             {
                 return new Rect(0f, 0f, 1f, 1f);
             }
 
-            float screenAspect = (float)screenWidth / screenHeight;
             float targetAspect = (float)targetWidth / targetHeight;
-
-            if (screenAspect > targetAspect)
-            {
-                // UI는 넓은 화면에서도 기존 16:9 디자인 폭을 유지하도록 중앙에 배치합니다.
-                float normalizedWidth = targetAspect / screenAspect;
-                float x = (1f - normalizedWidth) * 0.5f;
-                return new Rect(x, 0f, normalizedWidth, 1f);
-            }
-
-            // 기준보다 좁은 화면에서는 UI 전체가 보이도록 상하에 동일한 여백을 둡니다.
-            float normalizedHeight = screenAspect / targetAspect;
-            float y = (1f - normalizedHeight) * 0.5f;
-            return new Rect(0f, y, 1f, normalizedHeight);
+            return AspectViewportUtility.CalculateViewportRect(
+                screenWidth,
+                screenHeight,
+                targetAspect,
+                mode);
         }
     }
 }

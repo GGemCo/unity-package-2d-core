@@ -152,30 +152,11 @@ namespace GGemCo2DCore
             float targetAspect,
             CameraAspectMode mode)
         {
-            if (screenWidth <= 0 || screenHeight <= 0 || targetAspect <= 0f ||
-                float.IsNaN(targetAspect) || float.IsInfinity(targetAspect))
-            {
-                return new Rect(0f, 0f, 1f, 1f);
-            }
-
-            float screenAspect = screenWidth / (float)screenHeight;
-            if (screenAspect > targetAspect)
-            {
-                if (mode == CameraAspectMode.ExpandHorizontal)
-                {
-                    // Orthographic Size를 유지하고 전체 화면을 사용하면 세로 시야는 그대로이며
-                    // 실제 화면 비율만큼 좌우 월드 시야가 자연스럽게 확장됩니다.
-                    return new Rect(0f, 0f, 1f, 1f);
-                }
-
-                // 화면이 기준보다 넓으면 좌우에 동일한 여백을 둡니다.
-                float normalizedWidth = targetAspect / screenAspect;
-                return new Rect((1f - normalizedWidth) * 0.5f, 0f, normalizedWidth, 1f);
-            }
-
-            // 화면이 기준보다 좁으면 상하에 동일한 여백을 둡니다.
-            float normalizedHeight = screenAspect / targetAspect;
-            return new Rect(0f, (1f - normalizedHeight) * 0.5f, 1f, normalizedHeight);
+            return AspectViewportUtility.CalculateViewportRect(
+                screenWidth,
+                screenHeight,
+                targetAspect,
+                mode);
         }
 
         /// <summary>
