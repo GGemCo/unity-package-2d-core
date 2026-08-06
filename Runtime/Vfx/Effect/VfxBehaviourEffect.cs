@@ -6,6 +6,9 @@ namespace GGemCo2DCore
     [DisallowMultipleComponent]
     public class VfxBehaviourEffect : VfxBehaviourBase
     {
+        private static readonly int OverlayStrengthId = Shader.PropertyToID("_OverlayStrength");
+        private static readonly int OverlayColorId = Shader.PropertyToID("_OverlayColor");
+
         public IVfxAnimationController VfxAnimationController;
 
         private string _color;
@@ -13,6 +16,9 @@ namespace GGemCo2DCore
         private Renderer _effectRenderer;
         private RectTransform _effectRectTransform;
         private Animator _animator;
+        private SpriteRenderer[] _spriteRenderers;
+        private Material[] _defaultSpriteMaterials;
+        private MaterialPropertyBlock _spritePropertyBlock;
         private bool _hasDefaultSorting;
         private int _defaultSortingLayerId;
         private int _defaultSortingOrder;
@@ -25,6 +31,7 @@ namespace GGemCo2DCore
         {
             base.Awake();
             EnsureCachedReferences();
+            CaptureDefaultSpriteRendererState();
         }
 
         /// <summary>
@@ -36,12 +43,57 @@ namespace GGemCo2DCore
         /// <param name="poolKeyOverride">동일 VfxUid를 Behaviour 정책별로 분리해 풀링할 때 사용하는 키입니다.</param>
         public override void Initialize(VfxRuntimeData runtimeData, VfxSpawnPolicy spawnPolicy, System.Action<int, GameObject> releaseAction = null, int poolKeyOverride = 0)
         {
+            RestoreDefaultSpriteRendererState();
             base.Initialize(runtimeData, spawnPolicy, releaseAction, poolKeyOverride);
             EnsureCachedReferences();
             CaptureDefaultSortingIfNeeded();
             RestoreDefaultSorting();
             _hasSortingLayerOverride = false;
             _hasSortingOrderOverride = false;
+        }
+
+        /// <summary>
+        /// 프리팹에 설정된 스프라이트 렌더러의 기본 머티리얼을 최초 한 번 보관합니다.
+        /// </summary>
+        private void CaptureDefaultSpriteRendererState()
+        {
+            if (_spriteRenderers != null)
+                return;
+
+            _spriteRenderers = GetComponentsInChildren<SpriteRenderer>(true);
+            _defaultSpriteMaterials = new Material[_spriteRenderers.Length];
+            _spritePropertyBlock = new MaterialPropertyBlock();
+
+            for (int i = 0; i < _spriteRenderers.Length; i++)
+            {
+                SpriteRenderer spriteRenderer = _spriteRenderers[i];
+                if (spriteRenderer != null)
+                    _defaultSpriteMaterials[i] = spriteRenderer.sharedMaterial;
+            }
+        }
+
+        /// <summary>
+        /// 풀에서 VFX를 다시 사용할 때 외부 오버레이가 남긴 머티리얼과 셰이더 속성을 초기화합니다.
+        /// </summary>
+        private void RestoreDefaultSpriteRendererState()
+        {
+            CaptureDefaultSpriteRendererState();
+
+            for (int i = 0; i < _spriteRenderers.Length; i++)
+            {
+                SpriteRenderer spriteRenderer = _spriteRenderers[i];
+                if (spriteRenderer == null)
+                    continue;
+
+                spriteRenderer.sharedMaterial = _defaultSpriteMaterials[i];
+
+                // 다른 시스템의 PropertyBlock 값은 유지하고 흰색 오버레이 속성만 비활성화합니다.
+                spriteRenderer.GetPropertyBlock(_spritePropertyBlock);
+                _spritePropertyBlock.SetFloat(OverlayStrengthId, 0f);
+                _spritePropertyBlock.SetColor(OverlayColorId, Color.white);
+                spriteRenderer.SetPropertyBlock(_spritePropertyBlock);
+                _spritePropertyBlock.Clear();
+            }
         }
 
         /// <summary>

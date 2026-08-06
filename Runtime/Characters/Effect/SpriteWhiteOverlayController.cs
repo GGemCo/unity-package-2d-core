@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace GGemCo2DCore
@@ -20,6 +21,8 @@ namespace GGemCo2DCore
 
         private MaterialPropertyBlock _propertyBlock;
         private Coroutine _flashRoutine;
+        private CharacterBase _ownerCharacter;
+        private readonly List<SpriteRenderer> _targetRendererBuffer = new();
 
         public float OverlayStrength => overlayStrength;
         public Color OverlayColor => overlayColor;
@@ -28,10 +31,15 @@ namespace GGemCo2DCore
         private void Awake()
         {
             _propertyBlock = new MaterialPropertyBlock();
+            _ownerCharacter = GetComponentInParent<CharacterBase>();
 
             if (targetRenderers == null || targetRenderers.Length == 0)
             {
-                targetRenderers = GetComponentsInChildren<SpriteRenderer>(true);
+                RefreshTargets();
+            }
+            else
+            {
+                FilterTargetRenderers(targetRenderers);
             }
 
             ApplyOverlay();
@@ -103,7 +111,7 @@ namespace GGemCo2DCore
 
             if (refreshTargets || targetRenderers == null || targetRenderers.Length == 0)
             {
-                targetRenderers = GetComponentsInChildren<SpriteRenderer>(true);
+                RefreshTargets();
             }
 
             if (targetRenderers == null || targetRenderers.Length == 0)
@@ -200,8 +208,52 @@ namespace GGemCo2DCore
         /// </summary>
         public void RefreshTargets()
         {
-            targetRenderers = GetComponentsInChildren<SpriteRenderer>(true);
+            FilterTargetRenderers(GetComponentsInChildren<SpriteRenderer>(true));
             ApplyOverlay();
+        }
+
+        /// <summary>
+        /// 전달된 후보 중 현재 캐릭터가 직접 소유한 스프라이트 렌더러만 대상으로 보관합니다.
+        /// </summary>
+        /// <param name="candidates">오버레이 적용 대상 후보입니다.</param>
+        private void FilterTargetRenderers(SpriteRenderer[] candidates)
+        {
+            _targetRendererBuffer.Clear();
+
+            if (candidates != null)
+            {
+                for (int i = 0; i < candidates.Length; i++)
+                {
+                    SpriteRenderer candidate = candidates[i];
+                    if (!IsValidOverlayTarget(candidate))
+                        continue;
+
+                    _targetRendererBuffer.Add(candidate);
+                }
+            }
+
+            targetRenderers = _targetRendererBuffer.ToArray();
+        }
+
+        /// <summary>
+        /// 캐릭터에 부착된 VFX와 하위 캐릭터의 렌더러를 오버레이 대상에서 제외합니다.
+        /// </summary>
+        /// <param name="candidate">검사할 스프라이트 렌더러입니다.</param>
+        /// <returns>현재 캐릭터의 외형 렌더러이면 <c>true</c>를 반환합니다.</returns>
+        private bool IsValidOverlayTarget(SpriteRenderer candidate)
+        {
+            if (candidate == null)
+                return false;
+
+            // Attach 방식으로 캐릭터 하위에 생성된 VFX는 캐릭터 오버레이의 영향을 받지 않아야 합니다.
+            if (candidate.GetComponentInParent<VfxBehaviourBase>() != null)
+                return false;
+
+            if (_ownerCharacter == null)
+                _ownerCharacter = GetComponentInParent<CharacterBase>();
+
+            CharacterBase rendererOwner = candidate.GetComponentInParent<CharacterBase>();
+            return _ownerCharacter == null || rendererOwner == _ownerCharacter;
         }
 
         private IEnumerator CoFlash(float duration, AnimationCurve curve)

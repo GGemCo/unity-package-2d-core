@@ -55,13 +55,16 @@ namespace GGemCo2DCore
             var controller = _spriteWhiteOverlayController != null
                 ? _spriteWhiteOverlayController
                 : GetComponent<SpriteWhiteOverlayController>();
+            bool created = false;
 
             if (controller == null)
             {
                 controller = gameObject.AddComponent<SpriteWhiteOverlayController>();
+                created = true;
             }
 
-            controller.Configure(config.Color, refreshTargets: true);
+            // 기존 대상 목록을 유지하여 실행 중 캐릭터에 부착된 VFX가 다시 수집되지 않도록 합니다.
+            controller.Configure(config.Color, refreshTargets: created);
             BindSpriteWhiteOverlayController(controller);
             return true;
         }
