@@ -1,4 +1,6 @@
+using System;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace GGemCo2DCore
@@ -21,6 +23,7 @@ namespace GGemCo2DCore
         private Coroutine _executeRoutine;
         private Coroutine _mapClearEvaluationRoutine;
         private readonly MapClearMonsterSuspensionScope _monsterSuspensionScope = new();
+        private readonly HashSet<object> _autoExitSuppressionTokens = new();
 
         /// <summary>
         /// 컨트롤러가 사용할 게임 씬 참조를 설정하고 맵/몬스터 이벤트를 구독합니다.
@@ -30,6 +33,19 @@ namespace GGemCo2DCore
         {
             _sceneGame = sceneGame;
             RegisterEvents();
+        }
+
+        /// <summary>
+        /// 현재 맵의 자동 클리어 종료 판정을 일시적으로 억제하는 수명 토큰을 발급합니다.
+        /// 테스트 자동 전투나 별도 시나리오가 직접 맵 전환을 관리할 때 사용합니다.
+        /// </summary>
+        /// <returns>해제 시 자동 종료 판정을 다시 활성화하는 수명 토큰입니다.</returns>
+        public IDisposable AcquireAutoExitSuppression()
+        {
+            object token = new object();
+            _autoExitSuppressionTokens.Add(token);
+            StopPendingMapClearEvaluation();
+            return new AutoExitSuppressionScope(this, token);
         }
 
         /// <summary>
@@ -91,6 +107,7 @@ namespace GGemCo2DCore
             StopPendingMapClearEvaluation();
             StopExecuteRoutine();
             CancelPendingDestinationWindowOpen();
+            _autoExitSuppressionTokens.Clear();
         }
 
         /// <summary>
@@ -162,7 +179,7 @@ namespace GGemCo2DCore
         private void OnMonsterKilled(MonsterKilledEventData eventData)
         {
             MapClearExitPolicySettings policy = GetPolicy();
-            if (policy == null || !policy.enabled || _isExecuting)
+            if (policy == null || !policy.enabled || _isExecuting || _autoExitSuppressionTokens.Count > 0)
             {
                 return;
             }
@@ -218,7 +235,7 @@ namespace GGemCo2DCore
         /// </summary>
         private void TryBeginMapClearExitIfCompleted()
         {
-            if (_isExecuting)
+            if (_isExecuting || _autoExitSuppressionTokens.Count > 0)
             {
                 return;
             }
@@ -672,6 +689,66 @@ namespace GGemCo2DCore
             MapClearExitPolicySettings policy = AddressableLoaderSettings.Instance?.settings?.mapClearExitPolicy;
             policy?.EnsureDefaults();
             return policy;
+        }
+
+        /// <summary>
+        /// 지정한 자동 종료 억제 토큰을 해제하고, 남은 토큰이 없으면 현재 맵의 클리어 상태를 다시 검사합니다.
+        /// </summary>
+        /// <param name="token">해제할 내부 수명 토큰입니다.</param>
+        private void ReleaseAutoExitSuppression(object token)
+        {
+            if (token == null || !_autoExitSuppressionTokens.Remove(token))
+            {
+                return;
+            }
+
+            MapClearExitPolicySettings policy = GetPolicy();
+            bool canEvaluateCurrentMap = policy != null &&
+                                         policy.enabled &&
+                                         (!policy.ignoreMapWithoutInitialMonsters || _hasInitialMonsters);
+            if (_autoExitSuppressionTokens.Count <= 0 &&
+                !_isExecuting &&
+                _currentMapUid > 0 &&
+                canEvaluateCurrentMap)
+            {
+                ScheduleMapClearEvaluation();
+            }
+        }
+
+        /// <summary>
+        /// 자동 맵 종료 억제 요청의 해제 시점을 보장하는 수명 범위입니다.
+        /// </summary>
+        private sealed class AutoExitSuppressionScope : IDisposable
+        {
+            private MapClearExitPolicyController _owner;
+            private object _token;
+
+            /// <summary>
+            /// 자동 맵 종료 억제 수명 범위를 생성합니다.
+            /// </summary>
+            /// <param name="owner">억제 토큰을 관리하는 컨트롤러입니다.</param>
+            /// <param name="token">컨트롤러가 발급한 고유 토큰입니다.</param>
+            public AutoExitSuppressionScope(MapClearExitPolicyController owner, object token)
+            {
+                _owner = owner;
+                _token = token;
+            }
+
+            /// <summary>
+            /// 보유한 자동 종료 억제 토큰을 한 번만 해제합니다.
+            /// </summary>
+            public void Dispose()
+            {
+                MapClearExitPolicyController owner = _owner;
+                object token = _token;
+                _owner = null;
+                _token = null;
+
+                if (owner != null)
+                {
+                    owner.ReleaseAutoExitSuppression(token);
+                }
+            }
         }
     }
 }
