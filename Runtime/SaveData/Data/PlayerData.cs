@@ -362,6 +362,87 @@ namespace GGemCo2DCore
             return settings.statPointLevelUpOnInvestPolicy == GGemCoPlayerStatSettings.StatPointLevelUpOnInvestPolicy.IncreaseLevelByInvestedPoints;
         }
 
+        /// <summary>
+        /// 현재 레벨에서 추가로 투자할 수 있는 스탯 포인트 수를 반환합니다.
+        /// </summary>
+        /// <returns>
+        /// 스탯 투자로 레벨이 증가하는 정책이면 최대 레벨까지 남은 투자 가능량을 반환하고,
+        /// 해당 정책을 사용하지 않으면 <see cref="int.MaxValue"/>를 반환합니다.
+        /// </returns>
+        public int GetRemainingStatPointInvestCapacity()
+        {
+            return GetRemainingStatPointInvestCapacity(GetPlayerStatSettings());
+        }
+
+        /// <summary>
+        /// 현재 플레이어 상태에서 지정한 수만큼 스탯 포인트를 추가 투자할 수 있는지 확인합니다.
+        /// </summary>
+        /// <param name="additionalInvestCount">현재 확정 상태를 기준으로 추가 투자할 포인트 수입니다.</param>
+        /// <returns>최대 레벨 정책을 위반하지 않고 투자할 수 있으면 <see langword="true"/>를 반환합니다.</returns>
+        public bool CanInvestAdditionalStatPoints(int additionalInvestCount)
+        {
+            return CanInvestAdditionalStatPoints(additionalInvestCount, GetPlayerStatSettings());
+        }
+
+        /// <summary>
+        /// 지정한 스탯 포인트를 추가 투자했을 때 표시할 예상 레벨을 반환합니다.
+        /// </summary>
+        /// <param name="additionalInvestCount">현재 확정 상태를 기준으로 추가 투자할 포인트 수입니다.</param>
+        /// <returns>최대 레벨 범위로 제한된 예상 플레이어 레벨입니다.</returns>
+        public int GetProjectedLevelAfterStatPointInvestment(int additionalInvestCount)
+        {
+            var settings = GetPlayerStatSettings();
+            if (additionalInvestCount <= 0 || !ShouldIncreaseLevelOnStatPointInvest(settings))
+            {
+                return CurrentLevel;
+            }
+
+            int appliedInvestCount = Mathf.Min(
+                additionalInvestCount,
+                GetRemainingStatPointInvestCapacity(settings));
+            return CurrentLevel + appliedInvestCount;
+        }
+
+        /// <summary>
+        /// 현재 레벨과 최대 레벨을 기준으로 추가 스탯 투자 가능량을 계산합니다.
+        /// </summary>
+        /// <param name="settings">스탯 투자 시 레벨 증가 정책을 제공하는 설정입니다.</param>
+        /// <returns>현재 상태에서 추가로 투자할 수 있는 스탯 포인트 수입니다.</returns>
+        private int GetRemainingStatPointInvestCapacity(GGemCoPlayerStatSettings settings)
+        {
+            if (!ShouldIncreaseLevelOnStatPointInvest(settings))
+            {
+                return int.MaxValue;
+            }
+
+            // 최대 레벨 설정이 아직 초기화되지 않은 상태에서는 투자를 허용하지 않아
+            // 저장 데이터와 레벨 사이의 불일치가 만들어지지 않도록 방어합니다.
+            if (_maxPlayerLevel <= 0)
+            {
+                return 0;
+            }
+
+            return Mathf.Max(0, _maxPlayerLevel - CurrentLevel);
+        }
+
+        /// <summary>
+        /// 추가 스탯 투자가 현재 최대 레벨 범위 안에 있는지 확인합니다.
+        /// </summary>
+        /// <param name="additionalInvestCount">현재 확정 상태를 기준으로 추가 투자할 포인트 수입니다.</param>
+        /// <param name="settings">스탯 투자 시 레벨 증가 정책을 제공하는 설정입니다.</param>
+        /// <returns>투자량이 유효하고 남은 투자 가능량 이하이면 <see langword="true"/>를 반환합니다.</returns>
+        private bool CanInvestAdditionalStatPoints(
+            int additionalInvestCount,
+            GGemCoPlayerStatSettings settings)
+        {
+            if (additionalInvestCount < 0)
+            {
+                return false;
+            }
+
+            return additionalInvestCount <= GetRemainingStatPointInvestCapacity(settings);
+        }
+
         private static bool AllowCommittedStatPointRefund(GGemCoPlayerStatSettings settings)
         {
             if (settings == null) return true;
@@ -612,6 +693,7 @@ namespace GGemCo2DCore
             if (UnspentStatPoints < amount) return false;
 
             var settings = GetPlayerStatSettings();
+            if (!CanInvestAdditionalStatPoints(amount, settings)) return false;
 
             switch (type)
             {
@@ -762,6 +844,7 @@ namespace GGemCo2DCore
             int currentInvestedTotal = GetInvestedStatPointTotal();
             int newInvestedTotal = investedAtk + investedDef + investedHp + investedMp + investedStamina;
             int investedDelta = Mathf.Max(0, newInvestedTotal - currentInvestedTotal);
+            if (!CanInvestAdditionalStatPoints(investedDelta, settings)) return false;
 
             if (!useReservedBudget)
             {
@@ -855,13 +938,14 @@ namespace GGemCo2DCore
             int newTotal = unspent + newInvestedTotal;
             if (newTotal != currentTotal) return false;
 
+            int investedDelta = Mathf.Max(0, newInvestedTotal - currentInvestedTotal);
+            if (!CanInvestAdditionalStatPoints(investedDelta, settings)) return false;
+
             long resetGoldCost = GetStatPointResetGoldCost();
             if (resetGoldCost > 0 && CurrentGold < resetGoldCost)
             {
                 return false;
             }
-
-            int investedDelta = Mathf.Max(0, newInvestedTotal - currentInvestedTotal);
 
             _isBatchUpdating = true;
             try

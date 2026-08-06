@@ -59,6 +59,8 @@ namespace GGemCo2DCore
             if (!_useReservedGoldBudget || _player == null) return 0;
             if (DraftUnspent > 0) return 0;
 
+            // 현재 드래프트에서 새로 투자한 총량을 기준으로 검사하여,
+            // 여러 스탯 항목에 나누어 투자해도 플레이어 최대 레벨을 넘지 않도록 합니다.
             int nextAdditionalInvestCount = GetDraftAdditionalInvestedCount() + 1;
             return _player.GetReservedStatPointDraftPriceForAdditionalInvestCount(nextAdditionalInvestCount);
         }
@@ -146,6 +148,12 @@ namespace GGemCo2DCore
         {
             if (!CharacterConstants.IsStatPointTarget(type)) return false;
             if (_player == null) return false;
+
+            int nextAdditionalInvestCount = GetDraftAdditionalInvestedCount() + 1;
+            if (!_player.CanInvestAdditionalStatPoints(nextAdditionalInvestCount))
+            {
+                return false;
+            }
 
             if (!_useReservedGoldBudget)
             {

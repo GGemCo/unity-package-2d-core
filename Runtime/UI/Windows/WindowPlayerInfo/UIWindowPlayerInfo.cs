@@ -379,7 +379,9 @@ namespace GGemCo2DCore
                 additionalLevels = Mathf.Max(0, draftInvested - currentInvested);
             }
 
-            int previewLevel = currentLevel + additionalLevels;
+            // 스탯 투자 미리보기 역시 PlayerData의 최대 레벨 정책을 사용하여
+            // 실제 적용 결과와 UI 표시가 서로 달라지지 않도록 합니다.
+            int previewLevel = _boundPlayer.GetProjectedLevelAfterStatPointInvestment(additionalLevels);
             if (levelFormatterAsset != null)
             {
                 var renderData = new UIElementStatRenderData(

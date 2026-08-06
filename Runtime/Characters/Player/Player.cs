@@ -1226,6 +1226,29 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 현재 확정 상태를 기준으로 지정한 수만큼 스탯 포인트를 추가 투자할 수 있는지 확인합니다.
+        /// </summary>
+        /// <param name="additionalInvestCount">추가 투자할 스탯 포인트 수입니다.</param>
+        /// <returns>최대 레벨 정책을 위반하지 않고 투자할 수 있으면 <see langword="true"/>를 반환합니다.</returns>
+        public bool CanInvestAdditionalStatPoints(int additionalInvestCount)
+        {
+            return _playerData != null &&
+                   _playerData.CanInvestAdditionalStatPoints(additionalInvestCount);
+        }
+
+        /// <summary>
+        /// 지정한 스탯 포인트를 추가 투자했을 때의 예상 플레이어 레벨을 반환합니다.
+        /// </summary>
+        /// <param name="additionalInvestCount">현재 확정 상태를 기준으로 추가 투자할 스탯 포인트 수입니다.</param>
+        /// <returns>최대 레벨 범위로 제한된 예상 플레이어 레벨입니다.</returns>
+        public int GetProjectedLevelAfterStatPointInvestment(int additionalInvestCount)
+        {
+            return _playerData != null
+                ? _playerData.GetProjectedLevelAfterStatPointInvestment(additionalInvestCount)
+                : CurrentLevel;
+        }
+
+        /// <summary>
         /// 스탯 포인트 투자 상태를 일괄 적용합니다.
         /// - Apply 버튼 등 '원자적 커밋' 용도
         /// </summary>
