@@ -53,7 +53,6 @@ namespace GGemCo2DCore
 
             SetDescription();
             SetupStaticUi();
-            ResetTransientView();
             RegisterListeners();
         }
 
@@ -90,26 +89,6 @@ namespace GGemCo2DCore
                 textInvested.text = FormatInvested(data);
 
             ApplyStatPointUiState(data);
-        }
-
-        /// <summary>
-        /// 창을 다시 열기 전에 이전 편집 세션에서 남은 동적 표시 상태를 초기화합니다.
-        /// 이름과 설명 같은 정적 정보 및 버튼 이벤트 구독은 유지합니다.
-        /// </summary>
-        public void ResetTransientView()
-        {
-            if (textValue != null)
-                textValue.text = string.Empty;
-
-            if (textInvested != null)
-                textInvested.text = string.Empty;
-
-            // 새 편집 세션이 렌더링되기 전에는 이전 세션의 입력 가능 상태를 노출하지 않습니다.
-            if (buttonPlus != null)
-                buttonPlus.interactable = false;
-
-            if (buttonMinus != null)
-                buttonMinus.interactable = false;
         }
 
         private void SetupStaticUi()

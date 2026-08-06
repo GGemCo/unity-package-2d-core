@@ -14,7 +14,7 @@ namespace GGemCo2DCore
         private readonly int _originalHp;
         private readonly int _originalMp;
         private readonly int _originalStamina;
-        private readonly int _originalInvestedTotal;
+        private readonly int _resetBaselineUnspent;
 
         public int DraftUnspent { get; private set; }
         public int DraftAtk { get; private set; }
@@ -24,9 +24,20 @@ namespace GGemCo2DCore
         public int DraftStamina { get; private set; }
 
         /// <summary>
-        /// 원본과 현재 드래프트의 스탯 포인트 상태가 다른지 반환합니다.
+        /// 모든 투자 포인트를 회수한 초기화 기준에서 사용자가 드래프트를 변경했는지 반환합니다.
         /// </summary>
-        public bool IsDirty =>
+        public bool HasDraftChangesFromResetBaseline =>
+            DraftUnspent != _resetBaselineUnspent ||
+            DraftAtk != 0 ||
+            DraftDef != 0 ||
+            DraftHp != 0 ||
+            DraftMp != 0 ||
+            DraftStamina != 0;
+
+        /// <summary>
+        /// 실제 플레이어의 원본 할당과 현재 드래프트 할당이 다른지 반환합니다.
+        /// </summary>
+        public bool HasAllocationChangesFromOriginal =>
             DraftUnspent != _originalUnspent ||
             DraftAtk != _originalAtk ||
             DraftDef != _originalDef ||
@@ -47,7 +58,8 @@ namespace GGemCo2DCore
             _originalHp = player != null ? player.InvestedStatPointHp : 0;
             _originalMp = player != null ? player.InvestedStatPointMp : 0;
             _originalStamina = player != null ? player.InvestedStatPointStamina : 0;
-            _originalInvestedTotal = _originalAtk + _originalDef + _originalHp + _originalMp + _originalStamina;
+            _resetBaselineUnspent = _originalUnspent + _originalAtk + _originalDef +
+                                    _originalHp + _originalMp + _originalStamina;
 
             ResetToClearedDraft();
         }
@@ -80,7 +92,7 @@ namespace GGemCo2DCore
         /// </summary>
         public void ResetToClearedDraft()
         {
-            DraftUnspent = _originalUnspent + _originalInvestedTotal;
+            DraftUnspent = _resetBaselineUnspent;
             DraftAtk = 0;
             DraftDef = 0;
             DraftHp = 0;

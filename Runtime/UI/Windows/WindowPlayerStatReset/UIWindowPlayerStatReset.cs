@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
-using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace GGemCo2DCore
@@ -296,19 +295,23 @@ namespace GGemCo2DCore
         {
             if (_boundPlayer == null) return;
 
-            // PlayerData(레벨업 등)로 인해 스탯포인트가 변경될 수 있습니다.
-            // 편집 중이 아닌 경우에는 초기화 드래프트를 최신 스냅샷으로 다시 생성합니다.
+            // 사용자가 아직 드래프트를 변경하지 않았다면 외부 스탯 변경을 최신 초기화 기준에 반영합니다.
             if (_editSession == null || !_editSession.IsSamePlayer(_boundPlayer) ||
-                (!_editSession.IsDirty && _editSession.IsStaleSnapshot()))
+                (!_editSession.HasDraftChangesFromResetBaseline && _editSession.IsStaleSnapshot()))
             {
                 _editSession = new StatPointResetEditSession(_boundPlayer);
             }
 
-            // 드래프트가 있을 때만 미리보기 totals를 계산(부작용 없음)
-            CharacterStat.CharacterTotals projectedTotals = default;
-            if (_editSession.IsDirty)
+            // 초기화 기준값은 모든 투자 포인트를 회수한 상태이며, 창을 처음 열었을 때 current로 표시합니다.
+            CharacterStat.CharacterTotals resetBaselineTotals =
+                _boundPlayer.CalculateProjectedTotalsForStatPoints(0, 0, 0, 0, 0);
+
+            bool hasDraftPreview = _editSession.HasDraftChangesFromResetBaseline;
+            CharacterStat.CharacterTotals draftTotals = resetBaselineTotals;
+            if (hasDraftPreview)
             {
-                projectedTotals = _boundPlayer.CalculateProjectedTotalsForStatPoints(
+                // 사용자가 +/- 버튼을 누른 뒤에만 현재 드래프트를 preview로 계산합니다.
+                draftTotals = _boundPlayer.CalculateProjectedTotalsForStatPoints(
                     _editSession.DraftAtk,
                     _editSession.DraftDef,
                     _editSession.DraftHp,
@@ -325,7 +328,7 @@ namespace GGemCo2DCore
                 var element = kv.Value;
                 if (element == null) continue;
 
-                var renderData = BuildRenderData(index, projectedTotals);
+                var renderData = BuildRenderData(index, resetBaselineTotals, draftTotals, hasDraftPreview);
                 element.Render(renderData);
             }
         }
@@ -341,41 +344,49 @@ namespace GGemCo2DCore
             if (textUnspent != null)
             {
                 string prefix = string.IsNullOrEmpty(_unspentPrefix) ? "" : _unspentPrefix;
-                // textUnspent.text = _editSession.IsDirty
-                //     ? $"{prefix}{_boundPlayer.UnspentStatPoints} → <style=UI_Emphasis>{_editSession.DraftUnspent}</style>"
-                //     : $"{prefix}{_boundPlayer.UnspentStatPoints}";
                 textUnspent.text = $"{prefix}<style=UI_Emphasis>{_editSession.DraftUnspent}</style>";
             }
 
             if (buttonApply != null)
-                buttonApply.interactable = _editSession.IsDirty;
+                buttonApply.interactable =
+                    _editSession.HasDraftChangesFromResetBaseline &&
+                    _editSession.HasAllocationChangesFromOriginal;
 
             if (buttonReset != null)
                 buttonReset.interactable = _editSession != null;
         }
 
+        /// <summary>
+        /// 초기화 기준값을 current로, 사용자가 변경한 드래프트 값을 preview로 구성합니다.
+        /// </summary>
+        /// <param name="index">렌더링할 플레이어 스탯 식별자입니다.</param>
+        /// <param name="resetBaselineTotals">모든 투자 포인트를 회수한 초기화 기준 총합입니다.</param>
+        /// <param name="draftTotals">현재 드래프트 투자량을 적용한 총합입니다.</param>
+        /// <param name="hasDraftPreview">사용자 입력에 따른 미리보기를 표시할지 여부입니다.</param>
+        /// <returns>스탯 라인에 전달할 렌더 데이터입니다.</returns>
         private UIElementStatRenderData BuildRenderData(
             CharacterConstants.IndexPlayerInfo index,
-            CharacterStat.CharacterTotals projectedTotals)
+            CharacterStat.CharacterTotals resetBaselineTotals,
+            CharacterStat.CharacterTotals draftTotals,
+            bool hasDraftPreview)
         {
             string label = GetCachedLabelOrFallback(index);
-            var (currentValue, invested) = GetStatPointLineData(index, _boundPlayer);
-
-            bool hasPreview = _editSession != null && _editSession.IsDirty;
-            long previewValue = hasPreview
-                ? GetTotalValueByIndex(index, projectedTotals)
+            long currentValue = GetTotalValueByIndex(index, resetBaselineTotals);
+            long previewValue = hasDraftPreview
+                ? GetTotalValueByIndex(index, draftTotals)
                 : currentValue;
 
             bool isTarget = CharacterConstants.IsStatPointTarget(index);
             int draftInvested = isTarget && _editSession != null ? _editSession.GetDraftInvested(index) : 0;
-            int investedDelta = isTarget ? draftInvested - invested : 0;
+            // 초기화 UI의 비교 기준 투자량은 모든 포인트를 회수한 0입니다.
+            int investedDelta = isTarget ? draftInvested : 0;
             bool canIncrease = isTarget && _editSession != null && _editSession.CanIncrease(index);
             bool canDecrease = isTarget && _editSession != null && _editSession.CanDecrease(index);
 
             return new UIElementStatRenderData(
                 label,
                 currentValue,
-                hasPreview,
+                hasDraftPreview,
                 previewValue,
                 isTarget,
                 draftInvested,
@@ -391,7 +402,12 @@ namespace GGemCo2DCore
         private void OnClickApply()
         {
             if (_boundPlayer == null) return;
-            if (_editSession == null || !_editSession.IsDirty) return;
+            if (_editSession == null ||
+                !_editSession.HasDraftChangesFromResetBaseline ||
+                !_editSession.HasAllocationChangesFromOriginal)
+            {
+                return;
+            }
 
             // 스탯 초기화는 모든 포인트를 다시 분배한 상태에서만 적용합니다.
             // 남은 포인트가 있으면 요구사항대로 아무 커밋도 하지 않고 종료합니다.
@@ -492,12 +508,7 @@ namespace GGemCo2DCore
         /// </summary>
         private void OnClickReset()
         {
-            _editSession?.ResetToOriginal();
-            if (_boundPlayer != null)
-            {
-                RefreshValues();
-            }
-
+            // 드래프트는 실제 플레이어 데이터를 변경하지 않으므로 별도 복원 렌더링 없이 폐기합니다.
             CloseWithReason(PlayerStatResetCloseReason.Cancelled);
         }
 
@@ -527,6 +538,9 @@ namespace GGemCo2DCore
             callback?.Invoke(closeReason);
         }
 
+        /// <summary>
+        /// 초기화 기준 레벨과 현재 드래프트 투자량을 사용하여 레벨 미리보기를 갱신합니다.
+        /// </summary>
         private void UpdateLevelText()
         {
             if (textLevel == null)
@@ -538,18 +552,15 @@ namespace GGemCo2DCore
                 return;
             }
 
-            // 초기화 했기 때문에 1로 처리
-            // int currentLevel = _boundPlayer.CurrentLevel;
+            // 초기화 UI에서는 모든 투자 포인트를 회수한 레벨 1을 현재 기준으로 표시합니다.
             int currentLevel = 1;
             int additionalLevels = 0;
-            if (_editSession != null && _editSession.IsDirty && _boundPlayer.DoesStatPointInvestIncreaseLevel())
+            if (_editSession != null &&
+                _editSession.HasDraftChangesFromResetBaseline &&
+                _boundPlayer.DoesStatPointInvestIncreaseLevel())
             {
-                int currentInvested = _boundPlayer.InvestedStatPointAtk + _boundPlayer.InvestedStatPointDef +
-                                      _boundPlayer.InvestedStatPointHp +
-                                      _boundPlayer.InvestedStatPointMp + _boundPlayer.InvestedStatPointStamina;
                 int draftInvested = _editSession.DraftAtk + _editSession.DraftDef + _editSession.DraftHp +
                                     _editSession.DraftMp + _editSession.DraftStamina;
-                // additionalLevels = Mathf.Max(0, draftInvested - currentInvested);
                 additionalLevels = draftInvested;
             }
 
@@ -575,6 +586,12 @@ namespace GGemCo2DCore
                 : $"{prefixTextLevel} {currentLevel}";
         }
 
+        /// <summary>
+        /// 계산된 총합 스냅샷에서 스탯 초기화 UI가 표시할 값을 조회합니다.
+        /// </summary>
+        /// <param name="idx">조회할 플레이어 스탯 식별자입니다.</param>
+        /// <param name="totals">초기화 기준 또는 드래프트 기준으로 계산된 총합 스냅샷입니다.</param>
+        /// <returns>식별자에 해당하는 TotalStat 값이며, 지원하지 않는 항목은 0입니다.</returns>
         private static long GetTotalValueByIndex(CharacterConstants.IndexPlayerInfo idx,
             CharacterStat.CharacterTotals totals)
         {
@@ -585,56 +602,6 @@ namespace GGemCo2DCore
                 CharacterConstants.IndexPlayerInfo.Stamina => totals.TotalStatStamina,
                 _ => 0
             };
-        }
-
-        private static (long BaseValue, int invested) GetStatPointLineData(CharacterConstants.IndexPlayerInfo idx,
-            Player player)
-        {
-            // totalValue는 PlayerInfo에 표시되는 모든 라인에서 의미가 있으므로,
-            // IndexPlayerInfo 전체를 커버하도록 구성합니다.
-            long totalValue = idx switch
-            {
-                CharacterConstants.IndexPlayerInfo.Atk => player.TotalStatAtk.Value,
-                CharacterConstants.IndexPlayerInfo.Def => player.TotalStatDef.Value,
-                CharacterConstants.IndexPlayerInfo.Stamina => player.TotalStatStamina.Value,
-                _ => 0
-            };
-
-            // invested는 스탯 포인트 투자 대상에만 적용됩니다.
-            int invested = idx switch
-            {
-                CharacterConstants.IndexPlayerInfo.Atk => player.InvestedStatPointAtk,
-                CharacterConstants.IndexPlayerInfo.Def => player.InvestedStatPointDef,
-                CharacterConstants.IndexPlayerInfo.Stamina => player.InvestedStatPointStamina,
-                _ => 0
-            };
-
-            return (totalValue, invested);
-        }
-
-        private static (long TotalValue, int invested) GetStatPointLineData_bak(CharacterConstants.IndexPlayerInfo idx,
-            Player player)
-        {
-            // totalValue는 PlayerInfo에 표시되는 모든 라인에서 의미가 있으므로,
-            // IndexPlayerInfo 전체를 커버하도록 구성합니다.
-            long totalValue = idx switch
-            {
-                CharacterConstants.IndexPlayerInfo.Atk => player.ResolvedAtk.Value,
-                CharacterConstants.IndexPlayerInfo.Def => player.ResolvedDef.Value,
-                CharacterConstants.IndexPlayerInfo.Stamina => player.MaxStamina.Value,
-                _ => 0
-            };
-
-            // invested는 스탯 포인트 투자 대상에만 적용됩니다.
-            int invested = idx switch
-            {
-                CharacterConstants.IndexPlayerInfo.Atk => player.InvestedStatPointAtk,
-                CharacterConstants.IndexPlayerInfo.Def => player.InvestedStatPointDef,
-                CharacterConstants.IndexPlayerInfo.Stamina => player.InvestedStatPointStamina,
-                _ => 0
-            };
-
-            return (totalValue, invested);
         }
 
         private string GetCachedLabelOrFallback(CharacterConstants.IndexPlayerInfo idx)
@@ -682,7 +649,6 @@ namespace GGemCo2DCore
             if (!show)
             {
                 CancelResetDraft();
-                ResetStatElementViews();
                 if (!_hasPendingCloseReason)
                 {
                     _pendingCloseReason =
@@ -696,46 +662,14 @@ namespace GGemCo2DCore
             _hasPendingCloseReason = false;
             if (_boundPlayer != null)
             {
-                PrepareForOpen();
+                BeginResetDraft();
+                RefreshValues();
                 return;
             }
 
-            ResetStatElementViews();
             if (textLevel)
             {
                 textLevel.text = string.Empty;
-            }
-        }
-
-        /// <summary>
-        /// 창을 열 때 이전 화면 상태를 제거하고 현재 플레이어 기준의 새 초기화 드래프트를 렌더링합니다.
-        /// </summary>
-        private void PrepareForOpen()
-        {
-            BeginResetDraft();
-            ResetStatElementViews();
-            RefreshValues();
-        }
-
-        /// <summary>
-        /// 모든 스탯 라인의 임시 표시와 이 창 내부의 UI 선택 상태를 초기화합니다.
-        /// 동적으로 생성한 엘리먼트와 버튼 이벤트는 재사용하므로 다시 초기화하지 않습니다.
-        /// </summary>
-        private void ResetStatElementViews()
-        {
-            foreach (KeyValuePair<CharacterConstants.IndexPlayerInfo, UIElementPlayerStatReset> pair in _playerInfos)
-            {
-                pair.Value?.ResetTransientView();
-            }
-
-            EventSystem eventSystem = EventSystem.current;
-            GameObject selectedObject = eventSystem != null
-                ? eventSystem.currentSelectedGameObject
-                : null;
-            if (selectedObject != null && selectedObject.transform.IsChildOf(transform))
-            {
-                // 마지막으로 누른 +/- 버튼의 Selected 상태가 재오픈 후 남지 않도록 해제합니다.
-                eventSystem.SetSelectedGameObject(null);
             }
         }
 
@@ -748,11 +682,11 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 창이 닫힐 때 임시 드래프트를 원본 상태로 되돌려 다음 표시 시점에 stale 상태가 남지 않도록 합니다.
+        /// 창이 닫힐 때 임시 드래프트 참조를 폐기하여 다음 열기에서 최신 플레이어 기준으로 다시 생성되도록 합니다.
         /// </summary>
         private void CancelResetDraft()
         {
-            _editSession?.ResetToOriginal();
+            _editSession = null;
         }
 
         private EntityPlayerInfo GetEntityPlayerInfo(CharacterConstants.IndexPlayerInfo indexPlayerInfo)
