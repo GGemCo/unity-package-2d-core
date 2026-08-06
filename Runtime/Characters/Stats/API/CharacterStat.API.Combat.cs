@@ -14,6 +14,39 @@ namespace GGemCo2DCore
         public float GetCurrentAttackSpeed() => TotalAttackSpeed.Value / 100f;
 
         /// <summary>
+        /// 기본 공격속도를 지정한 값만큼 증가시키고 전체 스탯을 다시 계산합니다.
+        /// </summary>
+        /// <param name="value">기본 공격속도에 더할 양수 값입니다.</param>
+        /// <remarks>
+        /// 장비, 패시브, Affect Modifier는 변경하지 않으며 정수 범위를 넘으면 <see cref="int.MaxValue"/>로 제한합니다.
+        /// </remarks>
+        public void IncreaseCurrentAttackSpeed(int value)
+        {
+            if (value <= 0)
+                return;
+
+            long increasedValue = (long)BaseAttackSpeed + value;
+            BaseAttackSpeed = increasedValue >= int.MaxValue
+                ? int.MaxValue
+                : (int)increasedValue;
+            RecalculateStats();
+        }
+
+        /// <summary>
+        /// 기본 공격속도를 지정한 값으로 교체하고 전체 스탯을 다시 계산합니다.
+        /// </summary>
+        /// <param name="value">새로 적용할 1 이상의 기본 공격속도입니다.</param>
+        /// <remarks>장비, 패시브, Affect Modifier는 유지되므로 최종 공격속도는 지정값과 다를 수 있습니다.</remarks>
+        public void SetCurrentAttackSpeed(int value)
+        {
+            if (value <= 0)
+                return;
+
+            BaseAttackSpeed = value;
+            RecalculateStats();
+        }
+
+        /// <summary>
         /// 데미지 타입에 대응되는 현재 기본 속성 데미지 값을 반환합니다.
         /// </summary>
         /// <param name="damageType">조회할 데미지 타입입니다.</param>
