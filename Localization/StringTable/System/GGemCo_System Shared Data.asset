@@ -588,6 +588,10 @@ MonoBehaviour:
     m_Key: SkillSetting_DependentSkillEquipped
     m_Metadata:
       m_Items: []
+  - m_Id: 34392264916779008
+    m_Key: Text_Remain_Point
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

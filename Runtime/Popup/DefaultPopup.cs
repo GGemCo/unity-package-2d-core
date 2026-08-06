@@ -12,6 +12,12 @@ namespace GGemCo2DCore
     /// </summary>
     public class PopupMetadata
     {
+        /// <summary>
+        /// 동일 요청의 중복 표시를 막고 특정 팝업만 취소할 때 사용하는 식별자입니다.
+        /// 비어 있으면 기존과 동일하게 중복을 허용합니다.
+        /// </summary>
+        public string RequestKey;
+
         // 타입
         public PopupManager.Type PopupType = PopupManager.Type.Default;
         // 타이틀

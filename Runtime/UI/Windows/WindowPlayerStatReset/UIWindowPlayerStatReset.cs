@@ -32,6 +32,9 @@ namespace GGemCo2DCore
     /// </summary>
     public class UIWindowPlayerStatReset : UIWindow, IStatPointDraftChangeHandler
     {
+        private const string RemainPointMessageKey = "Text_Remain_Point";
+        private const string RemainPointPopupRequestKey = "PlayerStatReset.RemainPoint";
+
         [Header(UIWindowConstants.TitleHeaderIndividual)]
         [Header("프리팹")]
         [Tooltip("스탯 라인 프리팹(UIElementStatReset) - 비활성 템플릿으로 두고 런타임에 복제합니다.")]
@@ -74,9 +77,12 @@ namespace GGemCo2DCore
         [Tooltip("보여줄 스탯 선택(멀티 선택 가능)")] 
         [SerializeField] private CharacterConstants.PlayerInfoMask useIndexPlayerInfos = CharacterConstants.PlayerInfoMask.All;
 
-        [Header("팝업")] 
-        [Tooltip("분배 해야하는 스탯 포인트가 남았을 때 보여줄 대화박스")] 
-        [SerializeField] PopupBubble popupBubble;
+        [Header("팝업")]
+        [Tooltip("남은 포인트 안내 말풍선을 Apply 버튼 기준으로 배치할 위치 보정값")]
+        [SerializeField] private Vector3 remainPointPopupOffset = new Vector3(0f, 80f, 0f);
+
+        [Tooltip("남은 포인트 안내 말풍선을 자동으로 닫을 실제 시간(초)")]
+        [SerializeField] private float remainPointPopupDuration = 2f;
 
         private readonly Dictionary<CharacterConstants.IndexPlayerInfo, UIElementPlayerStatReset> _playerInfos = new();
         private readonly Dictionary<CharacterConstants.IndexPlayerInfo, string> _labelCache = new();
@@ -88,6 +94,7 @@ namespace GGemCo2DCore
         private Action<PlayerStatResetCloseReason> _closeCallback;
         private PlayerStatResetCloseReason _pendingCloseReason;
         private bool _hasPendingCloseReason;
+        private bool _hasLoggedMissingPopupManager;
 
         protected override void Awake()
         {
@@ -100,15 +107,13 @@ namespace GGemCo2DCore
 
             if (buttonApply != null) buttonApply.onClick.AddListener(OnClickApply);
             if (buttonReset != null) buttonReset.onClick.AddListener(OnClickReset);
-
-            if (popupBubble != null)
-                popupBubble.gameObject.SetActive(false);
         }
 
         private void OnDestroy()
         {
             if (buttonApply != null) buttonApply.onClick.RemoveListener(OnClickApply);
             if (buttonReset != null) buttonReset.onClick.RemoveListener(OnClickReset);
+            CancelRemainPointPopup();
 
             // 씬 종료 중에는 다른 UIWindow를 다시 열지 않도록 보류 중인 콜백을 실행하지 않고 해제합니다.
             _closeCallback = null;
@@ -121,6 +126,8 @@ namespace GGemCo2DCore
         /// </summary>
         private void OnDisable()
         {
+            CancelRemainPointPopup();
+
             if (_closeCallback == null)
             {
                 _hasPendingCloseReason = false;
@@ -247,9 +254,8 @@ namespace GGemCo2DCore
             if (ok)
                 RefreshValues();
 
-            // 포인트를 사용하면 대화창 닫기
-            if (popupBubble != null)
-                popupBubble.gameObject.SetActive(false);
+            // 포인트를 조정하면 이전 안내는 더 이상 현재 입력 상태를 나타내지 않으므로 닫습니다.
+            CancelRemainPointPopup();
             return ok;
         }
 
@@ -390,11 +396,7 @@ namespace GGemCo2DCore
             // 남은 포인트가 있으면 요구사항대로 아무 커밋도 하지 않고 종료합니다.
             if (_editSession.DraftUnspent > 0)
             {
-                if (popupBubble != null)
-                {
-                    popupBubble.gameObject.SetActive(true);
-                }
-
+                ShowRemainPointPopup();
                 return;
             }
 
@@ -427,6 +429,60 @@ namespace GGemCo2DCore
             _editSession = new StatPointResetEditSession(_boundPlayer);
             RefreshValues();
             CloseWithReason(PlayerStatResetCloseReason.Applied);
+        }
+
+        /// <summary>
+        /// 공통 팝업 매니저를 통해 남은 스탯 포인트 안내 말풍선을 표시합니다.
+        /// 동일 요청 키를 사용하므로 Apply 버튼을 반복해서 눌러도 말풍선이 중복 생성되지 않습니다.
+        /// </summary>
+        private void ShowRemainPointPopup()
+        {
+            PopupManager popupManager = GetPopupManager();
+            if (popupManager == null)
+            {
+                if (!_hasLoggedMissingPopupManager)
+                {
+                    GcLogger.LogWarning($"[{nameof(UIWindowPlayerStatReset)}] PopupManager를 찾을 수 없어 남은 포인트 안내를 표시하지 못했습니다.");
+                    _hasLoggedMissingPopupManager = true;
+                }
+
+                return;
+            }
+
+            Vector3 anchorPosition = buttonApply != null
+                ? buttonApply.transform.position
+                : transform.position;
+
+            popupManager.ShowPopup(new PopupMetadataBubble
+            {
+                RequestKey = RemainPointPopupRequestKey,
+                PopupType = PopupManager.Type.Bubble,
+                Message = RemainPointMessageKey,
+                MessageColor = new Color(62f / 255f, 31f / 255f, 0f, 1f),
+                ShowConfirmButton = false,
+                ShowCancelButton = false,
+                IsClosableByClick = true,
+                ThumbnailType = PopupBubbleThumbnailType.Witch,
+                Duration = Mathf.Max(0f, remainPointPopupDuration),
+                Position = anchorPosition + remainPointPopupOffset,
+            });
+        }
+
+        /// <summary>
+        /// 이 윈도우가 요청한 남은 포인트 안내 말풍선만 취소합니다.
+        /// </summary>
+        private void CancelRemainPointPopup()
+        {
+            GetPopupManager()?.Cancel(RemainPointPopupRequestKey);
+        }
+
+        /// <summary>
+        /// 현재 게임 씬에 등록된 공통 팝업 매니저를 반환합니다.
+        /// </summary>
+        /// <returns>사용 가능한 매니저가 없으면 <see langword="null"/>을 반환합니다.</returns>
+        private static PopupManager GetPopupManager()
+        {
+            return SceneGame.Instance != null ? SceneGame.Instance.popupManager : null;
         }
 
         /// <summary>

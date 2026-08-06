@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -180,7 +180,8 @@ namespace GGemCo2DCore
         /// <returns>코루틴 열거자입니다.</returns>
         private IEnumerator CoroutineFadeOut()
         {
-            yield return new WaitForSeconds(_duration);
+            // UIWindow이 게임 시간을 일시 정지해도 안내 말풍선은 설정한 실제 시간 뒤 닫혀야 합니다.
+            yield return new WaitForSecondsRealtime(_duration);
             ClosePopup();
         }
 
@@ -469,4 +470,3 @@ namespace GGemCo2DCore
         }
     }
 }
-

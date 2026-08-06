@@ -23,6 +23,8 @@ namespace GGemCo2DCore
         public void SetCanvasPopup(Transform value) => canvasPopup = value;
 
         private readonly Queue<PopupMetadata> _popupQueue = new Queue<PopupMetadata>();
+        private readonly HashSet<string> _reservedRequestKeys = new HashSet<string>();
+        private readonly Dictionary<DefaultPopup, string> _requestKeyByPopup = new Dictionary<DefaultPopup, string>();
         private DefaultPopup _currentDefaultPopup;
         
         /// <summary>
@@ -33,14 +35,26 @@ namespace GGemCo2DCore
         {
             if (popupMetadata == null)
             {
-                GcLogger.LogError($"팝업 prefab이 없습니다. type: {popupMetadata.PopupType}");
+                GcLogger.LogError("팝업 메타데이터가 없습니다.");
+                return;
+            }
+
+            if (!TryReserveRequestKey(popupMetadata.RequestKey))
+            {
                 return;
             }
 
             if (popupMetadata.ForceShow)
             {
                 var popup = CreatePopup(popupMetadata);
-                popup?.ShowPopup();
+                if (popup == null)
+                {
+                    ReleaseRequestKey(popupMetadata.RequestKey);
+                    return;
+                }
+
+                TrackPopupRequest(popup, popupMetadata.RequestKey);
+                popup.ShowPopup();
                 return;
             }
 
@@ -114,14 +128,21 @@ namespace GGemCo2DCore
                 return;
             }
 
-            if (_popupQueue.Count == 0)
+            // 프리팹 누락 등으로 생성에 실패한 요청은 해제하고 다음 요청을 계속 처리합니다.
+            while (_popupQueue.Count > 0)
             {
+                PopupMetadata nextMetadata = _popupQueue.Dequeue();
+                _currentDefaultPopup = CreatePopup(nextMetadata);
+                if (_currentDefaultPopup == null)
+                {
+                    ReleaseRequestKey(nextMetadata.RequestKey);
+                    continue;
+                }
+
+                TrackPopupRequest(_currentDefaultPopup, nextMetadata.RequestKey);
+                _currentDefaultPopup.ShowPopup();
                 return;
             }
-
-            PopupMetadata nextMetadata = _popupQueue.Dequeue();
-            _currentDefaultPopup = CreatePopup(nextMetadata);
-            _currentDefaultPopup?.ShowPopup();
         }
 
         private DefaultPopup CreatePopup(PopupMetadata popupMetadata)
@@ -152,6 +173,11 @@ namespace GGemCo2DCore
             if (popup != null)
             {
                 popup.Closed -= OnPopupClosed;
+                if (_requestKeyByPopup.TryGetValue(popup, out string requestKey))
+                {
+                    _requestKeyByPopup.Remove(popup);
+                    ReleaseRequestKey(requestKey);
+                }
             }
 
             if (_currentDefaultPopup == popup)
@@ -160,6 +186,43 @@ namespace GGemCo2DCore
             }
 
             ShowNextPopup();
+        }
+
+        /// <summary>
+        /// 요청 키가 비어 있지 않을 때 동일한 팝업이 표시 중이거나 대기 중인지 확인하고 예약합니다.
+        /// </summary>
+        /// <param name="requestKey">중복 여부를 확인할 요청 식별자입니다.</param>
+        /// <returns>새 요청을 등록할 수 있으면 <see langword="true"/>를 반환합니다.</returns>
+        private bool TryReserveRequestKey(string requestKey)
+        {
+            return string.IsNullOrEmpty(requestKey) || _reservedRequestKeys.Add(requestKey);
+        }
+
+        /// <summary>
+        /// 생성된 팝업과 요청 키의 수명주기를 연결합니다.
+        /// </summary>
+        /// <param name="popup">생성된 팝업입니다.</param>
+        /// <param name="requestKey">팝업 요청 식별자입니다.</param>
+        private void TrackPopupRequest(DefaultPopup popup, string requestKey)
+        {
+            if (popup == null || string.IsNullOrEmpty(requestKey))
+            {
+                return;
+            }
+
+            _requestKeyByPopup[popup] = requestKey;
+        }
+
+        /// <summary>
+        /// 더 이상 표시하거나 대기하지 않는 요청 키의 예약을 해제합니다.
+        /// </summary>
+        /// <param name="requestKey">해제할 요청 식별자입니다.</param>
+        private void ReleaseRequestKey(string requestKey)
+        {
+            if (!string.IsNullOrEmpty(requestKey))
+            {
+                _reservedRequestKeys.Remove(requestKey);
+            }
         }
 
         private GameObject GetPopupPrefab(Type popupType)
@@ -182,6 +245,56 @@ namespace GGemCo2DCore
         {
             if (!_currentDefaultPopup) return;
             _currentDefaultPopup.ClosePopup();
+        }
+
+        /// <summary>
+        /// 표시 중이거나 대기 중인 팝업 가운데 요청 키가 일치하는 항목만 취소합니다.
+        /// </summary>
+        /// <param name="requestKey">취소할 팝업 요청 식별자입니다.</param>
+        /// <returns>취소할 팝업을 찾았으면 <see langword="true"/>를 반환합니다.</returns>
+        public bool Cancel(string requestKey)
+        {
+            if (string.IsNullOrEmpty(requestKey))
+            {
+                return false;
+            }
+
+            DefaultPopup popupToClose = null;
+            foreach (KeyValuePair<DefaultPopup, string> pair in _requestKeyByPopup)
+            {
+                if (pair.Value == requestKey)
+                {
+                    popupToClose = pair.Key;
+                    break;
+                }
+            }
+
+            if (popupToClose != null)
+            {
+                popupToClose.ClosePopup();
+                return true;
+            }
+
+            bool removed = false;
+            int queuedCount = _popupQueue.Count;
+            for (int i = 0; i < queuedCount; i++)
+            {
+                PopupMetadata metadata = _popupQueue.Dequeue();
+                if (!removed && metadata != null && metadata.RequestKey == requestKey)
+                {
+                    removed = true;
+                    continue;
+                }
+
+                _popupQueue.Enqueue(metadata);
+            }
+
+            if (removed)
+            {
+                ReleaseRequestKey(requestKey);
+            }
+
+            return removed;
         }
     }
 }
