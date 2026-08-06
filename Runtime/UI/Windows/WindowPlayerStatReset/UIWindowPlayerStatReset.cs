@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace GGemCo2DCore
@@ -681,6 +682,7 @@ namespace GGemCo2DCore
             if (!show)
             {
                 CancelResetDraft();
+                ResetStatElementViews();
                 if (!_hasPendingCloseReason)
                 {
                     _pendingCloseReason =
@@ -694,14 +696,46 @@ namespace GGemCo2DCore
             _hasPendingCloseReason = false;
             if (_boundPlayer != null)
             {
-                BeginResetDraft();
-                RefreshValues();
+                PrepareForOpen();
                 return;
             }
 
+            ResetStatElementViews();
             if (textLevel)
             {
                 textLevel.text = string.Empty;
+            }
+        }
+
+        /// <summary>
+        /// 창을 열 때 이전 화면 상태를 제거하고 현재 플레이어 기준의 새 초기화 드래프트를 렌더링합니다.
+        /// </summary>
+        private void PrepareForOpen()
+        {
+            BeginResetDraft();
+            ResetStatElementViews();
+            RefreshValues();
+        }
+
+        /// <summary>
+        /// 모든 스탯 라인의 임시 표시와 이 창 내부의 UI 선택 상태를 초기화합니다.
+        /// 동적으로 생성한 엘리먼트와 버튼 이벤트는 재사용하므로 다시 초기화하지 않습니다.
+        /// </summary>
+        private void ResetStatElementViews()
+        {
+            foreach (KeyValuePair<CharacterConstants.IndexPlayerInfo, UIElementPlayerStatReset> pair in _playerInfos)
+            {
+                pair.Value?.ResetTransientView();
+            }
+
+            EventSystem eventSystem = EventSystem.current;
+            GameObject selectedObject = eventSystem != null
+                ? eventSystem.currentSelectedGameObject
+                : null;
+            if (selectedObject != null && selectedObject.transform.IsChildOf(transform))
+            {
+                // 마지막으로 누른 +/- 버튼의 Selected 상태가 재오픈 후 남지 않도록 해제합니다.
+                eventSystem.SetSelectedGameObject(null);
             }
         }
 

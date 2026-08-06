@@ -1,4 +1,4 @@
-﻿using TMPro;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -42,7 +42,10 @@ namespace GGemCo2DCore
         /// <param name="draftChangeHandler">증가/감소 버튼 입력을 처리할 초안 변경 핸들러입니다.</param>
         /// <param name="indexPlayerInfo">이 UI가 표현할 스탯 식별자입니다.</param>
         /// <param name="entityPlayerInfo">이 UI가 표현할 스탯 정보.</param>
-        public void Initialize(IStatPointDraftChangeHandler draftChangeHandler, CharacterConstants.IndexPlayerInfo indexPlayerInfo, EntityPlayerInfo entityPlayerInfo)
+        public void Initialize(
+            IStatPointDraftChangeHandler draftChangeHandler,
+            CharacterConstants.IndexPlayerInfo indexPlayerInfo,
+            EntityPlayerInfo entityPlayerInfo)
         {
             _draftChangeHandler = draftChangeHandler;
             _indexPlayerInfo = indexPlayerInfo;
@@ -50,6 +53,7 @@ namespace GGemCo2DCore
 
             SetDescription();
             SetupStaticUi();
+            ResetTransientView();
             RegisterListeners();
         }
 
@@ -70,6 +74,10 @@ namespace GGemCo2DCore
             formatterAsset = formatter;
         }
 
+        /// <summary>
+        /// 전달받은 렌더 데이터를 기준으로 값, 투자 포인트, 버튼 상태를 갱신합니다.
+        /// </summary>
+        /// <param name="data">현재 편집 세션에서 계산한 스탯 라인 표시 데이터입니다.</param>
         public void Render(in UIElementStatRenderData data)
         {
             if (textName != null)
@@ -82,6 +90,26 @@ namespace GGemCo2DCore
                 textInvested.text = FormatInvested(data);
 
             ApplyStatPointUiState(data);
+        }
+
+        /// <summary>
+        /// 창을 다시 열기 전에 이전 편집 세션에서 남은 동적 표시 상태를 초기화합니다.
+        /// 이름과 설명 같은 정적 정보 및 버튼 이벤트 구독은 유지합니다.
+        /// </summary>
+        public void ResetTransientView()
+        {
+            if (textValue != null)
+                textValue.text = string.Empty;
+
+            if (textInvested != null)
+                textInvested.text = string.Empty;
+
+            // 새 편집 세션이 렌더링되기 전에는 이전 세션의 입력 가능 상태를 노출하지 않습니다.
+            if (buttonPlus != null)
+                buttonPlus.interactable = false;
+
+            if (buttonMinus != null)
+                buttonMinus.interactable = false;
         }
 
         private void SetupStaticUi()
