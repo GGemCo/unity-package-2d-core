@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace GGemCo2DCore
@@ -11,11 +11,14 @@ namespace GGemCo2DCore
     {
         private const int CastHitCapacity = 12;
         private const int OverlapCapacity = 12;
+        private const int SupportContactCapacity = 12;
+        private const float DirectionEpsilon = 0.0001f;
 
         private static readonly HashSet<int> ConfiguredDeadBodyLayers = new();
 
         private readonly RaycastHit2D[] _castHits = new RaycastHit2D[CastHitCapacity];
         private readonly Collider2D[] _overlaps = new Collider2D[OverlapCapacity];
+        private readonly ContactPoint2D[] _supportContacts = new ContactPoint2D[SupportContactCapacity];
 
         private CharacterBase _owner;
         private CapsuleCollider2D _bodyCollider;
@@ -25,11 +28,26 @@ namespace GGemCo2DCore
         private float _strongSeparationMultiplier = 1f;
         private float _timedSeparationRemainingTime;
         private float _timedSeparationMultiplier = 1f;
+        private CharacterBase _supportingCharacter;
+        private float _supportContactElapsedTime;
+        private float _supportEscapeDirectionX;
 
         /// <summary>
         /// 현재 이동 차단과 겹침 해소에 사용할 Body Collider입니다.
         /// </summary>
         public CapsuleCollider2D BodyCollider => _bodyCollider;
+
+        /// <summary>
+        /// 플레이어가 현재 생존한 몬스터 Body Collider 위에 지지되고 있는지 반환합니다.
+        /// </summary>
+        /// <remarks>
+        /// 입력 처리 시점에도 최신 접촉 상태를 확인할 수 있도록 캐시가 아니라 현재 Physics2D 접촉 정보를 조회합니다.
+        /// </remarks>
+        public bool HasMonsterSupportContact()
+        {
+            GGemCoCharacterCollisionSettings settings = GetSettings();
+            return TryFindMonsterSupportContact(settings, out _);
+        }
 
         /// <summary>
         /// 캐릭터와 Body Collider 참조를 초기화합니다.
@@ -45,6 +63,7 @@ namespace GGemCo2DCore
                 _bodyCollider = resolvedCollider;
                 _bodyColliderDisabledByDeath = false;
                 _bodyColliderEnabledBeforeDeath = _bodyCollider == null || _bodyCollider.enabled;
+                ResetMonsterSupportRecovery();
             }
 
             Refresh();
@@ -307,6 +326,7 @@ namespace GGemCo2DCore
         private void FixedUpdate()
         {
             TickTimedSeparation(Time.fixedDeltaTime);
+            TickMonsterSupportRecovery(Time.fixedDeltaTime);
         }
 
         /// <summary>
@@ -325,6 +345,252 @@ namespace GGemCo2DCore
                 return;
 
             _timedSeparationMultiplier = 1f;
+        }
+
+        /// <summary>
+        /// 플레이어가 몬스터 Body 위에 일정 시간 지지되면 조작 잠금 여부와 무관하게 안전한 수평 방향으로 이탈시킵니다.
+        /// </summary>
+        /// <param name="deltaTime">이번 FixedUpdate의 시간 간격입니다.</param>
+        private void TickMonsterSupportRecovery(float deltaTime)
+        {
+            // 플레이어 외 캐릭터는 접촉 배열을 조회하지 않아 전투 중 불필요한 Physics2D 호출을 피합니다.
+            if (_owner == null || _owner.type != CharacterConstants.Type.Player)
+            {
+                ResetMonsterSupportRecovery();
+                return;
+            }
+
+            GGemCoCharacterCollisionSettings settings = GetSettings();
+            if (!CanRecoverMonsterSupport(settings) ||
+                !TryFindMonsterSupportContact(settings, out CharacterBase supportingCharacter))
+            {
+                ResetMonsterSupportRecovery();
+                return;
+            }
+
+            if (!ReferenceEquals(_supportingCharacter, supportingCharacter))
+            {
+                _supportingCharacter = supportingCharacter;
+                _supportContactElapsedTime = 0f;
+                _supportEscapeDirectionX = 0f;
+            }
+
+            _supportContactElapsedTime += Mathf.Max(0f, deltaTime);
+            if (_supportContactElapsedTime < GetSupportRecoveryDelay(settings))
+                return;
+
+            float maxStep = GetSupportRecoveryMaxStep(settings);
+            if (maxStep <= 0f || !TryResolveSupportEscapeDirection(supportingCharacter, maxStep, out float directionX))
+                return;
+
+            Vector2 delta = new Vector2(directionX * maxStep, 0f);
+            Rigidbody2D rigidbody2D = _owner.characterRigidbody2D;
+            if (rigidbody2D != null)
+            {
+                rigidbody2D.WakeUp();
+                rigidbody2D.MovePosition(rigidbody2D.position + delta);
+                return;
+            }
+
+            _owner.transform.position += (Vector3)delta;
+        }
+
+        /// <summary>
+        /// 현재 Body Collider가 생존한 몬스터 위에서 지지되고 있는지 검사합니다.
+        /// </summary>
+        /// <param name="settings">캐릭터 충돌 설정 인스턴스입니다.</param>
+        /// <param name="supportingCharacter">플레이어를 아래에서 지지하는 몬스터입니다.</param>
+        /// <returns>유효한 몬스터 지지 접촉을 찾았으면 <see langword="true"/>입니다.</returns>
+        private bool TryFindMonsterSupportContact(
+            GGemCoCharacterCollisionSettings settings,
+            out CharacterBase supportingCharacter)
+        {
+            supportingCharacter = null;
+
+            if (_owner == null ||
+                _owner.type != CharacterConstants.Type.Player ||
+                _owner.IsStatusDead() ||
+                _owner.IsDeathPending ||
+                _bodyCollider == null ||
+                !_bodyCollider.enabled ||
+                !IsEnabled(settings) ||
+                !CanParticipateInCollision(_owner, settings))
+            {
+                return false;
+            }
+
+            CharacterBodyCollisionPolicy policy = GetPolicy(
+                settings,
+                CharacterConstants.Type.Player,
+                CharacterConstants.Type.Monster);
+            if (policy == CharacterBodyCollisionPolicy.None)
+                return false;
+
+            int monsterBodyMask = CharacterCollisionLayerUtility.GetBodyLayerMask(CharacterConstants.Type.Monster);
+            if (monsterBodyMask == 0)
+                return false;
+
+            ContactFilter2D filter = CompatPhysics2D.CreateLayerFilter(monsterBodyMask, useTriggers: false);
+            int contactCount = _bodyCollider.GetContacts(filter, _supportContacts);
+            if (contactCount <= 0)
+                return false;
+
+            Bounds ownerBounds = _bodyCollider.bounds;
+            float tolerance = GetSupportContactTolerance(settings);
+            float highestSupportY = float.NegativeInfinity;
+
+            for (int i = 0; i < contactCount; i++)
+            {
+                Collider2D otherCollider = ResolveOtherContactCollider(_supportContacts[i]);
+                if (otherCollider == null || CharacterCollisionLayerUtility.IsSensorCollider(otherCollider))
+                    continue;
+
+                CharacterBase other = otherCollider.GetComponentInParent<CharacterBase>();
+                if (other == null ||
+                    ReferenceEquals(other, _owner) ||
+                    other.type != CharacterConstants.Type.Monster ||
+                    other.IsStatusDead() ||
+                    other.IsDeathPending ||
+                    !CanParticipateInCollision(other, settings))
+                {
+                    continue;
+                }
+
+                Bounds otherBounds = otherCollider.bounds;
+                bool isOwnerAbove = ownerBounds.center.y > otherBounds.center.y &&
+                                    ownerBounds.min.y >= otherBounds.center.y;
+                bool isNearSupportTop = ownerBounds.min.y <= otherBounds.max.y + tolerance;
+                if (!isOwnerAbove || !isNearSupportTop || otherBounds.max.y <= highestSupportY)
+                    continue;
+
+                supportingCharacter = other;
+                highestSupportY = otherBounds.max.y;
+            }
+
+            return supportingCharacter != null;
+        }
+
+        /// <summary>
+        /// 접촉 정보에서 현재 Body Collider의 상대 Collider를 반환합니다.
+        /// </summary>
+        /// <param name="contact">Physics2D가 전달한 접촉 정보입니다.</param>
+        /// <returns>현재 Body Collider가 아닌 상대 Collider이며, 찾지 못하면 null입니다.</returns>
+        private Collider2D ResolveOtherContactCollider(ContactPoint2D contact)
+        {
+            if (contact.collider != null && !ReferenceEquals(contact.collider, _bodyCollider))
+                return contact.collider;
+
+            if (contact.otherCollider != null && !ReferenceEquals(contact.otherCollider, _bodyCollider))
+                return contact.otherCollider;
+
+            return null;
+        }
+
+        /// <summary>
+        /// 몬스터 중심과 벽 여유 공간을 함께 고려하여 플레이어를 밀어낼 수평 방향을 선택합니다.
+        /// </summary>
+        /// <param name="supportingCharacter">플레이어를 지지하는 몬스터입니다.</param>
+        /// <param name="moveDistance">이번 FixedUpdate에 이동할 거리입니다.</param>
+        /// <param name="directionX">선택된 수평 방향이며 왼쪽은 -1, 오른쪽은 1입니다.</param>
+        /// <returns>벽에 막히지 않은 이탈 방향을 찾았으면 <see langword="true"/>입니다.</returns>
+        private bool TryResolveSupportEscapeDirection(
+            CharacterBase supportingCharacter,
+            float moveDistance,
+            out float directionX)
+        {
+            directionX = 0f;
+            if (_owner == null || supportingCharacter == null || _bodyCollider == null)
+                return false;
+
+            float preferredDirection = _supportEscapeDirectionX;
+            if (Mathf.Abs(preferredDirection) <= DirectionEpsilon)
+            {
+                Collider2D supportingBody = supportingCharacter.colliderMapObject != null
+                    ? supportingCharacter.colliderMapObject
+                    : CharacterCollisionLayerUtility.FindBodyCollider(supportingCharacter);
+                float supportCenterX = supportingBody != null
+                    ? supportingBody.bounds.center.x
+                    : supportingCharacter.transform.position.x;
+                float centerDeltaX = _bodyCollider.bounds.center.x - supportCenterX;
+                if (Mathf.Abs(centerDeltaX) > DirectionEpsilon)
+                {
+                    preferredDirection = Mathf.Sign(centerDeltaX);
+                }
+                else if (Mathf.Abs(_owner.directionNormalize.x) > DirectionEpsilon)
+                {
+                    preferredDirection = Mathf.Sign(_owner.directionNormalize.x);
+                }
+                else
+                {
+                    preferredDirection = 1f;
+                }
+            }
+
+            float alternateDirection = -preferredDirection;
+            if (!IsHorizontalEscapeBlocked(preferredDirection, moveDistance))
+            {
+                _supportEscapeDirectionX = preferredDirection;
+                directionX = preferredDirection;
+                return true;
+            }
+
+            if (!IsHorizontalEscapeBlocked(alternateDirection, moveDistance))
+            {
+                _supportEscapeDirectionX = alternateDirection;
+                directionX = alternateDirection;
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// 지정한 수평 방향의 짧은 이탈 이동이 맵의 수직면에 의해 차단되는지 검사합니다.
+        /// </summary>
+        /// <param name="directionX">검사할 수평 방향입니다.</param>
+        /// <param name="moveDistance">검사할 이동 거리입니다.</param>
+        /// <returns>수평 이동을 막는 맵 접촉이 있으면 <see langword="true"/>입니다.</returns>
+        private bool IsHorizontalEscapeBlocked(float directionX, float moveDistance)
+        {
+            int mapMask = CharacterCollisionLayerUtility.GetLayerMask(ConfigLayer.Keys.TileMapWall) |
+                          CharacterCollisionLayerUtility.GetLayerMask(ConfigLayer.Keys.TileMapGround) |
+                          CharacterCollisionLayerUtility.GetLayerMask(ConfigLayer.Keys.TileMapOneWayPlatform);
+            if (mapMask == 0)
+                return false;
+
+            ContactFilter2D filter = CompatPhysics2D.CreateLayerFilter(mapMask, useTriggers: false);
+            int hitCount = _bodyCollider.Cast(
+                new Vector2(Mathf.Sign(directionX), 0f),
+                filter,
+                _castHits,
+                Mathf.Max(0f, moveDistance) + GetSkinWidth(GetSettings()));
+
+            for (int i = 0; i < hitCount; i++)
+            {
+                RaycastHit2D hit = _castHits[i];
+                if (hit.collider == null || hit.collider.transform.IsChildOf(_owner.transform))
+                    continue;
+
+                // 바닥과 맞닿은 상태에서 수평 Cast를 하면 거리 0의 수직 법선이 함께 반환될 수 있습니다.
+                // 실제 좌우 이동을 막는 수직면만 차단 대상으로 취급합니다.
+                Vector2 normal = hit.normal;
+                if (normal.sqrMagnitude > DirectionEpsilon && Mathf.Abs(normal.y) > Mathf.Abs(normal.x))
+                    continue;
+
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// 현재 몬스터 위 착지 복구 진행 상태를 초기화합니다.
+        /// </summary>
+        private void ResetMonsterSupportRecovery()
+        {
+            _supportingCharacter = null;
+            _supportContactElapsedTime = 0f;
+            _supportEscapeDirectionX = 0f;
         }
 
         /// <summary>
@@ -555,6 +821,17 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 플레이어가 몬스터 위에 지지된 상태를 자동으로 복구할 수 있는지 반환합니다.
+        /// </summary>
+        /// <param name="settings">캐릭터 충돌 설정 인스턴스입니다.</param>
+        /// <returns>복구 기능을 사용할 수 있으면 <see langword="true"/>입니다.</returns>
+        private static bool CanRecoverMonsterSupport(GGemCoCharacterCollisionSettings settings)
+        {
+            return IsEnabled(settings) &&
+                   (settings == null || settings.recoverPlayerFromMonsterSupport);
+        }
+
+        /// <summary>
         /// 모션 이동용 캐릭터 Body 충돌 보정 기능을 사용할 수 있는지 반환합니다.
         /// </summary>
         /// <param name="settings">캐릭터 충돌 설정 인스턴스입니다.</param>
@@ -689,6 +966,36 @@ namespace GGemCo2DCore
         private static float GetSeparationVerticalBias(GGemCoCharacterCollisionSettings settings)
         {
             return settings != null ? Mathf.Max(0f, settings.separationVerticalBias) : 0.2f;
+        }
+
+        /// <summary>
+        /// 몬스터 위 지지 접촉을 복구하기 전까지 기다릴 시간을 반환합니다.
+        /// </summary>
+        /// <param name="settings">캐릭터 충돌 설정 인스턴스입니다.</param>
+        /// <returns>0 이상으로 보정된 대기 시간입니다.</returns>
+        private static float GetSupportRecoveryDelay(GGemCoCharacterCollisionSettings settings)
+        {
+            return settings != null ? Mathf.Max(0f, settings.supportRecoveryDelay) : 0.12f;
+        }
+
+        /// <summary>
+        /// 몬스터 위 착지 복구 중 FixedUpdate 한 번에 적용할 최대 수평 이동량을 반환합니다.
+        /// </summary>
+        /// <param name="settings">캐릭터 충돌 설정 인스턴스입니다.</param>
+        /// <returns>0 이상으로 보정된 수평 이동량입니다.</returns>
+        private static float GetSupportRecoveryMaxStep(GGemCoCharacterCollisionSettings settings)
+        {
+            return settings != null ? Mathf.Max(0f, settings.supportRecoveryMaxStep) : 0.06f;
+        }
+
+        /// <summary>
+        /// 몬스터 상단을 지지 접촉으로 인정할 수직 여유 거리를 반환합니다.
+        /// </summary>
+        /// <param name="settings">캐릭터 충돌 설정 인스턴스입니다.</param>
+        /// <returns>0 이상으로 보정된 수직 여유 거리입니다.</returns>
+        private static float GetSupportContactTolerance(GGemCoCharacterCollisionSettings settings)
+        {
+            return settings != null ? Mathf.Max(0f, settings.supportContactTolerance) : 0.03f;
         }
 
         /// <summary>

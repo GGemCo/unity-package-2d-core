@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 namespace GGemCo2DCore
 {
@@ -76,6 +76,20 @@ namespace GGemCo2DCore
             }
 
             return _collisionController != null && _collisionController.TrySeparateOverlaps(multiplier);
+        }
+
+        /// <summary>
+        /// 현재 플레이어가 생존한 몬스터 Body Collider 위에 지지되고 있는지 확인합니다.
+        /// </summary>
+        /// <returns>몬스터 위 지지 접촉이 감지되면 <see langword="true"/>입니다.</returns>
+        public bool HasMonsterBodySupportContact()
+        {
+            if (_collisionController == null)
+            {
+                EnsureCharacterCollisionController();
+            }
+
+            return _collisionController != null && _collisionController.HasMonsterSupportContact();
         }
 
         /// <summary>

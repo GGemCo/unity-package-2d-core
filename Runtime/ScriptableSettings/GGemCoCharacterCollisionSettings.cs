@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 namespace GGemCo2DCore
 {
@@ -58,6 +58,22 @@ namespace GGemCo2DCore
         [Tooltip("수직 방향 분리 가중치입니다. 착지 후 위아래 튐을 줄이려면 낮은 값을 권장합니다.")]
         [Min(0f)]
         public float separationVerticalBias = 0.2f;
+
+        [Header("캐릭터 위 착지 복구")]
+        [Tooltip("플레이어가 몬스터 Body Collider 위에 올라간 상태를 감지하여 좌우의 안전한 방향으로 밀어낼지 여부입니다.")]
+        public bool recoverPlayerFromMonsterSupport = true;
+
+        [Tooltip("몬스터 위 접촉을 정상적인 순간 충돌이 아닌 복구 대상으로 판단하기 전까지 기다릴 시간입니다.")]
+        [Min(0f)]
+        public float supportRecoveryDelay = 0.12f;
+
+        [Tooltip("몬스터 위 착지 복구 중 FixedUpdate 한 번에 적용할 최대 수평 이동 거리입니다.")]
+        [Min(0f)]
+        public float supportRecoveryMaxStep = 0.06f;
+
+        [Tooltip("플레이어 하단이 몬스터 상단보다 조금 떨어져 있어도 지지 접촉으로 인정할 수직 여유 거리입니다.")]
+        [Min(0f)]
+        public float supportContactTolerance = 0.03f;
 
         [Header("점프 착지 보정")]
         [Tooltip("점프 착지 직후 겹침 해소를 더 강하게 적용할 시간입니다.")]
