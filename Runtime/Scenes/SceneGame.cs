@@ -462,7 +462,9 @@ namespace GGemCo2DCore
                 itemCount,
                 shopDisplayItem.Uid,
                 shopDisplayItem.ShopUid,
-                shopDisplayItem.BuyUsePolicy));
+                shopDisplayItem.BuyUsePolicy,
+                shopDisplayItem.CurrencyType,
+                shopDisplayItem.CurrencyValue));
             return result;
         }
 
@@ -500,7 +502,9 @@ namespace GGemCo2DCore
                 GameEventManager.ItemPurchased(new ItemPurchasedEventData(
                     itemUid,
                     itemCount,
-                    buyUsePolicy: buyUsePolicy));
+                    buyUsePolicy: buyUsePolicy,
+                    currencyType: currencyType,
+                    unitPrice: price));
             }
 
             return result;
