@@ -50,6 +50,11 @@ namespace GGemCo2DCoreEditor
         public const string Tutorial = Root + "Tutorial/";
 
         /// <summary>
+        /// TestAutomation 패키지 메뉴 루트입니다.
+        /// </summary>
+        public const string TestAutomation = Root + "TestAutomation/";
+
+        /// <summary>
         /// 설정 도구 카테고리명입니다.
         /// </summary>
         public const string Settings = "설정하기/";
@@ -118,6 +123,11 @@ namespace GGemCo2DCoreEditor
         /// Tutorial 패키지 메뉴의 기준 우선순위입니다.
         /// </summary>
         public const int Tutorial = 7000;
+
+        /// <summary>
+        /// TestAutomation 패키지 메뉴의 기준 우선순위입니다.
+        /// </summary>
+        public const int TestAutomation = 8000;
 
         /// <summary>
         /// 설정하기 카테고리의 우선순위 오프셋입니다.
@@ -303,5 +313,30 @@ namespace GGemCo2DCoreEditor
         /// Tutorial 패키지 기타 카테고리의 기준 우선순위입니다.
         /// </summary>
         public const int TutorialEtc = Tutorial + Etc;
+
+        /// <summary>
+        /// TestAutomation 패키지 설정하기 카테고리의 기준 우선순위입니다.
+        /// </summary>
+        public const int TestAutomationSettings = TestAutomation + Settings;
+
+        /// <summary>
+        /// TestAutomation 패키지 개발툴 카테고리의 기준 우선순위입니다.
+        /// </summary>
+        public const int TestAutomationDevelopment = TestAutomation + Development;
+
+        /// <summary>
+        /// TestAutomation 패키지 테스트툴 카테고리의 기준 우선순위입니다.
+        /// </summary>
+        public const int TestAutomationTest = TestAutomation + Test;
+
+        /// <summary>
+        /// TestAutomation 패키지 디버그툴 카테고리의 기준 우선순위입니다.
+        /// </summary>
+        public const int TestAutomationDebug = TestAutomation + Debug;
+
+        /// <summary>
+        /// TestAutomation 패키지 기타 카테고리의 기준 우선순위입니다.
+        /// </summary>
+        public const int TestAutomationEtc = TestAutomation + Etc;
     }
 }
