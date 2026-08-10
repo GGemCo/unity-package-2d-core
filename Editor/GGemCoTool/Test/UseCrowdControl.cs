@@ -91,9 +91,10 @@ namespace GGemCo2DCoreEditor
         {
             var options = new TableRowEditorUtility.TableRowEditorBuildOptions();
             options.ReadOnlyMembers.Add(nameof(StruckTableCrowdControl.Uid));
-            options.GroupByMemberName[nameof(StruckTableCrowdControl.EndViewportPolicy)] = "End Viewport";
-            options.GroupByMemberName[nameof(StruckTableCrowdControl.EndViewportClampAxis)] = "End Viewport";
-            options.GroupByMemberName[nameof(StruckTableCrowdControl.EndViewportPadding)] = "End Viewport";
+            options.GroupByMemberName[nameof(StruckTableCrowdControl.EndViewportPolicy)] = "Viewport Constraint";
+            options.GroupByMemberName[nameof(StruckTableCrowdControl.ViewportConstraintPhase)] = "Viewport Constraint";
+            options.GroupByMemberName[nameof(StruckTableCrowdControl.EndViewportClampAxis)] = "Viewport Constraint";
+            options.GroupByMemberName[nameof(StruckTableCrowdControl.EndViewportPadding)] = "Viewport Constraint";
             options.GroupByMemberName[nameof(StruckTableCrowdControl.StaggerAnimationName)] = null;
             return options;
         }
@@ -728,6 +729,7 @@ namespace GGemCo2DCoreEditor
                     "EaseType" => row.EaseType.ToString(),
                     "Duration" => MathHelper.FormatFloat(row.Duration),
                     "EndViewportPolicy" => row.EndViewportPolicy.ToString(),
+                    "ViewportConstraintPhase" => row.ViewportConstraintPhase.ToString(),
                     "EndViewportClampAxis" => row.EndViewportClampAxis.ToString(),
                     "EndViewportPadding" => MathHelper.FormatFloat(row.EndViewportPadding),
                     "IsUseKnockbackStatus" => MathHelper.FormatBool(row.IsUseKnockbackStatus),

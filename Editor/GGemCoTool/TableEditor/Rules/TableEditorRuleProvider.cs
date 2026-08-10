@@ -419,7 +419,7 @@ namespace GGemCo2DCoreEditor
             _rules = new List<TableEditorColumnRule>();
             AddRuleGroup(new[] { "Uid", "Name", "Type" }, "Common");
             AddRuleGroup(new[] { "DirectionType", "FixedDirectionX", "FixedDirectionY", "Distance", "EaseType", "Duration" }, "Motion");
-            AddRuleGroup(new[] { "EndViewportPolicy", "EndViewportClampAxis", "EndViewportPadding" }, "End Viewport");
+            AddRuleGroup(new[] { "EndViewportPolicy", "ViewportConstraintPhase", "EndViewportClampAxis", "EndViewportPadding" }, "Viewport Constraint");
             AddRuleGroup(new[] { "IsUseKnockbackStatus", "IsUseDontControlStatus", "StaggerAnimationName" }, "State / Animation");
         }
 
@@ -451,6 +451,9 @@ namespace GGemCo2DCoreEditor
             ValidatePositiveOrZero(row, messages, "Duration");
             ValidatePositiveOrZero(row, messages, "EndViewportPadding");
             ValidateEnumValue<CrowdControlConstants.EndViewportPolicy>(row, messages, "EndViewportPolicy");
+            // 신규 컬럼이 없는 레거시 테이블은 Runtime의 EndOnly 기본값으로 동작하므로 경고하지 않습니다.
+            if (columnMap != null && columnMap.ContainsKey("ViewportConstraintPhase"))
+                ValidateEnumValue<CrowdControlConstants.ViewportConstraintPhase>(row, messages, "ViewportConstraintPhase");
             ValidateEnumValue<CrowdControlConstants.EndViewportClampAxis>(row, messages, "EndViewportClampAxis");
         }
 

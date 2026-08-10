@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 namespace GGemCo2DCore
 {
@@ -82,6 +82,64 @@ namespace GGemCo2DCore
             RequestedDelta = requestedDelta;
             Collider = collider;
         }
+    }
+
+    /// <summary>
+    /// 캐릭터 모션 위치 제약을 적용한 결과입니다.
+    /// </summary>
+    public readonly struct MotionPositionConstraintResult
+    {
+        /// <summary>
+        /// 위치 제약을 반영한 최종 이동량입니다.
+        /// </summary>
+        public Vector2 AppliedDelta { get; }
+
+        /// <summary>
+        /// X축 이동량이 제약되었는지 여부입니다.
+        /// </summary>
+        public bool IsHorizontalConstrained { get; }
+
+        /// <summary>
+        /// Y축 이동량이 제약되었는지 여부입니다.
+        /// </summary>
+        public bool IsVerticalConstrained { get; }
+
+        /// <summary>
+        /// 캐릭터 모션 위치 제약 결과를 생성합니다.
+        /// </summary>
+        /// <param name="appliedDelta">제약을 반영한 최종 이동량입니다.</param>
+        /// <param name="isHorizontalConstrained">X축 이동량 제약 여부입니다.</param>
+        /// <param name="isVerticalConstrained">Y축 이동량 제약 여부입니다.</param>
+        public MotionPositionConstraintResult(
+            Vector2 appliedDelta,
+            bool isHorizontalConstrained,
+            bool isVerticalConstrained)
+        {
+            AppliedDelta = appliedDelta;
+            IsHorizontalConstrained = isHorizontalConstrained;
+            IsVerticalConstrained = isVerticalConstrained;
+        }
+    }
+
+    /// <summary>
+    /// 모션 시스템이 최종 위치를 반영하기 전에 증분 이동량을 제한하는 공통 포트입니다.
+    /// </summary>
+    /// <remarks>
+    /// 구현체는 프레임마다 호출될 수 있으므로 불필요한 객체 생성이나 컬렉션 할당을 피해야 합니다.
+    /// </remarks>
+    public interface ICharacterMotionPositionConstraint2D
+    {
+        /// <summary>
+        /// 현재 위치와 요청 이동량을 기준으로 적용 가능한 이동량을 계산합니다.
+        /// </summary>
+        /// <param name="currentPosition">모션 적용 전 Rigidbody2D 기준 위치입니다.</param>
+        /// <param name="requestedDelta">충돌 보정 이후 적용하려는 증분 이동량입니다.</param>
+        /// <param name="result">위치 제약이 반영된 결과입니다.</param>
+        /// <returns>제약 계산을 수행했으면 <see langword="true"/>입니다.</returns>
+        bool TryConstrain(
+            Vector2 currentPosition,
+            Vector2 requestedDelta,
+            out MotionPositionConstraintResult result);
     }
 
     /// <summary>
@@ -214,6 +272,11 @@ namespace GGemCo2DCore
         /// </summary>
         public float BodySeparationDuration { get; }
 
+        /// <summary>
+        /// 벽 및 캐릭터 충돌 보정 이후 최종 이동량에 적용할 선택적 위치 제약입니다.
+        /// </summary>
+        public ICharacterMotionPositionConstraint2D PositionConstraint { get; }
+
         public MotionRequest(
             MotionChannel channel,
             MotionKind kind,
@@ -242,7 +305,8 @@ namespace GGemCo2DCore
             GameObject collisionTarget = null,
             MotionBodyCollisionPolicy bodyCollisionPolicy = MotionBodyCollisionPolicy.UseCharacterDefault,
             float bodySeparationMultiplier = -1f,
-            float bodySeparationDuration = -1f)
+            float bodySeparationDuration = -1f,
+            ICharacterMotionPositionConstraint2D positionConstraint = null)
         {
             Channel = channel;
             Kind = kind;
@@ -273,6 +337,46 @@ namespace GGemCo2DCore
             BodyCollisionPolicy = bodyCollisionPolicy;
             BodySeparationMultiplier = bodySeparationMultiplier;
             BodySeparationDuration = bodySeparationDuration;
+            PositionConstraint = positionConstraint;
+        }
+
+        /// <summary>
+        /// 현재 요청의 모든 설정을 유지하면서 위치 제약만 교체한 새 요청을 반환합니다.
+        /// </summary>
+        /// <param name="positionConstraint">모션 이동에 적용할 위치 제약입니다.</param>
+        /// <returns>지정한 위치 제약이 반영된 모션 요청입니다.</returns>
+        public MotionRequest WithPositionConstraint(ICharacterMotionPositionConstraint2D positionConstraint)
+        {
+            return new MotionRequest(
+                Channel,
+                Kind,
+                Direction,
+                DurationSeconds,
+                Distance,
+                EaseType,
+                StopAtEnd,
+                UseMovePosition,
+                AllowReplace,
+                HoldSecondsAfter,
+                ArcHeight,
+                ArcMode,
+                ArcRiseEaseType,
+                ArcFallEaseType,
+                ArcApexHoldNormalized,
+                ArcRiseRatioNormalized,
+                ArcFallRatioNormalized,
+                FallSpeed,
+                StartPosition,
+                TargetPosition,
+                GroundSnapDistance,
+                StopOnWall,
+                WallCollisionSkin,
+                CollisionPolicy,
+                CollisionTarget,
+                BodyCollisionPolicy,
+                BodySeparationMultiplier,
+                BodySeparationDuration,
+                positionConstraint);
         }
     }
 }

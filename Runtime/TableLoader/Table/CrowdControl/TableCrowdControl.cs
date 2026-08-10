@@ -32,9 +32,14 @@ namespace GGemCo2DCore
         public float Duration;
 
         /// <summary>
-        /// 플레이어에게 적용된 CrowdControl의 최종 위치를 카메라 화면 안쪽으로 보정하는 정책입니다.
+        /// CrowdControl 대상 캐릭터의 위치를 카메라 화면 안쪽으로 보정하는 정책입니다.
         /// </summary>
         public CrowdControlConstants.EndViewportPolicy EndViewportPolicy;
+
+        /// <summary>
+        /// 화면 경계 보정을 CrowdControl 종료 시점에만 적용할지, 이동 중에도 적용할지 결정합니다.
+        /// </summary>
+        public CrowdControlConstants.ViewportConstraintPhase ViewportConstraintPhase;
 
         /// <summary>
         /// 화면 경계 보정을 적용할 축입니다.
@@ -85,6 +90,9 @@ namespace GGemCo2DCore
                 EndViewportPolicy = reader.Enum(
                     "EndViewportPolicy",
                     CrowdControlConstants.EndViewportPolicy.ClampPlayerExceptFreeCameraFollow),
+                ViewportConstraintPhase = reader.Enum(
+                    "ViewportConstraintPhase",
+                    CrowdControlConstants.ViewportConstraintPhase.EndOnly),
                 EndViewportClampAxis = reader.Enum(
                     "EndViewportClampAxis",
                     CrowdControlConstants.EndViewportClampAxis.Horizontal),

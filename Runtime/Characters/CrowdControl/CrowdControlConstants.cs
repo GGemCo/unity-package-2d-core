@@ -96,6 +96,33 @@ namespace GGemCo2DCore
             /// UseParallax 맵에서 게임 카메라가 플레이어를 정상 추적할 수 있으면 보정하지 않습니다.
             /// </summary>
             ClampPlayerExceptFreeCameraFollow = 2,
+
+            /// <summary>
+            /// 플레이어 또는 몬스터의 위치를 화면 안쪽으로 보정합니다.
+            /// </summary>
+            ClampCombatCharacterToViewport = 3,
+
+            /// <summary>
+            /// 플레이어 또는 몬스터의 위치를 화면 안쪽으로 보정하되,
+            /// 현재 카메라가 해당 캐릭터를 정상 추적할 수 있으면 보정하지 않습니다.
+            /// </summary>
+            ClampCombatCharacterExceptFreeCameraFollow = 4,
+        }
+
+        /// <summary>
+        /// CrowdControl 화면 경계 보정을 적용할 실행 단계를 정의합니다.
+        /// </summary>
+        public enum ViewportConstraintPhase
+        {
+            /// <summary>
+            /// 기존 동작처럼 CrowdControl 종료 위치에만 화면 경계 보정을 적용합니다.
+            /// </summary>
+            EndOnly = 0,
+
+            /// <summary>
+            /// CrowdControl 이동 중과 종료 위치 모두에 화면 경계 보정을 적용합니다.
+            /// </summary>
+            DuringAndEnd = 1,
         }
 
         /// <summary>

@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 namespace GGemCo2DCore
 {
@@ -139,7 +139,8 @@ namespace GGemCo2DCore
                     collisionTarget: request.CollisionTarget,
                     bodyCollisionPolicy: request.BodyCollisionPolicy,
                     bodySeparationMultiplier: request.BodySeparationMultiplier,
-                    bodySeparationDuration: request.BodySeparationDuration);
+                    bodySeparationDuration: request.BodySeparationDuration,
+                    positionConstraint: request.PositionConstraint);
             }
 
             state.Start(requestToUse);
@@ -340,7 +341,8 @@ namespace GGemCo2DCore
                 {
                     Vector2 currentPos = rb.position;
                     float deltaY = groundY - bottomY;
-                    Vector2 snapped = currentPos + new Vector2(0f, deltaY);
+                    Vector2 snapDelta = ResolvePositionConstraint(ref state, new Vector2(0f, deltaY));
+                    Vector2 snapped = currentPos + snapDelta;
                     if (state.UseMovePosition || rb.bodyType != RigidbodyType2D.Dynamic)
                     {
                         rb.MovePosition(snapped);
@@ -388,7 +390,8 @@ namespace GGemCo2DCore
 
             state.Elapsed += dt;
 
-            Vector2 desired = state.StartPosition;
+            Vector2 desiredDelta = state.StartPosition - rb.position;
+            Vector2 desired = rb.position + ResolvePositionConstraint(ref state, desiredDelta);
             if (state.UseMovePosition || rb.bodyType != RigidbodyType2D.Dynamic)
             {
                 rb.MovePosition(desired);
@@ -434,8 +437,55 @@ namespace GGemCo2DCore
             if (appliedDelta.sqrMagnitude <= 1e-12f)
                 return;
 
+            appliedDelta = ResolvePositionConstraint(ref state, appliedDelta);
+            if (appliedDelta.sqrMagnitude <= 1e-12f)
+                return;
+
             ApplyRigidbodyDelta(appliedDelta, useMovePosition);
             RequestCharacterBodyMotionSeparation(ref state);
+        }
+
+        /// <summary>
+        /// 모션 요청에 등록된 위치 제약을 적용하고, 제한된 축의 Dynamic Rigidbody 속도를 정리합니다.
+        /// </summary>
+        /// <param name="state">현재 실행 중인 모션 상태입니다.</param>
+        /// <param name="requestedDelta">충돌 정책 적용 이후의 요청 이동량입니다.</param>
+        /// <returns>위치 제약이 반영된 최종 이동량입니다.</returns>
+        private Vector2 ResolvePositionConstraint(ref MotionState state, Vector2 requestedDelta)
+        {
+            if (rb == null || state.PositionConstraint == null)
+                return requestedDelta;
+
+            if (!state.PositionConstraint.TryConstrain(
+                    rb.position,
+                    requestedDelta,
+                    out MotionPositionConstraintResult result))
+            {
+                return requestedDelta;
+            }
+
+            StopConstrainedVelocity(result);
+            return result.AppliedDelta;
+        }
+
+        /// <summary>
+        /// 화면 또는 기타 위치 제약에 의해 차단된 축의 잔여 속도를 제거합니다.
+        /// </summary>
+        /// <param name="result">위치 제약 축 정보가 포함된 결과입니다.</param>
+        private void StopConstrainedVelocity(MotionPositionConstraintResult result)
+        {
+            if (rb == null || rb.bodyType != RigidbodyType2D.Dynamic ||
+                (!result.IsHorizontalConstrained && !result.IsVerticalConstrained))
+            {
+                return;
+            }
+
+            Vector2 velocity = rb.GetLinearVelocity();
+            if (result.IsHorizontalConstrained)
+                velocity.x = 0f;
+            if (result.IsVerticalConstrained)
+                velocity.y = 0f;
+            rb.SetLinearVelocity(velocity);
         }
 
         /// <summary>
@@ -790,6 +840,7 @@ namespace GGemCo2DCore
             public float BodySeparationMultiplier;
             public float BodySeparationDuration;
             public MotionCollisionIgnoreScope2D CollisionIgnoreScope;
+            public ICharacterMotionPositionConstraint2D PositionConstraint;
 
             public bool IsGravitySuspended;
             public bool HasSavedGravityScale;
@@ -839,6 +890,7 @@ namespace GGemCo2DCore
                 BodySeparationMultiplier = req.BodySeparationMultiplier;
                 BodySeparationDuration = req.BodySeparationDuration;
                 CollisionIgnoreScope = null;
+                PositionConstraint = req.PositionConstraint;
 
                 IsGravitySuspended = false;
                 HasSavedGravityScale = false;
@@ -907,6 +959,7 @@ namespace GGemCo2DCore
                 BodyCollisionPolicy = MotionBodyCollisionPolicy.UseCharacterDefault;
                 BodySeparationMultiplier = -1f;
                 BodySeparationDuration = -1f;
+                PositionConstraint = null;
 
                 IsGravitySuspended = false;
                 HasSavedGravityScale = false;

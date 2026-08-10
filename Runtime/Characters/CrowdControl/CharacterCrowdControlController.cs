@@ -23,6 +23,7 @@ namespace GGemCo2DCore
         private CharacterMotionController2D _motionController2D;
         private GameObject _activeSource;
         private CharacterAirborneHandle _crowdControlAirborneHandle;
+        private readonly CrowdControlViewportMotionConstraint _viewportMotionConstraint = new();
         private bool _isActive;
         public bool IsActive => _isActive;
 
@@ -206,6 +207,7 @@ namespace GGemCo2DCore
             _activeCrowdControl = crowdControl;
             _activeSource = source;
             _isActive = true;
+            _viewportMotionConstraint.Configure(_character, _rigidbody2D, crowdControl);
             AcquireCrowdControlAirborneState(crowdControl);
             // 이번 CC 적용 사이클 동안 phase/end 애니메이션까지 동일한 강제 재생 정책을 유지합니다.
             _forceRefreshAnimationOnCurrentCrowdControl = forceRefreshAnimation;
@@ -277,7 +279,13 @@ namespace GGemCo2DCore
             if (crowdControl == null) return false;
 
             if (_handlers != null && _handlers.TryGetValue(crowdControl.Type, out var handler) && handler != null)
-                return handler.TryBuildMotionRequest(crowdControl, travelDirection, travelDistance, out request);
+            {
+                if (!handler.TryBuildMotionRequest(crowdControl, travelDirection, travelDistance, out request))
+                    return false;
+
+                request = AttachViewportMotionConstraint(request);
+                return true;
+            }
 
             request = new MotionRequest(
                 MotionChannel.CrowdControl,
@@ -290,7 +298,20 @@ namespace GGemCo2DCore
                 useMovePosition: true,
                 allowReplace: true,
                 stopOnWall: crowdControl.IsStopOnWall);
+            request = AttachViewportMotionConstraint(request);
             return true;
+        }
+
+        /// <summary>
+        /// 현재 CC 정책이 이동 중 화면 경계 보정을 요구하면 모션 요청에 재사용 가능한 위치 제약을 연결합니다.
+        /// </summary>
+        /// <param name="request">화면 경계 제약을 연결할 원본 모션 요청입니다.</param>
+        /// <returns>필요한 경우 화면 경계 위치 제약이 추가된 모션 요청입니다.</returns>
+        private MotionRequest AttachViewportMotionConstraint(in MotionRequest request)
+        {
+            return _viewportMotionConstraint.ShouldConstrainDuringMotion()
+                ? request.WithPositionConstraint(_viewportMotionConstraint)
+                : request;
         }
 
         private static Dictionary<CrowdControlConstants.Type, ICrowdControlHandler> CreateHandlers()
@@ -380,10 +401,7 @@ namespace GGemCo2DCore
         /// <returns>Y 위치 정책과 화면 경계 정책이 반영된 최종 종료 위치입니다.</returns>
         private Vector2 ResolveEndPosition(CrowdControlRuntimeData crowdControl, Vector2 startPos, Vector2 rawEndPos)
         {
-            bool useViewportClamp = CrowdControlEndViewportResolver.TryCreateContext(
-                _character,
-                _rigidbody2D,
-                crowdControl,
+            bool useViewportClamp = _viewportMotionConstraint.TryGetCurrentContext(
                 out CrowdControlViewportClampContext viewportContext);
 
             Vector2 adjustedRawEndPos = useViewportClamp
@@ -1192,6 +1210,8 @@ namespace GGemCo2DCore
                 allowReplace: true,
                 fallSpeed: safeFallSpeed,
                 stopOnWall: stopOnWall);
+
+            request = AttachViewportMotionConstraint(request);
 
             return _motionController.TryStartMotion(in request);
         }

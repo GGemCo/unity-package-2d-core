@@ -22,6 +22,7 @@ namespace GGemCo2DCore
         public Easing.EaseType EaseType;
         public float Duration;
         public CrowdControlConstants.EndViewportPolicy EndViewportPolicy;
+        public CrowdControlConstants.ViewportConstraintPhase ViewportConstraintPhase;
         public CrowdControlConstants.EndViewportClampAxis EndViewportClampAxis;
         public float EndViewportPadding;
 
@@ -84,6 +85,7 @@ namespace GGemCo2DCore
                 EaseType = row.EaseType,
                 Duration = row.Duration,
                 EndViewportPolicy = row.EndViewportPolicy,
+                ViewportConstraintPhase = row.ViewportConstraintPhase,
                 EndViewportClampAxis = row.EndViewportClampAxis,
                 EndViewportPadding = Mathf.Max(0f, row.EndViewportPadding),
                 Height = 0f,
