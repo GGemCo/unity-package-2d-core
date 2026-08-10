@@ -247,6 +247,23 @@ namespace GGemCo2DCore
         private PlayerData _playerData;
         private PopupManager _popupManager;
 
+        /// <summary>
+        /// 현재 대화 창이 말풍선 표현 모드로 설정되어 있는지 확인합니다.
+        /// </summary>
+        public bool IsSpeechBubbleMode => dialogueVisualMode == DialogueVisualMode.SpeechBubble;
+
+        /// <summary>
+        /// 현재 진행할 수 있는 대화 메시지가 바인딩되어 있는지 확인합니다.
+        /// </summary>
+        public bool HasActiveDialogueMessage =>
+            gameObject.activeInHierarchy && _messagePlayer.HasMessage;
+
+        /// <summary>
+        /// 현재 포인터 입력으로 대화를 진행할 수 있는지 확인합니다.
+        /// </summary>
+        public bool CanAdvanceDialogueByPointer =>
+            gameObject.activeInHierarchy && CanAdvanceDialogue();
+
         protected override void Awake()
         {
             _currentCharacterUid = 0;

@@ -267,10 +267,11 @@ namespace GGemCo2DCore
         /// </summary>
         public void AnimationEventComplete(StruckAnimationEventComplete struckAnimationEventComplete)
         {
+            if (Animator == null) return;
+
             AnimatorStateInfo state = Animator.GetCurrentAnimatorStateInfo(0);
             // GcLogger.Log($"OnAnimationComplete: {animator.GetCurrentAnimatorClipInfo(0)?.}");
             // GcLogger.Log("OnAnimationInterrupt gameobject: " + this.gameObject.name + " / animationName: " + entry.Animation.Name);
-            if (Animator == null) return;
             if (state.IsName(CurrentAnimationNameAttack))
             {
                 _characterBase.OnAnimationCompleteAttack();

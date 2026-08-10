@@ -494,9 +494,22 @@ namespace GGemCo2DCore
                 return;
             }
 
-            if (IsAdvancePointerBlocked(screenPoint))
+            TryAdvanceDialogueByPointer(screenPoint);
+        }
+
+        /// <summary>
+        /// 지정한 화면 좌표의 포인터 입력으로 현재 대화를 한 단계 진행합니다.
+        /// 실제 사용자 입력과 외부 호출이 동일한 입력 정책 및 버튼 영역 차단 규칙을 사용합니다.
+        /// </summary>
+        /// <param name="screenPoint">대화 진행 입력이 발생한 화면 좌표입니다.</param>
+        /// <returns>메시지 표시 또는 다음 대사 노드 진행을 처리했으면 true입니다.</returns>
+        public bool TryAdvanceDialogueByPointer(Vector2 screenPoint)
+        {
+            if (!gameObject.activeInHierarchy ||
+                !CanAdvanceDialogue() ||
+                IsAdvancePointerBlocked(screenPoint))
             {
-                return;
+                return false;
             }
 
             InteractionDialogueAdvanceResult result = _messagePlayer.Advance(textMessage);
@@ -505,13 +518,16 @@ namespace GGemCo2DCore
             {
                 RefreshChoiceButtonsVisibility();
                 RefreshThumbnailPosition();
-                return;
+                return true;
             }
 
             if (_messagePlayer.IsSequenceCompleted)
             {
                 TryAdvanceDialogueNodeAfterMessageEnd();
+                return true;
             }
+
+            return false;
         }
 
         /// <summary>
