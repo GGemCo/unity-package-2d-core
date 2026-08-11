@@ -42,7 +42,7 @@ namespace GGemCo2DCore
                     percent += pv;
             }
 
-            return CalculateFinalInternal(startValue, flat, percent);
+            return CalculateFinalFromModifiers(startValue, flat, percent);
         }
 
         /// <summary>
@@ -82,17 +82,21 @@ namespace GGemCo2DCore
             if (percentProjected != null && percentProjected.TryGetValue(statKey, out var pp))
                 percent += pp;
 
-            return CalculateFinalInternal(startValue, flat, percent);
+            return CalculateFinalFromModifiers(startValue, flat, percent);
         }
 
         /// <summary>
-        /// 계산 핵심 로직입니다.
+        /// 시작값과 이미 합산된 Flat/Percent Modifier로 최종값을 계산합니다.
         /// </summary>
         /// <param name="startValue">계산 기준이 되는 시작값입니다.</param>
         /// <param name="flatBonus">Flat(가산) 보너스 합입니다.</param>
         /// <param name="percentBonus">Percent(%) 보너스 합입니다(100 기준).</param>
         /// <returns>규칙에 따라 계산된 최종값입니다.</returns>
-        private static long CalculateFinalInternal(int startValue, int flatBonus, float percentBonus)
+        /// <remarks>
+        /// 출처별 스탯 분해처럼 Provider를 단계적으로 합산하는 계산도 일반 최종 계산과 동일한
+        /// 절삭 및 음수 배율 보정 규칙을 사용하도록 내부 공용 진입점으로 제공합니다.
+        /// </remarks>
+        internal static long CalculateFinalFromModifiers(int startValue, int flatBonus, float percentBonus)
         {
             float finalMultiplier = 1f + (percentBonus / 100f);
             if (finalMultiplier < 0f) finalMultiplier = 0f;

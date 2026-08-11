@@ -119,7 +119,7 @@ namespace GGemCo2DCore
         /// <summary>디버그 HUD에 플레이어 스탯 정보를 표시할지 여부입니다.</summary>
         public bool EnablePlayerStatDebugHud => EnablePlayerStatDebug && DebugOptionRuntimeUtility.Resolve(enablePlayerStatDebugHud);
 
-        [SerializeField, Tooltip("공격력/방어력/스태미나의 Item/Skill/Affect 증가량 출력")]
+        [SerializeField, Tooltip("공격력/방어력/스태미나의 Base/Growth/Item/Passive/Temp 기여량 출력")]
         private bool enablePlayerStatContributionDebug;
 
         /// <summary>스탯 출처별 증가량을 표시할지 여부입니다.</summary>

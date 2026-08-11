@@ -98,18 +98,21 @@ namespace GGemCo2DCore
         private void AppendStatLine(CharacterStatDebugCollector.StatLine line, GGemCoPlayerStatSettings settings)
         {
             _builder.Append(line.DisplayName)
-                .Append(" Base:").Append(line.BaseStart)
-                .Append(" -> ").Append(line.BaseTotal)
-                .Append(" / Stat:").Append(line.StatStart)
-                .Append(" -> ").Append(line.StatTotal)
-                .Append(" / Final:").AppendLine(line.FinalValue.ToString());
+                .Append(" Final:").AppendLine(line.FinalValue.ToString());
 
             if (!settings.EnablePlayerStatContributionDebug)
                 return;
 
-            _builder.Append("  Item:").Append(FormatSigned(line.ItemContribution))
-                .Append(" Skill:").Append(FormatSigned(line.SkillContribution))
-                .Append(" Affect:").AppendLine(FormatSigned(line.AffectContribution));
+            _builder.Append("  Base:").Append(line.BaseValue)
+                .Append(" Growth:").Append(FormatSigned(line.GrowthContribution))
+                .Append(" Item:").Append(FormatSigned(line.ItemContribution))
+                .Append(" Passive:").Append(FormatSigned(line.PassiveContribution))
+                .Append(" Temp:").Append(FormatSigned(line.TemporaryContribution));
+
+            if (line.OtherContribution != 0L)
+                _builder.Append(" Other:").Append(FormatSigned(line.OtherContribution));
+
+            _builder.AppendLine();
         }
 
         /// <summary>

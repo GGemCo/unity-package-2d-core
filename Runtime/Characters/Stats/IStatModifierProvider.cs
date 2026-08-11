@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace GGemCo2DCore
 {
     /// <summary>
-    /// 스탯 Modifier 디버그에서 표시할 출처 구분입니다.
+    /// 스탯 Modifier를 출처별 Breakdown과 디버그 정보로 분류할 때 사용하는 구분입니다.
     /// </summary>
     public enum StatModifierDebugSourceType
     {
@@ -23,11 +23,11 @@ namespace GGemCo2DCore
     }
 
     /// <summary>
-    /// 스탯 Modifier Provider가 디버그용 출처 정보를 제공하기 위한 선택 인터페이스입니다.
+    /// 스탯 Modifier Provider가 출처별 Breakdown과 디버그용 출처 정보를 제공하기 위한 선택 인터페이스입니다.
     /// </summary>
     /// <remarks>
     /// 기존 <see cref="IStatModifierProvider"/> 계약을 변경하지 않고,
-    /// 디버그 수집기에서 구현 여부를 확인해 Item/Skill/Affect 증가량을 분리합니다.
+    /// Breakdown 계산기와 디버그 수집기에서 구현 여부를 확인해 Item/Skill/Affect/Runtime 증가량을 분리합니다.
     /// </remarks>
     public interface IStatModifierDebugSource
     {

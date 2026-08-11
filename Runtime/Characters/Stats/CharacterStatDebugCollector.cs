@@ -13,8 +13,64 @@ namespace GGemCo2DCore
         /// </summary>
         public readonly struct StatLine
         {
+            /// <summary>
+            /// 기존 디버그 표시 계약을 유지하면서 단일 스탯 항목을 생성합니다.
+            /// </summary>
+            /// <param name="displayName">HUD에 표시할 스탯 이름입니다.</param>
+            /// <param name="baseStart">기본 항목 시작값입니다.</param>
+            /// <param name="statStart">성장 항목 시작값입니다.</param>
+            /// <param name="baseTotal">모든 Provider가 반영된 기본 항목 총합입니다.</param>
+            /// <param name="statTotal">모든 Provider가 반영된 성장 항목 총합입니다.</param>
+            /// <param name="finalValue">캐릭터별 파생 공식이 반영된 최종값입니다.</param>
+            /// <param name="itemContribution">아이템 출처의 기여량입니다.</param>
+            /// <param name="skillContribution">패시브 스킬 출처의 기여량입니다.</param>
+            /// <param name="affectContribution">Affect 출처의 기여량입니다.</param>
             public StatLine(string displayName, int baseStart, int statStart, long baseTotal, long statTotal, long finalValue,
                 long itemContribution, long skillContribution, long affectContribution)
+                : this(
+                    displayName,
+                    baseStart,
+                    statStart,
+                    baseTotal,
+                    statTotal,
+                    finalValue,
+                    baseStart,
+                    0L,
+                    itemContribution,
+                    skillContribution,
+                    affectContribution,
+                    0L)
+            {
+            }
+
+            /// <summary>
+            /// 공용 Breakdown 결과가 반영된 단일 스탯 항목을 생성합니다.
+            /// </summary>
+            /// <param name="displayName">HUD에 표시할 스탯 이름입니다.</param>
+            /// <param name="baseStart">기본 항목 시작값입니다.</param>
+            /// <param name="statStart">성장 항목 시작값입니다.</param>
+            /// <param name="baseTotal">모든 Provider가 반영된 기본 항목 총합입니다.</param>
+            /// <param name="statTotal">모든 Provider가 반영된 성장 항목 총합입니다.</param>
+            /// <param name="finalValue">캐릭터별 파생 공식이 반영된 최종값입니다.</param>
+            /// <param name="baseValue">Provider 적용 전 기본값입니다.</param>
+            /// <param name="growthContribution">성장 및 영구 출처의 기여량입니다.</param>
+            /// <param name="itemContribution">아이템 출처의 기여량입니다.</param>
+            /// <param name="passiveContribution">패시브 스킬 출처의 기여량입니다.</param>
+            /// <param name="temporaryContribution">Affect와 런타임 임시 출처의 기여량입니다.</param>
+            /// <param name="otherContribution">분류되지 않은 출처의 기여량입니다.</param>
+            public StatLine(
+                string displayName,
+                int baseStart,
+                int statStart,
+                long baseTotal,
+                long statTotal,
+                long finalValue,
+                long baseValue,
+                long growthContribution,
+                long itemContribution,
+                long passiveContribution,
+                long temporaryContribution,
+                long otherContribution)
             {
                 DisplayName = displayName;
                 BaseStart = baseStart;
@@ -22,19 +78,58 @@ namespace GGemCo2DCore
                 BaseTotal = baseTotal;
                 StatTotal = statTotal;
                 FinalValue = finalValue;
+                BaseValue = baseValue;
+                GrowthContribution = growthContribution;
                 ItemContribution = itemContribution;
-                SkillContribution = skillContribution;
-                AffectContribution = affectContribution;
+                PassiveContribution = passiveContribution;
+                TemporaryContribution = temporaryContribution;
+                OtherContribution = otherContribution;
+
+                // 기존 외부 소비자가 사용하는 이름은 공용 Breakdown 출처에 대한 호환 별칭으로 유지합니다.
+                SkillContribution = passiveContribution;
+                AffectContribution = temporaryContribution;
             }
 
+            /// <summary>HUD에 표시할 스탯 이름입니다.</summary>
             public string DisplayName { get; }
+
+            /// <summary>기본 항목 시작값입니다.</summary>
             public int BaseStart { get; }
+
+            /// <summary>성장 항목 시작값입니다.</summary>
             public int StatStart { get; }
+
+            /// <summary>모든 Provider가 반영된 기본 항목 총합입니다.</summary>
             public long BaseTotal { get; }
+
+            /// <summary>모든 Provider가 반영된 성장 항목 총합입니다.</summary>
             public long StatTotal { get; }
+
+            /// <summary>캐릭터별 파생 공식이 반영된 최종값입니다.</summary>
             public long FinalValue { get; }
+
+            /// <summary>Provider 적용 전 기본값입니다.</summary>
+            public long BaseValue { get; }
+
+            /// <summary>성장 스탯과 영구 스탯 포인트의 기여량입니다.</summary>
+            public long GrowthContribution { get; }
+
+            /// <summary>장비와 아이템의 기여량입니다.</summary>
             public long ItemContribution { get; }
+
+            /// <summary>패시브 스킬의 기여량입니다.</summary>
+            public long PassiveContribution { get; }
+
+            /// <summary>Affect와 런타임 임시 효과의 기여량입니다.</summary>
+            public long TemporaryContribution { get; }
+
+            /// <summary>출처를 분류할 수 없는 Provider의 기여량입니다.</summary>
+            public long OtherContribution { get; }
+
+            /// <summary><see cref="PassiveContribution"/>의 기존 호환 별칭입니다.</summary>
             public long SkillContribution { get; }
+
+            /// <summary><see cref="TemporaryContribution"/>의 기존 호환 별칭입니다.</summary>
             public long AffectContribution { get; }
         }
 
@@ -68,79 +163,54 @@ namespace GGemCo2DCore
             if (stat == null)
                 return default;
 
-            IReadOnlyList<IStatModifierProvider> providers = stat.GetStatModifierProvidersForDebug();
-
             return new Snapshot(
-                BuildLine("ATK", stat.BaseAtk, stat.StatAtk, ConfigCommon.BaseStatAtk, ConfigCommon.StatusStatAtk,
-                    stat.TotalBaseAtk.Value, stat.TotalStatAtk.Value, stat.ResolvedAtk.Value, providers),
-                BuildLine("DEF", stat.BaseDef, stat.StatDef, ConfigCommon.BaseStatDef, ConfigCommon.StatusStatDef,
-                    stat.TotalBaseDef.Value, stat.TotalStatDef.Value, stat.ResolvedDef.Value, providers),
-                BuildLine("STAMINA", stat.BaseStamina, stat.StatStamina, ConfigCommon.BaseStatStamina, ConfigCommon.StatusStatStamina,
-                    stat.TotalBaseStamina.Value, stat.TotalStatStamina.Value, stat.MaxStamina.Value, providers),
+                BuildLine("ATK", CharacterStatBreakdownType.Attack, stat.BaseAtk, stat.StatAtk,
+                    stat.TotalBaseAtk.Value, stat.TotalStatAtk.Value, stat.ResolvedAtk.Value, stat),
+                BuildLine("DEF", CharacterStatBreakdownType.Defense, stat.BaseDef, stat.StatDef,
+                    stat.TotalBaseDef.Value, stat.TotalStatDef.Value, stat.ResolvedDef.Value, stat),
+                BuildLine("STAMINA", CharacterStatBreakdownType.Stamina, stat.BaseStamina, stat.StatStamina,
+                    stat.TotalBaseStamina.Value, stat.TotalStatStamina.Value, stat.MaxStamina.Value, stat),
                 BuildFormulaVariableLines(stat));
         }
 
         /// <summary>
-        /// Base/Stat 키 쌍을 하나의 표시 항목으로 변환합니다.
+        /// 공용 출처별 Breakdown을 디버그 HUD의 단일 표시 항목으로 변환합니다.
         /// </summary>
-        private static StatLine BuildLine(string displayName, int baseStart, int statStart, string baseKey, string statKey,
-            long baseTotal, long statTotal, long finalValue, IReadOnlyList<IStatModifierProvider> providers)
+        /// <param name="displayName">HUD에 표시할 스탯 이름입니다.</param>
+        /// <param name="statType">공용 Breakdown 대상 스탯 종류입니다.</param>
+        /// <param name="baseStart">기본 항목 시작값입니다.</param>
+        /// <param name="statStart">성장 항목 시작값입니다.</param>
+        /// <param name="baseTotal">모든 Provider가 반영된 기본 항목 총합입니다.</param>
+        /// <param name="statTotal">모든 Provider가 반영된 성장 항목 총합입니다.</param>
+        /// <param name="finalValue">Breakdown 조회 실패 시 사용할 현재 최종값입니다.</param>
+        /// <param name="stat">Breakdown을 조회할 캐릭터 스탯입니다.</param>
+        /// <returns>HUD 출력에 사용할 단일 스탯 항목입니다.</returns>
+        private static StatLine BuildLine(
+            string displayName,
+            CharacterStatBreakdownType statType,
+            int baseStart,
+            int statStart,
+            long baseTotal,
+            long statTotal,
+            long finalValue,
+            CharacterStat stat)
         {
-            long item = CalculateSourceContribution(baseKey, baseStart, providers, StatModifierDebugSourceType.Item)
-                + CalculateSourceContribution(statKey, statStart, providers, StatModifierDebugSourceType.Item);
-            long skill = CalculateSourceContribution(baseKey, baseStart, providers, StatModifierDebugSourceType.Skill)
-                + CalculateSourceContribution(statKey, statStart, providers, StatModifierDebugSourceType.Skill);
-            long affect = CalculateSourceContribution(baseKey, baseStart, providers, StatModifierDebugSourceType.Affect)
-                + CalculateSourceContribution(statKey, statStart, providers, StatModifierDebugSourceType.Affect);
+            if (stat == null || !stat.TryGetStatBreakdown(statType, out CharacterStatBreakdown breakdown))
+                return new StatLine(displayName, baseStart, statStart, baseTotal, statTotal, finalValue, 0L, 0L, 0L);
 
-            return new StatLine(displayName, baseStart, statStart, baseTotal, statTotal, finalValue, item, skill, affect);
-        }
-
-        /// <summary>
-        /// 특정 출처가 지정 스탯 키에 기여한 증가량을 계산합니다.
-        /// </summary>
-        /// <remarks>
-        /// Percent 기여량은 전체 Flat이 반영된 기준값에 해당 출처 Percent만 적용하여 계산합니다.
-        /// 이 방식은 Provider별 Percent가 합산되는 현재 StatCalculator 규칙과 동일한 기준입니다.
-        /// </remarks>
-        private static long CalculateSourceContribution(string statKey, int startValue, IReadOnlyList<IStatModifierProvider> providers,
-            StatModifierDebugSourceType sourceType)
-        {
-            if (providers == null || string.IsNullOrEmpty(statKey))
-                return 0L;
-
-            int totalFlat = 0;
-            int sourceFlat = 0;
-            float sourcePercent = 0f;
-
-            for (int i = 0; i < providers.Count; i++)
-            {
-                IStatModifierProvider provider = providers[i];
-                if (provider == null)
-                    continue;
-
-                int flat = 0;
-                if (provider.Flat != null && provider.Flat.TryGetValue(statKey, out int providerFlat))
-                    flat = providerFlat;
-
-                totalFlat += flat;
-
-                if (provider is not IStatModifierDebugSource debugSource || debugSource.DebugSourceType != sourceType)
-                    continue;
-
-                sourceFlat += flat;
-                if (provider.Percent != null && provider.Percent.TryGetValue(statKey, out float providerPercent))
-                    sourcePercent += providerPercent;
-            }
-
-            double percentContribution = (startValue + totalFlat) * (sourcePercent / 100d);
-            double resolved = sourceFlat + percentContribution;
-            if (resolved >= long.MaxValue)
-                return long.MaxValue;
-            if (resolved <= long.MinValue)
-                return long.MinValue;
-
-            return (long)System.Math.Round(resolved);
+            return new StatLine(
+                displayName,
+                baseStart,
+                statStart,
+                baseTotal,
+                statTotal,
+                breakdown.FinalValue,
+                breakdown.BaseValue,
+                breakdown.GrowthContribution,
+                breakdown.ItemContribution,
+                breakdown.PassiveContribution,
+                breakdown.TemporaryContribution,
+                breakdown.OtherContribution);
         }
 
         /// <summary>
