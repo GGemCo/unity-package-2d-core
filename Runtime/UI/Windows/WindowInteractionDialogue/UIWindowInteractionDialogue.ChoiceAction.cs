@@ -346,7 +346,8 @@ namespace GGemCo2DCore
 
         /// <summary>
         /// 스탯 초기화 창 종료 결과에 따라 중단한 NPC 인터랙션을 재개하거나 완전히 종료합니다.
-        /// 취소하기 버튼으로 닫힌 경우에만 선택지와 동적 대사 컨텍스트를 다시 구성합니다.
+        /// 취소하거나 스탯 적용을 완료한 경우 선택지와 동적 대사 컨텍스트를 다시 구성합니다.
+        /// 다른 UI 전환 등으로 창이 외부에서 종료된 경우에는 기존 인터랙션도 완전히 종료합니다.
         /// </summary>
         /// <param name="closeReason">스탯 초기화 창이 닫힌 이유입니다.</param>
         private void HandlePlayerStatResetClosed(
@@ -363,13 +364,18 @@ namespace GGemCo2DCore
                 return;
             }
 
-            if (closeReason == PlayerStatResetCloseReason.Cancelled)
+            switch (closeReason)
             {
-                interactionManager.ResumeSuspendedInteraction(token);
-                return;
+                case PlayerStatResetCloseReason.Cancelled:
+                case PlayerStatResetCloseReason.Applied:
+                    // 최신 스탯 상태와 NPC의 동적 선택지를 다시 수집하도록 정식 재개 경로를 사용합니다.
+                    interactionManager.ResumeSuspendedInteraction(token);
+                    return;
+                case PlayerStatResetCloseReason.Dismissed:
+                default:
+                    interactionManager.CompleteSuspendedInteraction(token);
+                    return;
             }
-
-            interactionManager.CompleteSuspendedInteraction(token);
         }
 
         /// <summary>
