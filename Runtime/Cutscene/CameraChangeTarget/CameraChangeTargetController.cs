@@ -88,8 +88,25 @@ namespace GGemCo2DCore
                 return;
             }
 
-            cameraManager.SetFollowTarget(_newTarget);
-            cameraManager.SetCutsceneFollowOffset(data.offset);
+            var request = new CameraFocusRequest
+            {
+                Owner = CameraFocusOwner.Cutscene,
+                Source = this,
+                TrackingMode = CameraFocusTrackingMode.FollowTarget,
+                Target = _newTarget,
+                Offset = data.offset,
+                Duration = 0f,
+                Easing = Easing.EaseType.Linear,
+                UseUnscaledTime = false,
+                RespectMapBounds = true,
+                ReplaceMode = CameraFocusReplaceMode.ReplaceCurrent,
+            };
+            if (!cameraManager.TryStartCameraFocus(request))
+            {
+                GcLogger.LogWarning($"[{nameof(CameraChangeTargetController)}] Camera Focus 요청이 거부되어 이벤트를 실행하지 못했습니다.");
+                Stop();
+                return;
+            }
 
             _timer = 0f;
             _isChange = true;
@@ -119,7 +136,7 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 컷신 종료 시 추가 Offset을 제거하고 카메라 추적 대상을 플레이어로 복원합니다.
+        /// 컷신 종료 시 이 컨트롤러가 소유한 임시 포커스를 제거하고 기본 게임플레이 추적으로 복원합니다.
         /// </summary>
         public void End()
         {
@@ -129,8 +146,7 @@ namespace GGemCo2DCore
                 return;
             }
 
-            cameraManager.ClearCutsceneFollowOffset();
-            cameraManager.SetFollowPlayer();
+            cameraManager.RestoreCameraFocusIfOwnedBy(CameraFocusOwner.Cutscene, this);
         }
     }
 }

@@ -52,6 +52,7 @@ namespace GGemCo2DCore
         private readonly CameraFollowController _followController = new();
         private readonly CameraBoundsController _boundsController = new();
         private readonly CameraEffectController _effectController = new();
+        private readonly CameraFocusController _focusController = new();
 
         private Camera _currentCamera;
         private Vector3 _basePosition;
@@ -171,7 +172,29 @@ namespace GGemCo2DCore
             }
 
             Vector3 nextBasePosition = _basePosition;
-            if (CanEvaluateTargetFollow())
+            bool canEvaluateGameplayFollow = CanEvaluateTargetFollow();
+            if (_focusController.IsActive)
+            {
+                Vector3 gameplayFollowPosition = _basePosition;
+                if (_focusController.IsRestoring && canEvaluateGameplayFollow)
+                {
+                    gameplayFollowPosition = _followController.ResolveTargetPosition(
+                        _basePosition,
+                        applyDeadZone: false);
+                }
+
+                nextBasePosition = _focusController.Evaluate(
+                    _basePosition,
+                    gameplayFollowPosition,
+                    _followController.Offset,
+                    cameraMoveSpeed);
+
+                if (_focusController.RespectMapBounds)
+                {
+                    nextBasePosition = _boundsController.Clamp(nextBasePosition, _currentCamera);
+                }
+            }
+            else if (canEvaluateGameplayFollow)
             {
                 nextBasePosition = _followController.EvaluateBasePosition(_basePosition, Time.deltaTime);
                 nextBasePosition = _boundsController.Clamp(nextBasePosition, _currentCamera);
@@ -396,6 +419,8 @@ namespace GGemCo2DCore
             bool started = _effectController.BeginOverride(owner, position);
             if (started)
             {
+                // 독점 카메라 제어가 시작되면 위치 계층의 임시 Focus는 더 이상 유효하지 않습니다.
+                _focusController.Reset();
                 _pendingAutoBottomOffsetApply = false;
                 _basePosition = _effectController.OverridePosition;
                 transform.position = _basePosition;
@@ -513,6 +538,64 @@ namespace GGemCo2DCore
         public void ClearCutsceneFollowOffset()
         {
             _followController.ClearCutsceneOffset();
+        }
+
+        /// <summary>
+        /// 기본 게임플레이 Follow를 보존한 채 임시 카메라 포커스를 시작합니다.
+        /// </summary>
+        /// <param name="request">추적 대상, Offset, 이동 시간과 소유권이 포함된 요청입니다.</param>
+        /// <returns>요청이 수락되어 포커스를 시작했으면 <see langword="true"/>입니다.</returns>
+        public bool TryStartCameraFocus(CameraFocusRequest request)
+        {
+            if (_effectController.IsOverrideActive)
+                return false;
+
+            if (!IsFinite(request.Offset.x) || !IsFinite(request.Offset.y))
+            {
+                GcLogger.LogWarning($"[{nameof(CameraManager)}] 유효하지 않은 Camera Focus Offset을 0으로 보정합니다. offset: {request.Offset}");
+                request.Offset = Vector2.zero;
+            }
+
+            if (!IsFinite(request.SnapshotPosition.x) || !IsFinite(request.SnapshotPosition.y))
+            {
+                GcLogger.LogWarning($"[{nameof(CameraManager)}] 유효하지 않은 Camera Focus 스냅샷 위치를 현재 위치로 보정합니다.");
+                request.SnapshotPosition = _basePosition;
+            }
+
+            return _focusController.TryStart(request, _basePosition);
+        }
+
+        /// <summary>
+        /// 지정한 소유자와 출처가 시작한 임시 포커스를 기본 게임플레이 Follow로 복귀시킵니다.
+        /// </summary>
+        /// <param name="owner">복귀할 포커스의 소유 시스템입니다.</param>
+        /// <param name="source">복귀할 포커스 요청 출처입니다.</param>
+        /// <param name="duration">복귀 보간 시간입니다.</param>
+        /// <param name="easing">복귀 보간 방식입니다.</param>
+        /// <param name="useUnscaledTime">Time.timeScale 영향을 무시할지 여부입니다.</param>
+        /// <returns>소유권이 일치해 복귀를 처리했으면 <see langword="true"/>입니다.</returns>
+        public bool RestoreCameraFocusIfOwnedBy(
+            CameraFocusOwner owner,
+            object source,
+            float duration = 0f,
+            Easing.EaseType easing = Easing.EaseType.EaseOutQuad,
+            bool useUnscaledTime = false)
+        {
+            return _focusController.RestoreIfOwnedBy(
+                owner,
+                source,
+                _basePosition,
+                Mathf.Max(0f, duration),
+                easing,
+                useUnscaledTime);
+        }
+
+        /// <summary>
+        /// 현재 임시 카메라 포커스를 즉시 제거하고 기본 게임플레이 Follow로 전환합니다.
+        /// </summary>
+        public void ResetCameraFocus()
+        {
+            _focusController.Reset();
         }
 
         /// <summary>
@@ -698,6 +781,7 @@ namespace GGemCo2DCore
         public void ReSetByCutscene()
         {
             _effectController.ClearOverride();
+            _focusController.Reset();
             ClearCutsceneFollowOffset();
             SetFollowPlayer();
             _effectController.StopShake(CameraShakeChannel.Cutscene);

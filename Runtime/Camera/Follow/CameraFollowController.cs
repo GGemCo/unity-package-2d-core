@@ -149,16 +149,35 @@ namespace GGemCo2DCore
                 return currentBasePosition;
             }
 
-            // 맵별 기본 Offset은 유지하고 컷신 이벤트의 추가 Offset만 별도 합산합니다.
-            Vector2 resolvedOffset = _offset + _cutsceneOffset;
-            Vector3 targetPosition = _followTarget.position + new Vector3(resolvedOffset.x, resolvedOffset.y, 0f);
-            targetPosition.y = EvaluateVerticalFollowTargetY(targetPosition.y);
-            targetPosition = ApplyDeadZone(currentBasePosition, targetPosition);
+            Vector3 targetPosition = ResolveTargetPosition(currentBasePosition);
 
             float lerpWeight = Mathf.Clamp01(deltaTime * _moveSpeed);
             Vector3 resolvedPosition = Vector3.Lerp(currentBasePosition, targetPosition, lerpWeight);
             resolvedPosition.z = currentBasePosition.z;
             return resolvedPosition;
+        }
+
+        /// <summary>
+        /// 이동 속도 보간을 적용하기 전 현재 게임플레이 Follow 목표 위치를 계산합니다.
+        /// </summary>
+        /// <param name="currentBasePosition">Dead Zone 계산에 사용할 현재 카메라 기본 위치입니다.</param>
+        /// <param name="applyDeadZone">현재 Dead Zone 정책을 목표 위치에 적용할지 여부입니다.</param>
+        /// <returns>Follow 대상과 Offset이 반영된 목표 위치입니다.</returns>
+        internal Vector3 ResolveTargetPosition(Vector3 currentBasePosition, bool applyDeadZone = true)
+        {
+            if (_followTarget == null)
+                return currentBasePosition;
+
+            // 맵별 기본 Offset은 유지하고 컷신 이벤트의 추가 Offset만 별도 합산합니다.
+            Vector2 resolvedOffset = _offset + _cutsceneOffset;
+            Vector3 targetPosition = _followTarget.position + new Vector3(resolvedOffset.x, resolvedOffset.y, 0f);
+            targetPosition.y = EvaluateVerticalFollowTargetY(targetPosition.y);
+            if (applyDeadZone)
+            {
+                targetPosition = ApplyDeadZone(currentBasePosition, targetPosition);
+            }
+            targetPosition.z = currentBasePosition.z;
+            return targetPosition;
         }
 
         /// <summary>

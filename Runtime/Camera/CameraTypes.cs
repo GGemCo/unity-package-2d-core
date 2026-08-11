@@ -3,6 +3,71 @@ using UnityEngine;
 namespace GGemCo2DCore
 {
     /// <summary>
+    /// 임시 카메라 포커스 요청을 발생시킨 시스템을 정의합니다.
+    /// </summary>
+    public enum CameraFocusOwner
+    {
+        /// <summary>소유권을 사용하지 않는 기본 요청입니다.</summary>
+        Default = 0,
+
+        /// <summary>스킬 연출에서 발생한 포커스 요청입니다.</summary>
+        Skill = 10,
+
+        /// <summary>컷신 연출에서 발생한 포커스 요청입니다.</summary>
+        Cutscene = 100,
+    }
+
+    /// <summary>
+    /// 카메라 포커스가 대상을 참조하는 방식을 정의합니다.
+    /// </summary>
+    public enum CameraFocusTrackingMode
+    {
+        /// <summary>대상 Transform의 현재 위치를 계속 추적합니다.</summary>
+        FollowTarget = 0,
+
+        /// <summary>이벤트 시작 시 전달된 고정 월드 위치를 사용합니다.</summary>
+        SnapshotPosition = 1,
+    }
+
+    /// <summary>
+    /// 기존 카메라 포커스가 있을 때 새 요청을 처리하는 방식을 정의합니다.
+    /// </summary>
+    public enum CameraFocusReplaceMode
+    {
+        /// <summary>현재 요청보다 우선순위가 낮지 않으면 새 요청으로 교체합니다.</summary>
+        ReplaceCurrent = 0,
+
+        /// <summary>다른 포커스가 활성화되어 있으면 새 요청을 무시합니다.</summary>
+        IgnoreIfActive = 1,
+
+        /// <summary>현재 소유자의 우선순위가 높거나 같으면 새 요청을 무시합니다.</summary>
+        IgnoreIfOwnerPriorityIsGreaterOrEqual = 2,
+    }
+
+    /// <summary>
+    /// 기본 게임플레이 Follow 위에 임시로 적용할 카메라 포커스 요청입니다.
+    /// </summary>
+    public struct CameraFocusRequest
+    {
+        public CameraFocusOwner Owner;
+        public object Source;
+        public CameraFocusTrackingMode TrackingMode;
+        public Transform Target;
+        public Vector2 SnapshotPosition;
+        public Vector2 Offset;
+        public float Duration;
+        public Easing.EaseType Easing;
+        public bool UseUnscaledTime;
+        public bool RespectMapBounds;
+        public CameraFocusReplaceMode ReplaceMode;
+
+        /// <summary>
+        /// 선택한 추적 방식에 필요한 대상 정보가 존재하는지 반환합니다.
+        /// </summary>
+        public bool IsValid => TrackingMode == CameraFocusTrackingMode.SnapshotPosition || Target != null;
+    }
+
+    /// <summary>
     /// 카메라 줌 요청을 발생시킨 시스템을 정의합니다.
     /// 전역 카메라 연출이 서로 충돌하지 않도록 우선순위와 소유권 확인에 사용합니다.
     /// </summary>
