@@ -15,7 +15,7 @@ namespace GGemCo2DCore
         [Tooltip("스탯 설명")]
         [SerializeField] private TextMeshProUGUI textDescription;
 
-        [Tooltip("표시할 스탯 총합 텍스트")]
+        [Tooltip("PlayerInfo 표시 정책에 따른 초기화 기준값과 재분배 미리보기를 표시할 텍스트")]
         [SerializeField] private TextMeshProUGUI textValue;
 
         [Tooltip("투자 포인트 텍스트")]

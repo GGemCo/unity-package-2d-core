@@ -292,5 +292,35 @@ namespace GGemCo2DCore
                     return false;
             }
         }
+
+        /// <summary>
+        /// 현재 플레이어 정보창 표시 정책에 따라 시작값과 투자 포인트만 반영한 현재값과 미리보기값을 계산합니다.
+        /// </summary>
+        /// <param name="statType">계산할 플레이어 정보창 스탯입니다.</param>
+        /// <param name="currentInvested">현재 표시 기준에 포함할 투자 포인트입니다.</param>
+        /// <param name="previewInvested">미리보기 기준에 포함할 투자 포인트입니다.</param>
+        /// <param name="currentValue">스탯 항목 시작값과 현재 투자 포인트를 합산한 값입니다.</param>
+        /// <param name="previewValue">스탯 항목 시작값과 미리보기 투자 포인트를 합산한 값입니다.</param>
+        /// <returns>시작값과 투자 포인트만 표시하는 정책을 적용할 수 있으면 <see langword="true"/>를 반환합니다.</returns>
+        public bool TryCalculatePlayerInfoDisplayValues(
+            CharacterConstants.IndexPlayerInfo statType,
+            int currentInvested,
+            int previewInvested,
+            out long currentValue,
+            out long previewValue)
+        {
+            if (playerInfoStatDisplayPolicy != PlayerInfoStatDisplayPolicy.SettingsStartAndInvestedOnly ||
+                !TryGetPlayerInfoGrowthStartValue(statType, out long startValue))
+            {
+                currentValue = 0L;
+                previewValue = 0L;
+                return false;
+            }
+
+            // 투자 포인트는 STAT_* 성장 스탯에 1:1로 반영되므로 전투 파생 배율을 적용하지 않습니다.
+            currentValue = startValue + currentInvested;
+            previewValue = startValue + previewInvested;
+            return true;
+        }
     }
 }

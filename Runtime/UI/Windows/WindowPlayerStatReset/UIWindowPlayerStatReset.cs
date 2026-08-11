@@ -89,6 +89,7 @@ namespace GGemCo2DCore
 
         private Player _boundPlayer;
         private StatPointResetEditSession _editSession;
+        private GGemCoPlayerStatSettings _playerStatSettings;
         private bool _labelsApplied;
         private string _unspentPrefix;
         private Action<PlayerStatResetCloseReason> _closeCallback;
@@ -233,6 +234,7 @@ namespace GGemCo2DCore
         {
             _boundPlayer = player;
             _editSession = player != null ? new StatPointResetEditSession(player) : null;
+            _playerStatSettings = ResolvePlayerStatSettings();
 
             ApplyLabelsOnce();
             RefreshValues();
@@ -383,6 +385,18 @@ namespace GGemCo2DCore
             bool canIncrease = isTarget && _editSession != null && _editSession.CanIncrease(index);
             bool canDecrease = isTarget && _editSession != null && _editSession.CanDecrease(index);
 
+            // 초기화 Window의 current는 모든 투자 포인트를 회수한 0을 기준으로 하며,
+            // preview에는 사용자가 현재 재분배한 드래프트 투자량만 포함합니다.
+            if (TryGetSettingsStartAndInvestedDisplayValues(
+                    index,
+                    draftInvested,
+                    out long settingsCurrentValue,
+                    out long settingsPreviewValue))
+            {
+                currentValue = settingsCurrentValue;
+                previewValue = settingsPreviewValue;
+            }
+
             return new UIElementStatRenderData(
                 label,
                 currentValue,
@@ -393,6 +407,53 @@ namespace GGemCo2DCore
                 investedDelta,
                 canIncrease,
                 canDecrease);
+        }
+
+        /// <summary>
+        /// 플레이어 정보창 표시 정책에 따라 초기화 기준값과 재분배 미리보기값을 계산합니다.
+        /// </summary>
+        /// <param name="index">계산할 플레이어 스탯 인덱스입니다.</param>
+        /// <param name="draftInvested">현재 초기화 드래프트에 재분배한 투자 포인트입니다.</param>
+        /// <param name="currentValue">설정의 스탯 항목 시작값입니다.</param>
+        /// <param name="previewValue">설정 시작값과 재분배 포인트를 합산한 값입니다.</param>
+        /// <returns>시작값과 투자 포인트 전용 표시 정책을 적용했으면 <see langword="true"/>를 반환합니다.</returns>
+        private bool TryGetSettingsStartAndInvestedDisplayValues(
+            CharacterConstants.IndexPlayerInfo index,
+            int draftInvested,
+            out long currentValue,
+            out long previewValue)
+        {
+            GGemCoPlayerStatSettings settings = ResolvePlayerStatSettings();
+            if (settings == null ||
+                !settings.TryCalculatePlayerInfoDisplayValues(
+                    index,
+                    0,
+                    draftInvested,
+                    out currentValue,
+                    out previewValue))
+            {
+                currentValue = 0L;
+                previewValue = 0L;
+                return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Addressables 로더에서 플레이어 스탯 설정을 조회하고 재사용합니다.
+        /// </summary>
+        /// <returns>로드된 설정 자산이 있으면 해당 자산을 반환하고, 준비되지 않았으면 <see langword="null"/>을 반환합니다.</returns>
+        private GGemCoPlayerStatSettings ResolvePlayerStatSettings()
+        {
+            if (_playerStatSettings != null)
+                return _playerStatSettings;
+
+            AddressableLoaderSettings loader = AddressableLoaderSettings.Instance;
+            if (loader != null && loader.playerStatSettings != null)
+                _playerStatSettings = loader.playerStatSettings;
+
+            return _playerStatSettings;
         }
 
         /// <summary>

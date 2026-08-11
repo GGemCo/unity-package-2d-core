@@ -356,18 +356,18 @@ namespace GGemCo2DCore
         {
             GGemCoPlayerStatSettings settings = ResolvePlayerStatSettings();
             if (settings == null ||
-                settings.playerInfoStatDisplayPolicy !=
-                GGemCoPlayerStatSettings.PlayerInfoStatDisplayPolicy.SettingsStartAndInvestedOnly ||
-                !settings.TryGetPlayerInfoGrowthStartValue(index, out long startValue))
+                !settings.TryCalculatePlayerInfoDisplayValues(
+                    index,
+                    currentInvested,
+                    draftInvested,
+                    out currentValue,
+                    out previewValue))
             {
                 currentValue = 0L;
                 previewValue = 0L;
                 return false;
             }
 
-            // 투자 포인트는 STAT_* Modifier로 1:1 반영되므로 별도 전투 배율 없이 시작값에 직접 더합니다.
-            currentValue = startValue + currentInvested;
-            previewValue = startValue + draftInvested;
             return true;
         }
 
