@@ -114,6 +114,11 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 현재 컷신이 맵 기본 Follow Offset에 추가한 월드 좌표 보정값입니다.
+        /// </summary>
+        public Vector2 CutsceneFollowOffset => _followController.CutsceneOffset;
+
+        /// <summary>
         /// 카메라 Follow Dead Zone 반경입니다.
         /// </summary>
         public Vector2 FollowDeadZone
@@ -322,6 +327,7 @@ namespace GGemCo2DCore
             _effectController.StopAllShakes();
             _effectController.StopZoom();
             _effectController.ClearOverride();
+            ClearCutsceneFollowOffset();
             _pendingAutoBottomOffsetApply = false;
             transform.position = _basePosition;
         }
@@ -486,6 +492,40 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 맵 기본 Follow Offset을 유지한 채 컷신 전용 추가 Offset을 적용합니다.
+        /// 연속된 Camera Change Target 이벤트에서는 이전 값을 누적하지 않고 새 값으로 교체합니다.
+        /// </summary>
+        /// <param name="offset">추적 대상 위치에 추가할 월드 좌표 보정값입니다.</param>
+        public void SetCutsceneFollowOffset(Vector2 offset)
+        {
+            if (!IsFinite(offset.x) || !IsFinite(offset.y))
+            {
+                GcLogger.LogWarning($"[{nameof(CameraManager)}] 유효하지 않은 컷신 카메라 Offset을 0으로 보정합니다. offset: {offset}");
+                offset = Vector2.zero;
+            }
+
+            _followController.SetCutsceneOffset(offset);
+        }
+
+        /// <summary>
+        /// 컷신 전용 추가 Offset을 제거하고 맵 기본 Follow Offset만 사용하도록 복원합니다.
+        /// </summary>
+        public void ClearCutsceneFollowOffset()
+        {
+            _followController.ClearCutsceneOffset();
+        }
+
+        /// <summary>
+        /// 카메라 좌표 계산에 사용할 부동소수점 값이 유효한지 확인합니다.
+        /// </summary>
+        /// <param name="value">검사할 값입니다.</param>
+        /// <returns>NaN 또는 무한대가 아니면 <see langword="true"/>입니다.</returns>
+        private static bool IsFinite(float value)
+        {
+            return !float.IsNaN(value) && !float.IsInfinity(value);
+        }
+
+        /// <summary>
         /// 지정한 대상이 현재 게임 카메라의 정상 추적 대상인지 확인합니다.
         /// </summary>
         public bool CanGameplayFollowTarget(Transform target)
@@ -629,6 +669,7 @@ namespace GGemCo2DCore
         public void ReSetByCutscene()
         {
             _effectController.ClearOverride();
+            ClearCutsceneFollowOffset();
             SetFollowPlayer();
             _effectController.StopShake(CameraShakeChannel.Cutscene);
             _effectController.ResetZoom();

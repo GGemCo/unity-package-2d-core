@@ -10,6 +10,7 @@ namespace GGemCo2DCore
         private Transform _followTarget;
         private ICameraVerticalFollowStateSource _verticalFollowStateSource;
         private Vector2 _offset;
+        private Vector2 _cutsceneOffset;
         private Vector2 _deadZone;
         private float _moveSpeed;
         private float _verticalFollowInfluence;
@@ -35,6 +36,11 @@ namespace GGemCo2DCore
             get => _offset;
             set => _offset = value;
         }
+
+        /// <summary>
+        /// 컷신 연출이 맵 기본 Follow Offset에 추가할 월드 좌표 보정값입니다.
+        /// </summary>
+        public Vector2 CutsceneOffset => _cutsceneOffset;
 
         /// <summary>
         /// 대상 추적 속도입니다.
@@ -111,6 +117,26 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 현재 컷신용 추가 Follow Offset을 교체합니다.
+        /// Y 보정이 바뀌면 점프 수직 추적 기준점도 다시 계산하도록 초기화합니다.
+        /// </summary>
+        /// <param name="offset">맵 기본 Follow Offset에 더할 월드 좌표 보정값입니다.</param>
+        public void SetCutsceneOffset(Vector2 offset)
+        {
+            _cutsceneOffset = offset;
+            _hasVerticalFollowAnchor = false;
+        }
+
+        /// <summary>
+        /// 컷신용 추가 Follow Offset을 제거하고 수직 추적 기준점을 초기화합니다.
+        /// </summary>
+        public void ClearCutsceneOffset()
+        {
+            _cutsceneOffset = Vector2.zero;
+            _hasVerticalFollowAnchor = false;
+        }
+
+        /// <summary>
         /// 현재 추적 상태를 기준으로 카메라 기본 위치를 계산합니다.
         /// </summary>
         /// <param name="currentBasePosition">효과가 적용되기 전 현재 카메라 기본 위치입니다.</param>
@@ -123,7 +149,9 @@ namespace GGemCo2DCore
                 return currentBasePosition;
             }
 
-            Vector3 targetPosition = _followTarget.position + new Vector3(_offset.x, _offset.y, 0f);
+            // 맵별 기본 Offset은 유지하고 컷신 이벤트의 추가 Offset만 별도 합산합니다.
+            Vector2 resolvedOffset = _offset + _cutsceneOffset;
+            Vector3 targetPosition = _followTarget.position + new Vector3(resolvedOffset.x, resolvedOffset.y, 0f);
             targetPosition.y = EvaluateVerticalFollowTargetY(targetPosition.y);
             targetPosition = ApplyDeadZone(currentBasePosition, targetPosition);
 

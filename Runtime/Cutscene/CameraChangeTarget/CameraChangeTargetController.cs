@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using UnityEngine;
 
 namespace GGemCo2DCore
@@ -36,12 +36,16 @@ namespace GGemCo2DCore
         /// 현재는 별도의 준비 작업 없이 한 프레임을 양보합니다.
         /// </summary>
         /// <param name="evt">준비할 컷신 이벤트 정보입니다.</param>
-        /// <returns>준비 과정을 비동기적으로 진행하기 위한 열거자입니다.</returns>
         public void ReadyImmediate(CutsceneEvent evt)
         {
             // TODO: 필요 시 캐릭터 타겟 캐싱 또는 유효성 검사를 이 단계에서 수행합니다.
         }
 
+        /// <summary>
+        /// 카메라 대상 전환 이벤트를 코루틴 준비 경로에서도 즉시 준비합니다.
+        /// </summary>
+        /// <param name="evt">준비할 컷신 이벤트 정보입니다.</param>
+        /// <returns>추가 대기 없이 종료되는 열거자입니다.</returns>
         public IEnumerator Ready(CutsceneEvent evt)
         {
             ReadyImmediate(evt);
@@ -49,7 +53,7 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 카메라 대상 전환 이벤트를 실행하고 새 추적 대상을 카메라에 적용합니다.
+        /// 카메라 대상 전환 이벤트를 실행하고 새 추적 대상과 추가 Offset을 카메라에 적용합니다.
         /// 이벤트 타입이 일치하지 않으면 아무 작업도 수행하지 않습니다.
         /// </summary>
         /// <param name="evt">실행할 컷신 이벤트 정보입니다.</param>
@@ -58,13 +62,34 @@ namespace GGemCo2DCore
             if (evt.type != CutsceneEventType.CameraChangeTarget) return;
 
             _duration = evt.duration;
-            var data = evt.cameraChangeTarget;
-            _newTarget = GetTargetTransform(data.characterType, data.characterUid);
-
-            if (_newTarget != null)
+            CameraChangeTargetData data = evt.cameraChangeTarget;
+            if (data == null)
             {
-                SceneGame.Instance.cameraManager.SetFollowTarget(_newTarget);
+                GcLogger.LogWarning($"[{nameof(CameraChangeTargetController)}] CameraChangeTarget 데이터가 없어 이벤트를 실행하지 못했습니다.");
+                Stop();
+                return;
             }
+
+            _newTarget = GetTargetTransform(data.characterType, data.characterUid);
+            if (_newTarget == null)
+            {
+                GcLogger.LogWarning(
+                    $"[{nameof(CameraChangeTargetController)}] 카메라 추적 대상을 찾지 못했습니다. " +
+                    $"characterType: {data.characterType}, characterUid: {data.characterUid}");
+                Stop();
+                return;
+            }
+
+            CameraManager cameraManager = SceneGame.Instance?.cameraManager;
+            if (cameraManager == null)
+            {
+                GcLogger.LogWarning($"[{nameof(CameraChangeTargetController)}] CameraManager가 없어 이벤트를 실행하지 못했습니다.");
+                Stop();
+                return;
+            }
+
+            cameraManager.SetFollowTarget(_newTarget);
+            cameraManager.SetCutsceneFollowOffset(data.offset);
 
             _timer = 0f;
             _isChange = true;
@@ -94,11 +119,18 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 컷신 종료 시 카메라의 추적 대상을 플레이어로 복원합니다.
+        /// 컷신 종료 시 추가 Offset을 제거하고 카메라 추적 대상을 플레이어로 복원합니다.
         /// </summary>
         public void End()
         {
-            SceneGame.Instance.cameraManager.SetFollowPlayer();
+            CameraManager cameraManager = SceneGame.Instance?.cameraManager;
+            if (cameraManager == null)
+            {
+                return;
+            }
+
+            cameraManager.ClearCutsceneFollowOffset();
+            cameraManager.SetFollowPlayer();
         }
     }
 }

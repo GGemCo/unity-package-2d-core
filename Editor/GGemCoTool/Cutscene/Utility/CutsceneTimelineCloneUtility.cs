@@ -204,6 +204,7 @@ namespace GGemCo2DCoreEditor
             {
                 characterType = source.characterType,
                 characterUid = source.characterUid,
+                offset = source.offset,
             };
         }
 

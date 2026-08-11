@@ -55,6 +55,15 @@ namespace GGemCo2DCoreEditor
                 return false;
             }
 
+            if (cutsceneEvent.type == CutsceneEventType.CameraChangeTarget &&
+                cutsceneEvent.cameraChangeTarget != null &&
+                !IsFinite(cutsceneEvent.cameraChangeTarget.offset))
+            {
+                error = $"type: {cutsceneEvent.type} / Camera Change Target Offset에 NaN 또는 무한대를 사용할 수 없습니다.";
+                Debug.LogError(error);
+                return false;
+            }
+
             // CharacterFade 이벤트는 RuntimeOverride 또는 Fixed 대상이 반드시 필요합니다.
             if (cutsceneEvent.type == CutsceneEventType.CharacterFade &&
                 cutsceneEvent.characterFade != null)
@@ -134,6 +143,19 @@ namespace GGemCo2DCoreEditor
         {
             return characterType == CharacterConstants.Type.Monster ||
                    characterType == CharacterConstants.Type.Npc;
+        }
+
+        /// <summary>
+        /// Vector2의 두 좌표가 카메라 위치 계산에 사용할 수 있는 유한 값인지 확인합니다.
+        /// </summary>
+        /// <param name="value">검사할 좌표입니다.</param>
+        /// <returns>두 좌표가 모두 NaN 또는 무한대가 아니면 <see langword="true"/>입니다.</returns>
+        private static bool IsFinite(Vector2 value)
+        {
+            return !float.IsNaN(value.x) &&
+                   !float.IsInfinity(value.x) &&
+                   !float.IsNaN(value.y) &&
+                   !float.IsInfinity(value.y);
         }
     }
 }
