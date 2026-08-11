@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using UnityEngine;
 
 namespace GGemCo2DCore
@@ -81,7 +81,18 @@ namespace GGemCo2DCore
             _timer = 0f;
             _isZooming = true;
 
-            SceneGame.Instance.cameraManager.StartZoom(_endSize, _duration, _easing);
+            var request = new CameraZoomRequest
+            {
+                Owner = CameraZoomOwner.Cutscene,
+                Source = this,
+                EndSize = _endSize,
+                Duration = _duration,
+                Easing = _easing,
+                UseUnscaledTime = false,
+                ChangeOriginalSize = false,
+                ReplaceMode = CameraZoomReplaceMode.ReplaceCurrent,
+            };
+            SceneGame.Instance.cameraManager.TryStartZoom(request);
         }
 
         /// <summary>

@@ -28,6 +28,10 @@ namespace GGemCo2DCore
         private float _zoomEndSize;
         private Easing.EaseType _zoomEasing;
         private bool _zoomUseUnscaledTime;
+        private CameraZoomOwner _zoomOwner;
+        private object _zoomSource;
+        private float _zoomRestoreSize;
+        private bool _hasZoomOwnership;
         private object _overrideOwner;
         private bool _isOverrideActive;
         private Vector3 _overridePosition;
@@ -70,6 +74,7 @@ namespace GGemCo2DCore
             _zoomEndSize = 0f;
             _zoomEasing = Easing.EaseType.Linear;
             _zoomUseUnscaledTime = false;
+            ClearZoomOwnership();
             _overrideOwner = null;
             _isOverrideActive = false;
             _overridePosition = cameraTransform != null ? cameraTransform.position : Vector3.zero;
@@ -244,7 +249,176 @@ namespace GGemCo2DCore
             bool useUnscaledTime,
             bool changeOriginalSize)
         {
-            if (_isOverrideActive || _camera == null || !_camera.orthographic)
+            ClearZoomOwnership();
+            StartZoomInternal(endSize, duration, easeType, useUnscaledTime, changeOriginalSize);
+        }
+
+        /// <summary>
+        /// 소유권과 교체 정책을 확인한 뒤 카메라 줌을 시작합니다.
+        /// 같은 출처가 연속으로 요청하면 최초 요청 직전 크기를 복귀 기준으로 유지합니다.
+        /// </summary>
+        /// <param name="request">실행할 카메라 줌 요청입니다.</param>
+        /// <returns>요청이 수락되어 줌을 적용했으면 <see langword="true"/>입니다.</returns>
+        public bool TryStartZoom(CameraZoomRequest request)
+        {
+            if (!request.IsValid || _isOverrideActive || _camera == null || !_camera.orthographic)
+            {
+                return false;
+            }
+
+            if (request.Owner != CameraZoomOwner.Default && request.Source == null)
+            {
+                return false;
+            }
+
+            if (!CanAcceptZoom(request))
+            {
+                return false;
+            }
+
+            bool isSameSource = _hasZoomOwnership &&
+                                _zoomOwner == request.Owner &&
+                                ReferenceEquals(_zoomSource, request.Source);
+            bool canInheritRestoreSize = _hasZoomOwnership && _zoomOwner == request.Owner;
+            if (!isSameSource && !canInheritRestoreSize)
+            {
+                _zoomRestoreSize = _camera.orthographicSize;
+            }
+
+            // 같은 우선순위 계층의 스킬끼리 줌을 교체할 때는 최초 적용 전 크기를 유지하여 복귀 누적 오차를 방지합니다.
+
+            _zoomOwner = request.Owner;
+            _zoomSource = request.Source;
+            _hasZoomOwnership = true;
+            StartZoomInternal(
+                request.EndSize,
+                request.Duration,
+                request.Easing,
+                request.UseUnscaledTime,
+                request.ChangeOriginalSize);
+            return true;
+        }
+
+        /// <summary>
+        /// 현재 줌 소유자와 출처가 일치할 때 요청 전 카메라 크기로 복귀합니다.
+        /// </summary>
+        /// <param name="owner">복귀할 줌의 소유 시스템입니다.</param>
+        /// <param name="source">복귀할 줌 요청의 출처 객체입니다.</param>
+        /// <param name="duration">복귀 보간 시간입니다.</param>
+        /// <param name="easeType">복귀 보간 방식입니다.</param>
+        /// <param name="useUnscaledTime">Time.timeScale 영향을 무시할지 여부입니다.</param>
+        /// <returns>소유권이 일치하여 복귀를 시작했으면 <see langword="true"/>입니다.</returns>
+        public bool RestoreZoomIfOwnedBy(
+            CameraZoomOwner owner,
+            object source,
+            float duration,
+            Easing.EaseType easeType,
+            bool useUnscaledTime)
+        {
+            if (!_hasZoomOwnership || _zoomOwner != owner || !ReferenceEquals(_zoomSource, source))
+            {
+                return false;
+            }
+
+            float restoreSize = _zoomRestoreSize;
+            ClearZoomOwnership();
+            StartZoomInternal(restoreSize, duration, easeType, useUnscaledTime, changeOriginalSize: false);
+            return true;
+        }
+
+        /// <summary>
+        /// 원본 Orthographic Size로 복귀하는 줌을 시작합니다.
+        /// </summary>
+        public void ResetZoom()
+        {
+            if (_camera == null || !_camera.orthographic)
+            {
+                return;
+            }
+
+            ClearZoomOwnership();
+            _zoomTimer = 0f;
+            _zoomStartSize = _camera.orthographicSize;
+            _zoomEndSize = _originalOrthographicSize;
+            _zoomDuration = 1f;
+            _zoomEasing = Easing.EaseType.EaseOutQuad;
+            _zoomUseUnscaledTime = false;
+            _isZooming = true;
+        }
+
+        /// <summary>
+        /// 진행 중인 줌을 중단합니다.
+        /// </summary>
+        /// <param name="snapToTarget">true이면 목표 Size를 즉시 적용합니다.</param>
+        public void StopZoom(bool snapToTarget = false)
+        {
+            ClearZoomOwnership();
+            if (!_isZooming)
+            {
+                return;
+            }
+
+            if (snapToTarget && _camera != null)
+            {
+                _camera.orthographicSize = _zoomEndSize;
+            }
+
+            _isZooming = false;
+        }
+
+        /// <summary>
+        /// Orthographic Size를 즉시 적용합니다.
+        /// </summary>
+        public void SetOrthographicSizeImmediate(float size, bool changeOriginalSize)
+        {
+            ClearZoomOwnership();
+            SetOrthographicSizeImmediateInternal(size, changeOriginalSize);
+        }
+
+        /// <summary>
+        /// 교체 정책과 소유자 우선순위를 기준으로 새 줌 요청을 수락할지 판단합니다.
+        /// </summary>
+        /// <param name="request">수락 여부를 확인할 줌 요청입니다.</param>
+        /// <returns>새 요청을 적용할 수 있으면 <see langword="true"/>입니다.</returns>
+        private bool CanAcceptZoom(CameraZoomRequest request)
+        {
+            if (!_hasZoomOwnership)
+            {
+                return true;
+            }
+
+            if (_zoomOwner == request.Owner && ReferenceEquals(_zoomSource, request.Source))
+            {
+                return true;
+            }
+
+            int currentPriority = (int)_zoomOwner;
+            int nextPriority = (int)request.Owner;
+            switch (request.ReplaceMode)
+            {
+                case CameraZoomReplaceMode.IgnoreIfPlaying:
+                    return !_isZooming && nextPriority >= currentPriority;
+
+                case CameraZoomReplaceMode.IgnoreIfOwnerPriorityIsGreaterOrEqual:
+                    return nextPriority > currentPriority;
+
+                case CameraZoomReplaceMode.ReplaceCurrent:
+                default:
+                    return nextPriority >= currentPriority;
+            }
+        }
+
+        /// <summary>
+        /// 검증이 끝난 Orthographic Size 보간 값을 현재 카메라에 적용합니다.
+        /// </summary>
+        private void StartZoomInternal(
+            float endSize,
+            float duration,
+            Easing.EaseType easeType,
+            bool useUnscaledTime,
+            bool changeOriginalSize)
+        {
+            if (_camera == null || !_camera.orthographic)
             {
                 return;
             }
@@ -252,7 +426,7 @@ namespace GGemCo2DCore
             float safeEndSize = Mathf.Max(endSize, 0.0001f);
             if (duration <= 0f)
             {
-                SetOrthographicSizeImmediate(safeEndSize, changeOriginalSize);
+                SetOrthographicSizeImmediateInternal(safeEndSize, changeOriginalSize);
                 _isZooming = false;
                 return;
             }
@@ -272,47 +446,9 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 원본 Orthographic Size로 복귀하는 줌을 시작합니다.
+        /// 소유권 변경 없이 Orthographic Size를 즉시 적용합니다.
         /// </summary>
-        public void ResetZoom()
-        {
-            if (_camera == null || !_camera.orthographic)
-            {
-                return;
-            }
-
-            _zoomTimer = 0f;
-            _zoomStartSize = _camera.orthographicSize;
-            _zoomEndSize = _originalOrthographicSize;
-            _zoomDuration = 1f;
-            _zoomEasing = Easing.EaseType.EaseOutQuad;
-            _zoomUseUnscaledTime = false;
-            _isZooming = true;
-        }
-
-        /// <summary>
-        /// 진행 중인 줌을 중단합니다.
-        /// </summary>
-        /// <param name="snapToTarget">true이면 목표 Size를 즉시 적용합니다.</param>
-        public void StopZoom(bool snapToTarget = false)
-        {
-            if (!_isZooming)
-            {
-                return;
-            }
-
-            if (snapToTarget && _camera != null)
-            {
-                _camera.orthographicSize = _zoomEndSize;
-            }
-
-            _isZooming = false;
-        }
-
-        /// <summary>
-        /// Orthographic Size를 즉시 적용합니다.
-        /// </summary>
-        public void SetOrthographicSizeImmediate(float size, bool changeOriginalSize)
+        private void SetOrthographicSizeImmediateInternal(float size, bool changeOriginalSize)
         {
             if (_camera == null || !_camera.orthographic)
             {
@@ -325,6 +461,17 @@ namespace GGemCo2DCore
             {
                 _originalOrthographicSize = safeSize;
             }
+        }
+
+        /// <summary>
+        /// 현재 카메라 줌 요청의 소유권과 복귀 기준을 초기화합니다.
+        /// </summary>
+        private void ClearZoomOwnership()
+        {
+            _zoomOwner = CameraZoomOwner.Default;
+            _zoomSource = null;
+            _zoomRestoreSize = 0f;
+            _hasZoomOwnership = false;
         }
 
         /// <summary>

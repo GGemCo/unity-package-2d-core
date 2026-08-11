@@ -664,6 +664,35 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 소유권과 교체 정책이 포함된 카메라 줌 요청을 실행합니다.
+        /// </summary>
+        /// <param name="request">실행할 카메라 줌 요청입니다.</param>
+        /// <returns>요청이 수락되어 적용되었으면 <see langword="true"/>입니다.</returns>
+        public bool TryStartZoom(CameraZoomRequest request)
+        {
+            return _effectController.TryStartZoom(request);
+        }
+
+        /// <summary>
+        /// 지정한 소유자와 출처가 시작한 줌을 요청 전 카메라 크기로 복귀시킵니다.
+        /// </summary>
+        /// <param name="owner">복귀할 줌의 소유 시스템입니다.</param>
+        /// <param name="source">복귀할 줌 요청의 출처 객체입니다.</param>
+        /// <param name="duration">복귀 보간 시간입니다.</param>
+        /// <param name="easeType">복귀 보간 방식입니다.</param>
+        /// <param name="useUnscaledTime">Time.timeScale 영향을 무시할지 여부입니다.</param>
+        /// <returns>소유권이 일치하여 복귀를 시작했으면 <see langword="true"/>입니다.</returns>
+        public bool RestoreZoomIfOwnedBy(
+            CameraZoomOwner owner,
+            object source,
+            float duration = 1f,
+            Easing.EaseType easeType = Easing.EaseType.EaseOutQuad,
+            bool useUnscaledTime = false)
+        {
+            return _effectController.RestoreZoomIfOwnedBy(owner, source, duration, easeType, useUnscaledTime);
+        }
+
+        /// <summary>
         /// 컷신 종료 시 카메라를 일반 게임플레이 상태로 복구합니다.
         /// </summary>
         public void ReSetByCutscene()
