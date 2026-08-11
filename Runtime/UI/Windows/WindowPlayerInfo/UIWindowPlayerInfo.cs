@@ -72,6 +72,7 @@ namespace GGemCo2DCore
 
         private Player _boundPlayer;
         private StatPointEditSession _editSession;
+        private GGemCoPlayerStatSettings _playerStatSettings;
         private bool _labelsApplied;
         private string _unspentPrefix;
 
@@ -162,6 +163,7 @@ namespace GGemCo2DCore
         {
             _boundPlayer = player;
             _editSession = player != null ? new StatPointEditSession(player) : null;
+            _playerStatSettings = ResolvePlayerStatSettings();
 
             ApplyLabelsOnce();
             RefreshValues();
@@ -295,14 +297,27 @@ namespace GGemCo2DCore
             int draftInvested = isTarget && _editSession != null ? _editSession.GetDraftInvested(index) : 0;
             int investedDelta = isTarget ? draftInvested - lineData.invested : 0;
 
-            // textValue는 스탯 포인트 투자 대상 여부와 관계없이 TotalStat* 값을 표시합니다.
-            // 투자 포인트 수량은 textInvested가 담당하고, Base 계열 총합은 textBase가 담당합니다.
+            // 프로젝트 표시 정책이 활성화되면 장비/패시브/임시 Modifier를 제외하고
+            // Settings 시작값과 실제 투자 포인트만 메인 값에 반영합니다.
             long currentValue = lineData.displayValue;
             long previewValue = GetPreviewDisplayValue(index, projectedTotals, hasPreview, lineData.displayValue);
+            bool usesSettingsStartAndInvestedOnly = TryGetSettingsStartAndInvestedDisplayValues(
+                index,
+                lineData.invested,
+                draftInvested,
+                out long settingsCurrentValue,
+                out long settingsPreviewValue);
+
+            if (usesSettingsStartAndInvestedOnly)
+            {
+                currentValue = settingsCurrentValue;
+                previewValue = settingsPreviewValue;
+            }
 
             bool canIncrease = isTarget && _editSession != null && _editSession.CanIncrease(index);
             bool canDecrease = isTarget && _editSession != null && _editSession.CanDecrease(index);
-            bool hasBaseValue = isTarget;
+            // Settings 시작값 전용 정책에서는 TotalBase*가 실제 전투 Modifier를 노출하므로 보조 Base 표시를 숨깁니다.
+            bool hasBaseValue = isTarget && !usesSettingsStartAndInvestedOnly;
             long previewBaseValue = hasPreview
                 ? GetBaseValueByIndex(index, projectedTotals)
                 : lineData.baseValue;
@@ -321,6 +336,55 @@ namespace GGemCo2DCore
                 lineData.baseValue,
                 hasPreview,
                 previewBaseValue);
+        }
+
+        /// <summary>
+        /// 현재 프로젝트의 플레이어 정보창 표시 정책에 따라 시작값과 투자값만 합산한 값을 계산합니다.
+        /// </summary>
+        /// <param name="index">표시할 플레이어 스탯 인덱스입니다.</param>
+        /// <param name="currentInvested">저장 데이터에 반영된 현재 투자 포인트입니다.</param>
+        /// <param name="draftInvested">편집 세션에서 변경 중인 투자 포인트입니다.</param>
+        /// <param name="currentValue">설정 시작값과 현재 투자 포인트를 합산한 값입니다.</param>
+        /// <param name="previewValue">설정 시작값과 드래프트 투자 포인트를 합산한 값입니다.</param>
+        /// <returns>전용 표시 정책을 적용할 수 있으면 <see langword="true"/>를 반환합니다.</returns>
+        private bool TryGetSettingsStartAndInvestedDisplayValues(
+            CharacterConstants.IndexPlayerInfo index,
+            int currentInvested,
+            int draftInvested,
+            out long currentValue,
+            out long previewValue)
+        {
+            GGemCoPlayerStatSettings settings = ResolvePlayerStatSettings();
+            if (settings == null ||
+                settings.playerInfoStatDisplayPolicy !=
+                GGemCoPlayerStatSettings.PlayerInfoStatDisplayPolicy.SettingsStartAndInvestedOnly ||
+                !settings.TryGetPlayerInfoGrowthStartValue(index, out long startValue))
+            {
+                currentValue = 0L;
+                previewValue = 0L;
+                return false;
+            }
+
+            // 투자 포인트는 STAT_* Modifier로 1:1 반영되므로 별도 전투 배율 없이 시작값에 직접 더합니다.
+            currentValue = startValue + currentInvested;
+            previewValue = startValue + draftInvested;
+            return true;
+        }
+
+        /// <summary>
+        /// Addressables 로더에서 플레이어 스탯 설정을 조회하고 재사용합니다.
+        /// </summary>
+        /// <returns>로드된 설정 자산이 있으면 해당 자산을 반환하고, 준비되지 않았으면 <see langword="null"/>을 반환합니다.</returns>
+        private GGemCoPlayerStatSettings ResolvePlayerStatSettings()
+        {
+            if (_playerStatSettings != null)
+                return _playerStatSettings;
+
+            AddressableLoaderSettings loader = AddressableLoaderSettings.Instance;
+            if (loader != null && loader.playerStatSettings != null)
+                _playerStatSettings = loader.playerStatSettings;
+
+            return _playerStatSettings;
         }
 
         private void OnClickApply()
