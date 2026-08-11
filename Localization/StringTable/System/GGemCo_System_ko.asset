@@ -566,6 +566,10 @@ MonoBehaviour:
       \uB0A8\uC558\uC5B4."
     m_Metadata:
       m_Items: []
+  - m_Id: 34392264916779009
+    m_Localized: "\uD604\uC7AC \uC2A4\uD0EF \uBC30\uBD84\uACFC \uB3D9\uC77C\uD574."
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds:

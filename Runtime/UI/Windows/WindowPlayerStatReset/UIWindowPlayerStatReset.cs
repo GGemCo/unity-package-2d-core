@@ -34,6 +34,8 @@ namespace GGemCo2DCore
     {
         private const string RemainPointMessageKey = "Text_Remain_Point";
         private const string RemainPointPopupRequestKey = "PlayerStatReset.RemainPoint";
+        private const string SameAllocationMessageKey = "Text_Same_Stat_Allocation";
+        private const string SameAllocationPopupRequestKey = "PlayerStatReset.SameAllocation";
 
         [Header(UIWindowConstants.TitleHeaderIndividual)]
         [Header("프리팹")]
@@ -96,6 +98,7 @@ namespace GGemCo2DCore
         private PlayerStatResetCloseReason _pendingCloseReason;
         private bool _hasPendingCloseReason;
         private bool _hasLoggedMissingPopupManager;
+        private bool _wasSameAllocation;
 
         protected override void Awake()
         {
@@ -115,6 +118,7 @@ namespace GGemCo2DCore
             if (buttonApply != null) buttonApply.onClick.RemoveListener(OnClickApply);
             if (buttonReset != null) buttonReset.onClick.RemoveListener(OnClickReset);
             CancelRemainPointPopup();
+            CancelSameAllocationPopup();
 
             // 씬 종료 중에는 다른 UIWindow를 다시 열지 않도록 보류 중인 콜백을 실행하지 않고 해제합니다.
             _closeCallback = null;
@@ -128,6 +132,7 @@ namespace GGemCo2DCore
         private void OnDisable()
         {
             CancelRemainPointPopup();
+            CancelSameAllocationPopup();
 
             if (_closeCallback == null)
             {
@@ -349,10 +354,14 @@ namespace GGemCo2DCore
                 textUnspent.text = $"{prefix}<style=UI_Emphasis>{_editSession.DraftUnspent}</style>";
             }
 
+            bool hasDraftChanges = _editSession.HasDraftChangesFromResetBaseline;
+            bool hasAllocationChanges = _editSession.HasAllocationChangesFromOriginal;
+            bool isSameAllocation = hasDraftChanges && !hasAllocationChanges;
+
             if (buttonApply != null)
-                buttonApply.interactable =
-                    _editSession.HasDraftChangesFromResetBaseline &&
-                    _editSession.HasAllocationChangesFromOriginal;
+                buttonApply.interactable = hasDraftChanges && hasAllocationChanges;
+
+            UpdateSameAllocationPopup(isSameAllocation);
 
             if (buttonReset != null)
                 buttonReset.interactable = _editSession != null;
@@ -515,12 +524,68 @@ namespace GGemCo2DCore
         /// </summary>
         private void ShowRemainPointPopup()
         {
+            ShowStatResetBubble(
+                RemainPointPopupRequestKey,
+                RemainPointMessageKey);
+        }
+
+        /// <summary>
+        /// 이 윈도우가 요청한 남은 포인트 안내 말풍선만 취소합니다.
+        /// </summary>
+        private void CancelRemainPointPopup()
+        {
+            GetPopupManager()?.Cancel(RemainPointPopupRequestKey);
+        }
+
+        /// <summary>
+        /// 현재 드래프트가 기존 스탯 배분과 같아지는 순간 승인 버튼 위에 안내 말풍선을 표시합니다.
+        /// 같은 상태로 반복 갱신될 때 팝업이 다시 생성되지 않도록 상태 전환 시점만 처리합니다.
+        /// </summary>
+        /// <param name="isSameAllocation">현재 드래프트가 기존 스탯 배분과 동일하면 <see langword="true"/>입니다.</param>
+        private void UpdateSameAllocationPopup(bool isSameAllocation)
+        {
+            if (_wasSameAllocation == isSameAllocation)
+            {
+                return;
+            }
+
+            _wasSameAllocation = isSameAllocation;
+            if (isSameAllocation)
+            {
+                ShowStatResetBubble(
+                    SameAllocationPopupRequestKey,
+                    SameAllocationMessageKey);
+                return;
+            }
+
+            GetPopupManager()?.Cancel(SameAllocationPopupRequestKey);
+        }
+
+        /// <summary>
+        /// 이 윈도우가 요청한 기존 배분 동일 안내 말풍선을 취소하고 상태를 초기화합니다.
+        /// </summary>
+        private void CancelSameAllocationPopup()
+        {
+            _wasSameAllocation = false;
+            GetPopupManager()?.Cancel(SameAllocationPopupRequestKey);
+        }
+
+        /// <summary>
+        /// 스탯 초기화 안내 말풍선을 승인 버튼 위치를 기준으로 표시합니다.
+        /// 요청별 고유 키를 사용하여 표시 중이거나 대기 중인 동일 팝업의 중복 생성을 방지합니다.
+        /// </summary>
+        /// <param name="requestKey">팝업 중복 방지와 선택 취소에 사용할 요청 키입니다.</param>
+        /// <param name="messageKey">시스템 로컬라이제이션 테이블에서 조회할 메시지 키입니다.</param>
+        private void ShowStatResetBubble(
+            string requestKey,
+            string messageKey)
+        {
             PopupManager popupManager = GetPopupManager();
             if (popupManager == null)
             {
                 if (!_hasLoggedMissingPopupManager)
                 {
-                    GcLogger.LogWarning($"[{nameof(UIWindowPlayerStatReset)}] PopupManager를 찾을 수 없어 남은 포인트 안내를 표시하지 못했습니다.");
+                    GcLogger.LogWarning($"[{nameof(UIWindowPlayerStatReset)}] PopupManager를 찾을 수 없어 스탯 초기화 안내를 표시하지 못했습니다.");
                     _hasLoggedMissingPopupManager = true;
                 }
 
@@ -533,9 +598,9 @@ namespace GGemCo2DCore
 
             popupManager.ShowPopup(new PopupMetadataBubble
             {
-                RequestKey = RemainPointPopupRequestKey,
+                RequestKey = requestKey,
                 PopupType = PopupManager.Type.Bubble,
-                Message = RemainPointMessageKey,
+                Message = messageKey,
                 MessageColor = new Color(62f / 255f, 31f / 255f, 0f, 1f),
                 ShowConfirmButton = false,
                 ShowCancelButton = false,
@@ -544,14 +609,6 @@ namespace GGemCo2DCore
                 Duration = Mathf.Max(0f, remainPointPopupDuration),
                 Position = anchorPosition + remainPointPopupOffset,
             });
-        }
-
-        /// <summary>
-        /// 이 윈도우가 요청한 남은 포인트 안내 말풍선만 취소합니다.
-        /// </summary>
-        private void CancelRemainPointPopup()
-        {
-            GetPopupManager()?.Cancel(RemainPointPopupRequestKey);
         }
 
         /// <summary>

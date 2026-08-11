@@ -516,6 +516,10 @@ MonoBehaviour:
     m_Localized: There are still points left to distribute.
     m_Metadata:
       m_Items: []
+  - m_Id: 34392264916779009
+    m_Localized: This stat allocation is the same as your current allocation.
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

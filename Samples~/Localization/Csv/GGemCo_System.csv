@@ -123,3 +123,4 @@ Key,Shared Comments,English(en),English(en) Comments,Korean(ko),Korean(ko) Comme
 "SkillSetting_PreviousMainSkillRequired","","Equip the previous combo skill first.","","이전 연계 스킬을 먼저 장착해야 합니다.",""
 "SkillSetting_LinkedMainSkillRequired","","Equip the linked parent skill first.","","연결된 부모 스킬을 먼저 장착해야 합니다.",""
 "SkillSetting_DependentSkillEquipped","","Unequip the connected next skill first.","","연결된 다음 스킬을 먼저 해제해야 합니다.",""
+"Text_Same_Stat_Allocation","UIWindowPlayerStatReset","This stat allocation is the same as your current allocation.","","현재 스탯 배분과 동일해.",""
