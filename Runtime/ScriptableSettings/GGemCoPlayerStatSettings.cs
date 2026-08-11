@@ -45,6 +45,18 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 플레이어 정보창에서 스탯 포인트 투자 대상의 메인 값을 표시하는 정책입니다.
+        /// </summary>
+        public enum PlayerInfoStatDisplayPolicy
+        {
+            [Tooltip("현재 적용 중인 모든 STAT_* Modifier가 반영된 TotalStat* 값을 표시합니다.")]
+            RuntimeTotal = 0,
+
+            [Tooltip("GGemCoPlayerStatSettings의 스탯 항목 시작값과 사용자가 투자한 포인트만 합산하여 표시합니다.")]
+            SettingsStartAndInvestedOnly = 1,
+        }
+
+        /// <summary>
         /// TotalStat* 값을 Base* 계열 파생값에 더하는 변환 규칙입니다.
         /// </summary>
         [Serializable]
@@ -64,6 +76,10 @@ namespace GGemCo2DCore
         [Header("스탯 항목 시작값")]
         [Tooltip("스탯 포인트와 STAT_* 옵션이 누적되는 플레이어 스탯 항목 시작값입니다.")]
         public CharacterGrowthStatValues stats;
+
+        [Header("플레이어 정보창 표시")]
+        [Tooltip("플레이어 정보창의 스탯 포인트 투자 대상 메인 값 표시 정책입니다. 실제 전투 스탯 계산에는 영향을 주지 않습니다.")]
+        public PlayerInfoStatDisplayPolicy playerInfoStatDisplayPolicy = PlayerInfoStatDisplayPolicy.RuntimeTotal;
 
         [Header("스탯 포인트")]
         [Tooltip("스탯 포인트 리셋 비용")]
@@ -166,6 +182,7 @@ namespace GGemCo2DCore
         {
             baseAttributes = CreateDefaultBaseAttributes();
             stats = CreateDefaultGrowthStats();
+            playerInfoStatDisplayPolicy = PlayerInfoStatDisplayPolicy.RuntimeTotal;
 
             statPointAcquirePolicy = StatPointAcquirePolicy.LevelUpOnly;
             statPointLevelUpOnInvestPolicy = StatPointLevelUpOnInvestPolicy.None;
@@ -236,6 +253,44 @@ namespace GGemCo2DCore
                 mp = 100,
                 stamina = 100,
             };
+        }
+
+        /// <summary>
+        /// 플레이어 정보창 스탯 인덱스에 대응하는 스탯 항목 시작값을 조회합니다.
+        /// </summary>
+        /// <param name="statType">시작값을 조회할 플레이어 정보창 스탯입니다.</param>
+        /// <param name="startValue">설정 자산의 <see cref="stats"/>에 저장된 시작값입니다.</param>
+        /// <returns>스탯 포인트 투자 대상이면 <see langword="true"/>를 반환합니다.</returns>
+        public bool TryGetPlayerInfoGrowthStartValue(
+            CharacterConstants.IndexPlayerInfo statType,
+            out long startValue)
+        {
+            switch (statType)
+            {
+                case CharacterConstants.IndexPlayerInfo.Atk:
+                    startValue = stats.atk;
+                    return true;
+
+                case CharacterConstants.IndexPlayerInfo.Def:
+                    startValue = stats.def;
+                    return true;
+
+                case CharacterConstants.IndexPlayerInfo.Hp:
+                    startValue = stats.hp;
+                    return true;
+
+                case CharacterConstants.IndexPlayerInfo.Mp:
+                    startValue = stats.mp;
+                    return true;
+
+                case CharacterConstants.IndexPlayerInfo.Stamina:
+                    startValue = stats.stamina;
+                    return true;
+
+                default:
+                    startValue = 0L;
+                    return false;
+            }
         }
     }
 }

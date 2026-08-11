@@ -15,10 +15,10 @@ namespace GGemCo2DCore
         [Tooltip("스탯 설명")]
         [SerializeField] private TextMeshProUGUI textDescription;
 
-        [Tooltip("표시할 메인 값 텍스트. 스탯 포인트 투자 대상은 TotalStat* 값을 표시합니다.")]
+        [Tooltip("표시할 메인 값 텍스트. 스탯 포인트 투자 대상은 PlayerInfo 표시 정책에 따른 값을 표시합니다.")]
         [SerializeField] private TextMeshProUGUI textValue;
 
-        [Tooltip("스탯 포인트 투자 대상의 TotalBase* 값을 표시할 텍스트입니다. 비어 있으면 표시하지 않습니다.")]
+        [Tooltip("RuntimeTotal 정책에서 스탯 포인트 투자 대상의 TotalBase* 값을 표시할 텍스트입니다. 비어 있으면 표시하지 않습니다.")]
         [SerializeField] private TextMeshProUGUI textBase;
 
         [Tooltip("투자 포인트 텍스트")]
@@ -97,7 +97,7 @@ namespace GGemCo2DCore
         {
             bool isTarget = CharacterConstants.IsStatPointTarget(_indexPlayerInfo);
 
-            // textBase는 TotalBase*를 표시해야 하는 스탯 포인트 투자 대상 라인에서만 사용합니다.
+            // 초기 구성에서는 투자 대상 여부만 반영하고, 최종 표시 여부는 Window가 전달하는 정책별 렌더 데이터로 결정합니다.
             if (textBase != null)
                 textBase.gameObject.SetActive(isTarget);
 
@@ -139,7 +139,7 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// textBase 오브젝트가 연결된 경우 TotalBase* 현재값과 미리보기 값을 표시합니다.
+        /// textBase 오브젝트가 연결되고 현재 정책에서 Base 표시를 허용한 경우 현재값과 미리보기 값을 표시합니다.
         /// </summary>
         /// <param name="data">PlayerInfo 윈도우가 계산한 표시 전용 데이터입니다.</param>
         private void RenderBaseText(in UIElementStatRenderData data)
