@@ -133,6 +133,8 @@ namespace GGemCo2DCoreEditor
                 .ToDictionary(x => x.TableCollectionName, StringComparer.Ordinal);
             var localeCache = LocalizationEditorSettings.GetLocales()
                 .ToDictionary(x => x.Identifier.Code, StringComparer.Ordinal);
+            var sharedEntrySnapshots = BuildSharedEntrySnapshots(collections.Values, result);
+            var csvIdentityTracker = new LocalizationCsvIdentityTracker();
 
             for (int rowIndex = 0; rowIndex < document.Rows.Count; rowIndex++)
             {
@@ -155,7 +157,30 @@ namespace GGemCo2DCoreEditor
                     continue;
                 }
 
-                var resolve = ResolveSharedEntry(collection, row, options, result, rowNumber, undoContext);
+                if (!csvIdentityTracker.TryRegister(row, rowNumber, result))
+                {
+                    result.SkippedRowCount++;
+                    continue;
+                }
+
+                if (!sharedEntrySnapshots.TryGetValue(
+                        row.CollectionName,
+                        out LocalizationSharedEntrySnapshot sharedEntrySnapshot))
+                {
+                    result.SkippedRowCount++;
+                    result.WarningCount++;
+                    result.Log($"[건너뜀][{rowNumber}] SharedData 조회 스냅샷이 없습니다: {row.CollectionName}");
+                    continue;
+                }
+
+                var resolve = ResolveSharedEntry(
+                    collection,
+                    sharedEntrySnapshot,
+                    row,
+                    options,
+                    result,
+                    rowNumber,
+                    undoContext);
                 if (resolve == null)
                 {
                     result.SkippedRowCount++;
@@ -174,6 +199,33 @@ namespace GGemCo2DCoreEditor
             result.Log(options.DryRun ? "미리보기 완료" : "CSV 병합 적용 완료");
             result.Log($"행 {result.ImportedRowCount}개, 신규 키 {result.CreatedEntryCount}개, 값 변경 {result.UpdatedValueCount}개, Smart 변경 {result.UpdatedSmartFlagCount}개, 경고 {result.WarningCount}개, 건너뜀 {result.SkippedRowCount}개");
             return result;
+        }
+
+        /// <summary>
+        /// 각 String Table Collection의 실제 <see cref="SharedTableData.Entries"/>를 기준으로
+        /// ID/Key 조회 스냅샷을 생성합니다.
+        /// Unity Localization 내부 조회 캐시가 오래된 상태여도 직렬화 목록을 기준으로 병합할 수 있습니다.
+        /// </summary>
+        /// <param name="collections">현재 프로젝트의 String Table Collection 목록입니다.</param>
+        /// <param name="result">중복 Shared Entry 진단을 기록할 작업 결과입니다.</param>
+        /// <returns>컬렉션 이름과 Shared Entry 조회 스냅샷의 매핑입니다.</returns>
+        private static Dictionary<string, LocalizationSharedEntrySnapshot> BuildSharedEntrySnapshots(
+            IEnumerable<StringTableCollection> collections,
+            LocalizationCsvSyncResult result)
+        {
+            var snapshots = new Dictionary<string, LocalizationSharedEntrySnapshot>(StringComparer.Ordinal);
+            foreach (StringTableCollection collection in collections)
+            {
+                if (collection == null || string.IsNullOrWhiteSpace(collection.TableCollectionName))
+                {
+                    continue;
+                }
+
+                snapshots[collection.TableCollectionName] =
+                    LocalizationSharedEntrySnapshot.Create(collection, result);
+            }
+
+            return snapshots;
         }
 
         /// <summary>
@@ -309,6 +361,7 @@ namespace GGemCo2DCoreEditor
         /// <returns>매칭된 SharedTableEntry 입니다.</returns>
         private static ResolvedSharedEntry ResolveSharedEntry(
             StringTableCollection collection,
+            LocalizationSharedEntrySnapshot sharedEntrySnapshot,
             LocalizationCsvRow row,
             LocalizationCsvSyncOptions options,
             LocalizationCsvSyncResult result,
@@ -323,18 +376,18 @@ namespace GGemCo2DCoreEditor
                 return null;
             }
 
-            SharedTableData.SharedTableEntry sharedEntry = null;
+            ResolvedSharedEntry resolvedEntry = null;
             if (row.Id > 0)
             {
-                sharedEntry = sharedData.GetEntry(row.Id);
+                resolvedEntry = sharedEntrySnapshot.GetById(row.Id);
             }
 
-            if (sharedEntry == null && !string.IsNullOrWhiteSpace(row.Key))
+            if (resolvedEntry == null && !string.IsNullOrWhiteSpace(row.Key))
             {
-                sharedEntry = sharedData.GetEntry(row.Key);
+                resolvedEntry = sharedEntrySnapshot.GetByKey(row.Key);
             }
 
-            if (sharedEntry == null)
+            if (resolvedEntry == null)
             {
                 if (!options.CreateMissingEntries)
                 {
@@ -350,51 +403,59 @@ namespace GGemCo2DCoreEditor
                     return null;
                 }
 
+                SharedTableData.SharedTableEntry sharedEntry = null;
                 if (!options.DryRun)
                 {
                     undoContext.Record(sharedData, "Merge Localization CSV - SharedData");
                     sharedEntry = row.Id > 0 ? sharedData.AddKey(row.Key, row.Id) : sharedData.AddKey(row.Key);
                     if (sharedEntry == null)
                     {
-                        sharedEntry = sharedData.GetEntry(row.Key);
+                        // Unity 내부 캐시 대신 실제 Entries 목록을 다시 스캔하여 생성 결과를 확인합니다.
+                        sharedEntry = sharedData.Entries.FirstOrDefault(
+                            entry => entry != null &&
+                                     string.Equals(entry.Key, row.Key, StringComparison.Ordinal));
                     }
                     EditorUtility.SetDirty(sharedData);
                 }
 
                 result.CreatedEntryCount++;
                 result.Log($"[신규][{rowNumber}] {collection.TableCollectionName} / {row.Key}");
-                return ResolvedSharedEntry.Create(sharedEntry, row.Id, row.Key);
+                resolvedEntry = ResolvedSharedEntry.Create(sharedEntry, row.Id, row.Key);
+                sharedEntrySnapshot.Register(resolvedEntry);
+                return resolvedEntry;
             }
 
-            if (!string.IsNullOrWhiteSpace(row.Key) && !string.Equals(sharedEntry.Key, row.Key, StringComparison.Ordinal))
+            if (!string.IsNullOrWhiteSpace(row.Key) &&
+                !string.Equals(resolvedEntry.Key, row.Key, StringComparison.Ordinal))
             {
                 if (!options.AllowKeyRename)
                 {
                     result.WarningCount++;
-                    result.Log($"[경고][{rowNumber}] Id 로 매칭되었지만 Key 가 다릅니다. 기존 Key 유지: {collection.TableCollectionName} / 기존={sharedEntry.Key} / CSV={row.Key}");
-                    return ResolvedSharedEntry.Create(sharedEntry, row.Id, row.Key);
+                    result.Log($"[경고][{rowNumber}] Id 로 매칭되었지만 Key 가 다릅니다. 기존 Key 유지: {collection.TableCollectionName} / 기존={resolvedEntry.Key} / CSV={row.Key}");
+                    return resolvedEntry;
                 }
 
-                var duplicateKeyEntry = sharedData.GetEntry(row.Key);
-                if (duplicateKeyEntry != null && duplicateKeyEntry.Id != sharedEntry.Id)
+                ResolvedSharedEntry duplicateKeyEntry = sharedEntrySnapshot.GetByKey(row.Key);
+                if (duplicateKeyEntry != null && duplicateKeyEntry.Id != resolvedEntry.Id)
                 {
                     result.WarningCount++;
                     result.Log($"[경고][{rowNumber}] 변경 대상 Key 가 이미 존재하여 이름을 바꾸지 못했습니다: {collection.TableCollectionName} / {row.Key}");
-                    return ResolvedSharedEntry.Create(sharedEntry, row.Id, row.Key);
+                    return resolvedEntry;
                 }
 
                 if (!options.DryRun)
                 {
                     undoContext.Record(sharedData, "Merge Localization CSV - Rename Key");
-                    sharedData.RenameKey(sharedEntry.Id, row.Key);
+                    sharedData.RenameKey(resolvedEntry.Id, row.Key);
                     EditorUtility.SetDirty(sharedData);
                 }
 
+                sharedEntrySnapshot.Rename(resolvedEntry, row.Key);
                 result.RenamedKeyCount++;
-                result.Log($"[이름변경][{rowNumber}] {collection.TableCollectionName} / {sharedEntry.Id} / {row.Key}");
+                result.Log($"[이름변경][{rowNumber}] {collection.TableCollectionName} / {resolvedEntry.Id} / {row.Key}");
             }
 
-            return ResolvedSharedEntry.Create(sharedEntry, row.Id, row.Key);
+            return resolvedEntry;
         }
 
         /// <summary>
@@ -663,6 +724,242 @@ namespace GGemCo2DCoreEditor
     }
 
     /// <summary>
+    /// 한 String Table Collection의 Shared Entry를 ID와 Key로 조회하는 작업 단위 스냅샷입니다.
+    /// Unity Localization의 내부 Dictionary 캐시 대신 실제 <see cref="SharedTableData.Entries"/>를 기준으로 구성합니다.
+    /// </summary>
+    internal sealed class LocalizationSharedEntrySnapshot
+    {
+        private readonly Dictionary<long, ResolvedSharedEntry> _entriesById =
+            new Dictionary<long, ResolvedSharedEntry>();
+        private readonly Dictionary<string, ResolvedSharedEntry> _entriesByKey =
+            new Dictionary<string, ResolvedSharedEntry>(StringComparer.Ordinal);
+
+        /// <summary>
+        /// 컬렉션의 실제 Shared Entry 목록을 순회하여 조회 스냅샷을 생성하고 중복 데이터를 진단합니다.
+        /// </summary>
+        /// <param name="collection">조회 스냅샷을 생성할 String Table Collection입니다.</param>
+        /// <param name="result">중복 진단을 기록할 작업 결과입니다.</param>
+        /// <returns>생성된 Shared Entry 조회 스냅샷입니다.</returns>
+        public static LocalizationSharedEntrySnapshot Create(
+            StringTableCollection collection,
+            LocalizationCsvSyncResult result)
+        {
+            var snapshot = new LocalizationSharedEntrySnapshot();
+            SharedTableData sharedData = collection?.SharedData;
+            if (sharedData?.Entries == null)
+            {
+                return snapshot;
+            }
+
+            for (int index = 0; index < sharedData.Entries.Count; index++)
+            {
+                SharedTableData.SharedTableEntry sharedEntry = sharedData.Entries[index];
+                if (sharedEntry == null)
+                {
+                    result.WarningCount++;
+                    result.Log($"[오류] SharedData에 비어 있는 항목이 있습니다: {collection.TableCollectionName} / index={index}");
+                    continue;
+                }
+
+                ResolvedSharedEntry resolvedEntry =
+                    ResolvedSharedEntry.Create(sharedEntry, sharedEntry.Id, sharedEntry.Key);
+                snapshot.RegisterInitial(collection.TableCollectionName, resolvedEntry, result);
+            }
+
+            return snapshot;
+        }
+
+        /// <summary>
+        /// ID로 Shared Entry를 조회합니다.
+        /// </summary>
+        /// <param name="id">조회할 Shared Entry ID입니다.</param>
+        /// <returns>일치하는 항목이며, 없으면 <see langword="null"/>입니다.</returns>
+        public ResolvedSharedEntry GetById(long id)
+        {
+            return id > 0 && _entriesById.TryGetValue(id, out ResolvedSharedEntry entry)
+                ? entry
+                : null;
+        }
+
+        /// <summary>
+        /// Key로 Shared Entry를 조회합니다.
+        /// </summary>
+        /// <param name="key">조회할 Shared Entry Key입니다.</param>
+        /// <returns>일치하는 항목이며, 없으면 <see langword="null"/>입니다.</returns>
+        public ResolvedSharedEntry GetByKey(string key)
+        {
+            return !string.IsNullOrWhiteSpace(key) &&
+                   _entriesByKey.TryGetValue(key, out ResolvedSharedEntry entry)
+                ? entry
+                : null;
+        }
+
+        /// <summary>
+        /// 병합 중 신규 생성되거나 미리보기에서 가상 생성된 항목을 스냅샷에 등록합니다.
+        /// </summary>
+        /// <param name="entry">등록할 해석된 Shared Entry입니다.</param>
+        public void Register(ResolvedSharedEntry entry)
+        {
+            if (entry == null)
+            {
+                return;
+            }
+
+            if (entry.Id > 0)
+            {
+                _entriesById[entry.Id] = entry;
+            }
+
+            if (!string.IsNullOrWhiteSpace(entry.Key))
+            {
+                _entriesByKey[entry.Key] = entry;
+            }
+        }
+
+        /// <summary>
+        /// 병합 과정에서 변경된 Key를 스냅샷에 즉시 반영합니다.
+        /// 실제 Merge와 미리보기가 동일한 후속 행 매칭 결과를 갖도록 합니다.
+        /// </summary>
+        /// <param name="entry">이름이 변경된 Shared Entry입니다.</param>
+        /// <param name="newKey">CSV에서 요청한 새 Key입니다.</param>
+        public void Rename(ResolvedSharedEntry entry, string newKey)
+        {
+            if (entry == null || string.IsNullOrWhiteSpace(newKey))
+            {
+                return;
+            }
+
+            if (!string.IsNullOrWhiteSpace(entry.Key))
+            {
+                _entriesByKey.Remove(entry.Key);
+            }
+
+            entry.SetKey(newKey);
+            _entriesByKey[newKey] = entry;
+        }
+
+        /// <summary>
+        /// 초기 Shared Data 항목을 등록하면서 중복 ID와 중복 Key를 명확하게 진단합니다.
+        /// 중복 시 첫 번째 항목을 유지하여 이후 결과가 순회 순서와 무관하게 바뀌지 않도록 합니다.
+        /// </summary>
+        /// <param name="collectionName">진단에 표시할 컬렉션 이름입니다.</param>
+        /// <param name="entry">등록할 Shared Entry입니다.</param>
+        /// <param name="result">중복 진단을 기록할 작업 결과입니다.</param>
+        private void RegisterInitial(
+            string collectionName,
+            ResolvedSharedEntry entry,
+            LocalizationCsvSyncResult result)
+        {
+            if (entry.Id > 0)
+            {
+                if (_entriesById.TryGetValue(entry.Id, out ResolvedSharedEntry duplicateIdEntry))
+                {
+                    result.WarningCount++;
+                    result.Log($"[오류] SharedData에 중복 ID가 있습니다: {collectionName} / ID={entry.Id} / 첫 Key={duplicateIdEntry.Key} / 중복 Key={entry.Key}");
+                }
+                else
+                {
+                    _entriesById.Add(entry.Id, entry);
+                }
+            }
+
+            if (string.IsNullOrWhiteSpace(entry.Key))
+            {
+                return;
+            }
+
+            if (_entriesByKey.TryGetValue(entry.Key, out ResolvedSharedEntry duplicateKeyEntry))
+            {
+                result.WarningCount++;
+                result.Log($"[오류] SharedData에 중복 Key가 있습니다: {collectionName} / Key={entry.Key} / 첫 ID={duplicateKeyEntry.Id} / 중복 ID={entry.Id}");
+                return;
+            }
+
+            _entriesByKey.Add(entry.Key, entry);
+        }
+    }
+
+    /// <summary>
+    /// CSV 문서 안에서 Collection+ID 및 Collection+Key 중복 행을 추적합니다.
+    /// </summary>
+    internal sealed class LocalizationCsvIdentityTracker
+    {
+        private const char IdentitySeparator = '\u001F';
+        private readonly Dictionary<string, int> _firstRowById =
+            new Dictionary<string, int>(StringComparer.Ordinal);
+        private readonly Dictionary<string, int> _firstRowByKey =
+            new Dictionary<string, int>(StringComparer.Ordinal);
+
+        /// <summary>
+        /// CSV 행의 ID와 Key 조합을 등록하고 앞선 행과의 중복 여부를 검사합니다.
+        /// 중복 행은 동일 엔트리를 두 번 변경하지 않도록 병합 대상에서 제외합니다.
+        /// </summary>
+        /// <param name="row">검사할 CSV 행입니다.</param>
+        /// <param name="rowNumber">로그에 표시할 현재 CSV 행 번호입니다.</param>
+        /// <param name="result">중복 진단을 기록할 작업 결과입니다.</param>
+        /// <returns>처음 등장한 행이면 <see langword="true"/>, 중복이면 <see langword="false"/>입니다.</returns>
+        public bool TryRegister(
+            LocalizationCsvRow row,
+            int rowNumber,
+            LocalizationCsvSyncResult result)
+        {
+            bool isDuplicate = false;
+            string idIdentity = string.Empty;
+            string keyIdentity = string.Empty;
+            if (row.Id > 0)
+            {
+                idIdentity = BuildIdentity(row.CollectionName, row.Id.ToString());
+                if (_firstRowById.TryGetValue(idIdentity, out int firstIdRow))
+                {
+                    result.WarningCount++;
+                    result.Log($"[건너뜀][{rowNumber}] CSV에 중복 Collection+ID가 있습니다: {row.CollectionName} / ID={row.Id} / 첫 행={firstIdRow}");
+                    isDuplicate = true;
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(row.Key))
+            {
+                keyIdentity = BuildIdentity(row.CollectionName, row.Key);
+                if (_firstRowByKey.TryGetValue(keyIdentity, out int firstKeyRow))
+                {
+                    result.WarningCount++;
+                    result.Log($"[건너뜀][{rowNumber}] CSV에 중복 Collection+Key가 있습니다: {row.CollectionName} / Key={row.Key} / 첫 행={firstKeyRow}");
+                    isDuplicate = true;
+                }
+            }
+
+            if (isDuplicate)
+            {
+                return false;
+            }
+
+            // 중복으로 건너뛴 행은 최초 행으로 등록하지 않아 후속 진단의 기준이 되지 않도록 합니다.
+            if (!string.IsNullOrEmpty(idIdentity))
+            {
+                _firstRowById.Add(idIdentity, rowNumber);
+            }
+
+            if (!string.IsNullOrEmpty(keyIdentity))
+            {
+                _firstRowByKey.Add(keyIdentity, rowNumber);
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// 컬렉션 이름과 ID 또는 Key를 충돌 없는 내부 식별 문자열로 결합합니다.
+        /// </summary>
+        /// <param name="collectionName">CSV Collection 값입니다.</param>
+        /// <param name="entryIdentity">CSV ID 또는 Key 값입니다.</param>
+        /// <returns>중복 검사용 내부 식별 문자열입니다.</returns>
+        private static string BuildIdentity(string collectionName, string entryIdentity)
+        {
+            return string.Concat(collectionName, IdentitySeparator, entryIdentity);
+        }
+    }
+
+    /// <summary>
     /// 실제 SharedTableEntry 와, 미리보기에서 사용할 Key/Id 정보를 함께 보관합니다.
     /// </summary>
     internal sealed class ResolvedSharedEntry
@@ -697,6 +994,15 @@ namespace GGemCo2DCoreEditor
                 Id = sharedEntry != null ? sharedEntry.Id : fallbackId,
                 Key = sharedEntry != null ? sharedEntry.Key : fallbackKey
             };
+        }
+
+        /// <summary>
+        /// 미리보기 또는 실제 이름 변경 결과를 해석된 항목에 반영합니다.
+        /// </summary>
+        /// <param name="key">새 Shared Entry Key입니다.</param>
+        public void SetKey(string key)
+        {
+            Key = key ?? string.Empty;
         }
     }
 
