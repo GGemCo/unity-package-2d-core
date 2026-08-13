@@ -568,10 +568,6 @@ MonoBehaviour:
     m_Key: Skill_NotEnoughMp
     m_Metadata:
       m_Items: []
-  - m_Id: 107281613710344192
-    m_Key: SkillSetting_PreviousMainSlotRequired
-    m_Metadata:
-      m_Items: []
   - m_Id: 141062814828773376
     m_Key: SkillSetting_LinkedMainSlotRequired
     m_Metadata:
